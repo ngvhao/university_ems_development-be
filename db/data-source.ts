@@ -9,7 +9,7 @@ export const initDataSource = (): DataSourceOptions => ({
   port: parseInt(process.env.DB_PORT, 10),
   username: process.env.DB_USER_NAME,
   password: process.env.DB_PASSWORD,
-  database: 'university_ems_db',
+  database: process.env.DB_NAME,
   synchronize: false,
   logging: true,
   entities: ['dist/**/*.entity.js'],

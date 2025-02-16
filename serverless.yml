@@ -1,0 +1,33 @@
+service: serverless-university-ems
+frameworkVersion: '3'
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-southeast-1
+  environment:
+    DEBUG: ${env:DEBUG, 0}
+    STAGE: ${env:STAGE, "dev"}
+
+functions:
+  api:
+    handler: dist/src/serverless.handler
+    events:
+      - http:
+          method: ANY
+          path: /
+      - http:
+          method: ANY
+          path: '{proxy+}'
+
+custom:
+  dotenv:
+    exclude:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - AWS_SESSION_TOKEN
+
+plugins:
+  - serverless-offline
+  - serverless-dotenv-plugin
