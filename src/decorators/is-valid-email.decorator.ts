@@ -3,7 +3,7 @@ import {
   ValidationArguments,
   ValidationOptions,
 } from 'class-validator';
-import { EMAIL_REGEX } from 'src/utils/enums/contants';
+import { EMAIL_REGEX } from 'src/utils/contants';
 
 export function IsValidEmail(validationOptions?: ValidationOptions) {
   return (object: any, propertyName: string) => {
