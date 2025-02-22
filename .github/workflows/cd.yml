@@ -1,0 +1,54 @@
+name: University EMS CD
+
+on:
+  push:
+    branches:
+      - master
+      - stg
+      - dev
+
+jobs:
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Determine CodeBuild project
+        id: determine_codebuild
+        run: |
+          if [[ "${{ github.ref_name }}" == "dev" ]]; then
+            echo "project_name=codebuild-university-ems-dev" >> $GITHUB_ENV
+          elif [[ "${{ github.ref_name }}" == "master" ]]; then
+            echo "project_name=codebuild-university-ems-prd" >> $GITHUB_ENV
+          elif [[ "${{ github.ref_name }}" == "staging" ]]; then
+            echo "project_name=codebuild-university-ems-staging" >> $GITHUB_ENV
+          else
+            echo "Unknown branch, exiting."
+            exit 1
+          fi
+
+      - name: Start Deploying application
+        run: |
+          BRANCH="${{ github.ref_name }}"
+          COMMIT_HASH="${{ github.sha }}"
+          echo "Starting deployment for branch: $BRANCH"
+          VERSION="$COMMIT_HASH"
+
+          # Start CodeBuild and capture the build ID
+          START_BUILD_RESPONSE=$(aws codebuild start-build --project-name ${{ env.project_name }} --source-version $VERSION --environment-variables-override name=VERSION,value=$VERSION)
+
+          # Extract the build ID from the response (the build ID is in the response JSON)
+          BUILD_ID=$(echo $START_BUILD_RESPONSE | jq -r '.build.id')
+
+          # Echo the CodeBuild URL to the log
+          echo "CodeBuild started. You can view the build at id: $BUILD_ID"
