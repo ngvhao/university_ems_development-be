@@ -43,6 +43,7 @@ export const COUNTRY_CODE = /^\d{1,4}$/;
 export const PHONE_NUMBER = /^\d{10,11}$/;
 
 export const METADATA__PARAM_TYPE = 'partialBodyType';
+
 export const jwtConstants = {
   secret: process.env.JWT_SECRET_KEY,
   expired: JWT_EXPIRED_TIME_UPDATE_TOKEN,

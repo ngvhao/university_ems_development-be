@@ -3,11 +3,12 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
-// import { TypeOrmModule } from '@nestjs/typeorm';
-// import dataSource from 'db/data-source';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserModule } from './modules/user/user.module';
+import dataSource from 'db/data-source';
 
 @Module({
-  imports: [AuthModule],
+  imports: [TypeOrmModule.forRoot(dataSource.options), AuthModule, UserModule],
   controllers: [AppController],
   providers: [AppService],
 })

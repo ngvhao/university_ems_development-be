@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: 123
-      POSTGRES_DB: university-ems-db
+      POSTGRES_DB: university_ems_db
     ports:
       - "5432:5432"
     volumes:
