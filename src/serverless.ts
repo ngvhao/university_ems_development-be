@@ -3,11 +3,13 @@ import serverlessExpress from '@codegenie/serverless-express';
 import { APIGatewayProxyEvent, Callback, Context, Handler } from 'aws-lambda';
 import { AppModule } from './app.module';
 import { firstValueFrom, ReplaySubject } from 'rxjs';
+import { setupMiddlewares } from './main';
 
 const serverSubject = new ReplaySubject<Handler>();
 
 async function bootstrap(): Promise<Handler> {
   const app = await NestFactory.create(AppModule);
+  setupMiddlewares(app);
   await app.init();
   const expressApp = app.getHttpAdapter().getInstance();
   return serverlessExpress({ app: expressApp });
