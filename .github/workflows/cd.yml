@@ -5,7 +5,7 @@ on:
     branches:
       - master
       - stg
-      - dev
+      # - dev
 
 jobs:
   deploy:

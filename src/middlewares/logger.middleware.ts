@@ -8,6 +8,7 @@ export class LoggerMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     morgan(
       (tokens: TokenIndexer, req: Request, res: Response) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const user = (req as any)?.user?.email || 'anonymous';
         return JSON.stringify({
           user: user,

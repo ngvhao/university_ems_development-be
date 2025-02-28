@@ -30,5 +30,6 @@ module.exports = {
       },
     ],
     'unused-imports/no-unused-imports': 'error',
+    '@typescript-eslint/no-explicit-any': 'error'
   },
 };

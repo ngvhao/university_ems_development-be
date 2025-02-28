@@ -6,6 +6,7 @@ import * as dotenv from 'dotenv';
 import { INestApplication } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
+import * as bodyParser from 'body-parser';
 
 export function setupMiddlewares(app: INestApplication) {
   const expressApp = app as NestExpressApplication;
@@ -39,6 +40,7 @@ export function setupMiddlewares(app: INestApplication) {
       },
     }),
   );
+  app.use(bodyParser.json());
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new HttpExceptionFilter());
   return expressApp;
