@@ -1,6 +1,8 @@
+import { LecturerEntity } from 'src/modules/lecture/entities/lecture.entity';
+import { StudentEntity } from 'src/modules/student/entities/student.entity';
 import { EUserRole, EUserStatus } from 'src/utils/enums/user.enum';
 import { IEntity } from 'src/utils/interfaces/IEntity';
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, OneToMany } from 'typeorm';
 
 @Entity('users')
 export class UserEntity extends IEntity {
@@ -16,6 +18,9 @@ export class UserEntity extends IEntity {
   @Column()
   lastName: string;
 
+  @Column({ unique: true })
+  userCode: string;
+
   @Column({ nullable: true })
   avatarUrl: string;
 
@@ -24,6 +29,9 @@ export class UserEntity extends IEntity {
 
   @Column({ type: 'enum', enum: EUserStatus, default: EUserStatus.ACTIVE })
   status: EUserStatus;
+
+  @Column({ nullable: true })
+  refreshToken: string;
 
   @Column({ nullable: true })
   phoneNumber: string;
@@ -51,4 +59,13 @@ export class UserEntity extends IEntity {
 
   @Column({ nullable: true })
   ethnicity: string;
+
+  @Column({ default: true })
+  isActive: boolean;
+
+  @OneToMany(() => StudentEntity, (student) => student.user)
+  students: StudentEntity[];
+
+  @OneToMany(() => LecturerEntity, (lecturer) => lecturer.user)
+  lecturers: LecturerEntity[];
 }

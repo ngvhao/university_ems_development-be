@@ -1,19 +1,17 @@
 import { Body, Controller, Get, Param, Post, Res } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDTO } from './dtos/createUser.dto';
 import { Response } from 'express';
 import { SuccessResponse } from 'src/utils/response';
-import helpers from 'src/utils/helpers';
+import { CreateUserDto } from './dtos/createUser.dto';
+import { Helpers } from 'src/utils/helpers';
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {
-    //
-  }
+  constructor(private readonly userService: UserService) {}
 
   @Post()
-  async createUser(@Body() createUserDto: CreateUserDTO, @Res() res: Response) {
-    const hashedPassword = await helpers.hashPassword({
+  async createUser(@Body() createUserDto: CreateUserDto, @Res() res: Response) {
+    const hashedPassword = await Helpers.hashPassword({
       password: createUserDto.password,
     });
     createUserDto.password = hashedPassword;
