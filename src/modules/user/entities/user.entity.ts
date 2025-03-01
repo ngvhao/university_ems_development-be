@@ -16,6 +16,9 @@ export class UserEntity extends IEntity {
   @Column()
   lastName: string;
 
+  @Column({ unique: true })
+  userCode: string;
+
   @Column({ nullable: true })
   avatarUrl: string;
 

@@ -4,11 +4,33 @@ import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserModule } from './modules/user/user.module';
+import { LectureModule } from './modules/lecture/lecture.module';
+import { MajorModule } from './modules/major/major.module';
+import { FalcutyModule } from './modules/falcuty/falcuty.module';
+import { ClassModule } from './modules/class/class.module';
 import dataSource from 'db/data-source';
+import { StudentModule } from './modules/student/student.module';
+import { UserModule } from './modules/user/user.module';
+import { SemestersModule } from './modules/semester/semester.module';
+import { CourseModule } from './modules/course/course.module';
+import { EnrollmentModule } from './modules/enrollment/enrollment.module';
+import { CourseSemesterModule } from './modules/course_semester/course_semester.module';
 
 @Module({
-  imports: [TypeOrmModule.forRoot(dataSource.options), AuthModule, UserModule],
+  imports: [
+    TypeOrmModule.forRoot(dataSource.options),
+    AuthModule,
+    UserModule,
+    StudentModule,
+    LectureModule,
+    MajorModule,
+    FalcutyModule,
+    ClassModule,
+    SemestersModule,
+    CourseModule,
+    EnrollmentModule,
+    CourseSemesterModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
