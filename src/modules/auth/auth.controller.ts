@@ -1,12 +1,13 @@
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
   Post,
   Res,
   Request,
   UseGuards,
+  UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -15,33 +16,87 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtService } from '@nestjs/jwt';
 import { jwtConstants } from 'src/utils/constants';
 import { RequestHasUserDTO } from 'src/utils/request-has-user-dto';
+import { AuthService } from './auth.service';
+import { SuccessResponse } from 'src/utils/response';
+import { AuthHelpers } from 'src/utils/auth-helpers';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly jwtService: JwtService) {}
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly authService: AuthService,
+  ) {}
 
-  @Get()
-  testFunction(@Res() res: Response) {
-    return res.json({ message: 'Hello from Nguyen Van Hao!' });
-  }
-  @Get('/err')
-  testFunction2(@Res() _res: Response) {
-    throw new ForbiddenException();
-  }
   @UseGuards(LocalAuthGuard)
   @Post('/login')
   async login(
-    @Body() body: LoginDto,
+    @Body() _body: LoginDto,
     @Request() req: RequestHasUserDTO & Request,
     @Res() res: Response,
   ) {
     const user = req.user;
-    const payload = { id: user.id, sub: body.email };
-    const token = await this.jwtService.signAsync(payload, {
-      secret: jwtConstants.secret,
-      expiresIn: jwtConstants.expired,
+    const payload = { id: user.id, sub: user.userCode };
+
+    // Create accessToken
+    const accessToken = AuthHelpers.generateToken(
+      this.jwtService,
+      payload,
+      'access',
+    );
+
+    // Create refreshToken
+    const refreshToken = AuthHelpers.generateToken(
+      this.jwtService,
+      payload,
+      'refresh',
+    );
+
+    // Save refreshToken into database
+    await this.authService.updateRefreshToken({
+      userId: user.id,
+      refreshToken,
     });
-    return res.json({ token });
+
+    // Set token into cookie
+    AuthHelpers.setTokenCookies(res, accessToken, refreshToken);
+    return new SuccessResponse({
+      message: 'Login successfully',
+      data: accessToken,
+    }).send(res);
+  }
+
+  @Post('/refresh-token')
+  async refreshToken(
+    @Body() body: { refreshToken: string },
+    @Res() res: Response,
+  ) {
+    const { refreshToken } = body;
+    let payload: { id: number; sub: string };
+    try {
+      payload = await this.jwtService.verifyAsync(refreshToken, {
+        secret: jwtConstants.refreshSecret,
+      });
+    } catch {
+      throw new BadRequestException('Invalid or expired refresh token');
+    }
+    //Check if refreshToken is valid
+    const isValid = await this.authService.validateRefreshToken(
+      payload.id,
+      refreshToken,
+    );
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+    // Create new accessToken
+    const newAccessToken = AuthHelpers.generateToken(
+      this.jwtService,
+      payload,
+      'access',
+    );
+    AuthHelpers.setTokenCookies(res, newAccessToken);
+    return new SuccessResponse({
+      message: 'Fetch new access token successfully',
+    }).send(res);
   }
 
   @UseGuards(JwtAuthGuard)

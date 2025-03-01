@@ -11,7 +11,7 @@ import { Type } from 'class-transformer';
 import { EUserRole, EUserStatus } from 'src/utils/enums/user.enum';
 import { PASSWORD_VALID_REGEX, PHONE_NUMBER_REGEX } from 'src/utils/constants';
 
-export class CreateUserDTO {
+export class CreateUserDto {
   @IsNotEmpty()
   @IsEmail()
   email: string;

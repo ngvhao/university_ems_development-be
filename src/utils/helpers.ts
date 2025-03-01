@@ -1,8 +1,9 @@
 import * as bcrypt from 'bcrypt';
 import { SALT_ROUNDS } from './constants';
+import { EFacultyCode } from './enums/faculty.enum';
 
-class Helpers {
-  async hashPassword({
+export class Helpers {
+  static async hashPassword({
     password,
     saltRounds = SALT_ROUNDS,
   }: {
@@ -15,12 +16,21 @@ class Helpers {
     return bcrypt.hashSync(password, salt);
   }
 
-  async comparePassword(
+  static async comparePassword(
     password: string,
     hashedPassword: string,
   ): Promise<boolean> {
     return bcrypt.compare(password, hashedPassword);
   }
-}
 
-export default new Helpers();
+  static async generateUserCode(
+    facultyCode: string,
+    academicYear: number,
+    studentCount: number,
+  ): Promise<string> {
+    const enrollmentYear = academicYear.toString().slice(-2);
+    return `${EFacultyCode[facultyCode]}${enrollmentYear}${(studentCount + 1)
+      .toString()
+      .padStart(5, '0')}`;
+  }
+}

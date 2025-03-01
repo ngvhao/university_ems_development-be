@@ -6,23 +6,29 @@ import { ClassEntity } from 'src/modules/class/entities/class.entity';
 
 @Entity('students')
 export class StudentEntity extends IEntity {
+  @Column({ type: 'int', unsigned: true })
+  academicYear: number;
+
+  @Column({ type: 'float', default: 0.0 })
+  gpa: number;
+
+  @Column({ type: 'date' })
+  enrollmentDate: Date;
+
+  @Column({ type: 'date', nullable: true })
+  expectedGraduationDate: Date;
+
   @OneToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' })
+  @JoinColumn({ name: 'userId' })
   user: UserEntity;
 
   @ManyToOne(() => MajorEntity, (major) => major.students, { nullable: false })
-  @JoinColumn({ name: 'major_id' })
+  @JoinColumn({ name: 'majorId' })
   major: MajorEntity;
 
   @ManyToOne(() => ClassEntity, (classEntity) => classEntity.students, {
     nullable: false,
   })
-  @JoinColumn({ name: 'class_id' })
+  @JoinColumn({ name: 'classId' })
   class: ClassEntity;
-
-  @Column({ type: 'int', unsigned: true })
-  academic_year: number;
-
-  @Column({ type: 'float', default: 0.0 })
-  gpa: number;
 }

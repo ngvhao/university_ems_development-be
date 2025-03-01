@@ -29,6 +29,8 @@ export const MSG_NOT_FOUND = 'not-found';
 
 export const JWT_EXPIRED_TIME_UPDATE_TOKEN = '24h';
 
+export const JWT_REFRESH_EXPIRED_TIME_UPDATE_TOKEN = '7d';
+
 export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const PASSWORD_VALID_REGEX =
@@ -46,5 +48,12 @@ export const METADATA__PARAM_TYPE = 'partialBodyType';
 
 export const jwtConstants = {
   secret: process.env.JWT_SECRET_KEY,
+  refreshSecret: process.env.JWT_REFRESH_SECRET_KEY,
   expired: JWT_EXPIRED_TIME_UPDATE_TOKEN,
+  refreshExpired: JWT_REFRESH_EXPIRED_TIME_UPDATE_TOKEN,
+};
+
+export const tokenConstants = {
+  accessTokenMaxAge: 15 * 60 * 1000,
+  refreshTokenMaxAge: 7 * 24 * 60 * 60 * 1000,
 };

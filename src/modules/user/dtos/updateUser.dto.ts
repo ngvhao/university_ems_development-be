@@ -43,6 +43,10 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
+  refreshToken?: string;
+
+  @IsOptional()
+  @IsString()
   identityCardNumber?: string;
 
   @IsOptional()

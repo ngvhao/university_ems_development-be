@@ -1,22 +1,25 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { AuthService } from '../auth.service';
 import { Strategy } from 'passport-local';
+import { UserEntity } from 'src/modules/user/entities/user.entity';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
   logger = new Logger(LocalStrategy.name);
 
   constructor(private readonly authService: AuthService) {
-    super({ usernameField: 'email' });
+    super({ usernameField: 'userCode' });
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async validate(username: string, password: string): Promise<any> {
-    const user = await this.authService.validateUser(username, password);
-    if (!user) {
-      throw new UnauthorizedException('Unauthorize');
+  async validate(
+    userCode: string,
+    password: string,
+  ): Promise<Partial<UserEntity>> {
+    console.log('userCode:', userCode);
+    if (!userCode || !password) {
+      throw new BadRequestException('Invalid credentials');
     }
-    return user;
+    return await this.authService.validateUser(userCode, password);
   }
 }
