@@ -4,10 +4,10 @@ import {
   Get,
   Post,
   Res,
-  Request,
   UseGuards,
   UnauthorizedException,
   BadRequestException,
+  Request,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -15,7 +15,7 @@ import { LoginDto } from './dtos/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtService } from '@nestjs/jwt';
 import { jwtConstants } from 'src/utils/constants';
-import { RequestHasUserDTO } from 'src/utils/request-has-user-dto';
+import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
 import { AuthService } from './auth.service';
 import { SuccessResponse } from 'src/utils/response';
 import { AuthHelpers } from 'src/utils/auth-helpers';
@@ -31,7 +31,7 @@ export class AuthController {
   @Post('/login')
   async login(
     @Body() _body: LoginDto,
-    @Request() req: RequestHasUserDTO & Request,
+    @Request() req: RequestHasUserDto & Request,
     @Res() res: Response,
   ) {
     const user = req.user;
@@ -102,7 +102,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('/profile')
   async getProfile(
-    @Request() req: RequestHasUserDTO & Request,
+    @Request() req: RequestHasUserDto & Request,
     @Res() res: Response,
   ) {
     const user = req.user;

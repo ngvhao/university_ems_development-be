@@ -8,17 +8,17 @@ import {
   Column,
 } from 'typeorm';
 
-@Entity('enrollments')
-export class EnrollmentEntity {
+@Entity('enrollment_courses')
+export class EnrollmentCourseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
   @ManyToOne(() => StudentEntity, { nullable: false })
-  @JoinColumn({ name: 'student_id' })
+  @JoinColumn({ name: 'studentId' })
   student: StudentEntity;
 
   @ManyToOne(() => CourseSemesterEntity, { nullable: false })
-  @JoinColumn({ name: 'course_semester_id' })
+  @JoinColumn({ name: 'courseSemesterId' })
   courseSemester: CourseSemesterEntity;
 
   @Column({ type: 'float', nullable: true })

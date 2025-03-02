@@ -14,13 +14,16 @@ export class CourseSemesterEntity {
   id: number;
 
   @ManyToOne(() => CourseEntity, { nullable: false })
-  @JoinColumn({ name: 'course_id' })
+  @JoinColumn({ name: 'courseId' })
   course: CourseEntity;
 
   @Column({ type: 'int', default: 50 })
   maxStudents: number;
 
+  @Column({ type: 'int', default: 0 })
+  currentRegisterd: number;
+
   @ManyToOne(() => SemesterEntity, { nullable: false })
-  @JoinColumn({ name: 'semester_id' })
+  @JoinColumn({ name: 'semesterId' })
   semester: SemesterEntity;
 }

@@ -6,8 +6,8 @@ import { StudentEntity } from './entities/student.entity';
 import { EUserRole } from 'src/utils/enums/user.enum';
 import { ClassService } from '../class/class.service';
 import { CreateStudentDto } from './dtos/createStudent.dto';
-import { Helpers } from 'src/utils/helpers';
 import _ from 'lodash';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class StudentService {
@@ -17,6 +17,7 @@ export class StudentService {
     @InjectRepository(StudentEntity)
     private studentRepository: Repository<StudentEntity>,
     private classService: ClassService,
+    private userService: UserService,
   ) {}
 
   async createStudent(
@@ -43,22 +44,11 @@ export class StudentService {
       const { facultyCode } = classEntity.major.department.faculty;
       const majorId = classEntity.major.id;
 
-      // Find total number of students in a specific major depends on classId
-      const studentCount = await this.studentRepository.count({
-        where: {
-          major: { id: majorId },
-          user: {
-            role: EUserRole.STUDENT,
-          },
-          academicYear,
-        },
-      });
-
-      // Generate studentCode
-      const studentCode = await Helpers.generateUserCode(
+      // Find the last Idx number of students in a specific major depends on classId
+      const studentCode = await this.userService.generateStudentCode(
         facultyCode,
         academicYear,
-        studentCount,
+        majorId,
       );
 
       // Create user

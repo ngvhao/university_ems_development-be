@@ -6,4 +6,4 @@ import { SemesterService } from './semester.service';
   controllers: [SemesterController],
   providers: [SemesterService],
 })
-export class SemestersModule {}
+export class SemesterModule {}

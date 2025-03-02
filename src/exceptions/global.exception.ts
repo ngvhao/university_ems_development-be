@@ -5,13 +5,12 @@ import {
   HttpException,
   HttpStatus,
   Logger,
-  BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { getRequestId } from 'src/utils/serverless-get-request';
 import { QueryFailedError } from 'typeorm';
 
-@Catch(HttpException)
+@Catch(QueryFailedError, HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
 
@@ -23,21 +22,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const requestId = getRequestId();
     const timestamp = new Date().toISOString();
     const path = request.url;
-    let errors = exception.errors;
+    let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+    let message = 'Internal Server Error';
+    let errors = null;
     console.error('GlobalExceptionsFilter@catch:', exception);
-    let statusCode =
-      exception.getResponse()['statusCode'] || HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = exception.getResponse()['errors'] || 'Internal Server Error';
+
+    if (exception instanceof HttpException) {
+      statusCode = exception.getStatus();
+      message = exception.getResponse()['message'] || exception.message;
+      errors = exception.getResponse()['errors'];
+    }
 
     if (exception instanceof QueryFailedError) {
       statusCode = HttpStatus.BAD_REQUEST;
-      message = 'Query fail';
-    }
-
-    if (exception instanceof BadRequestException) {
-      message = exception.message;
-      statusCode = exception.getStatus();
-      errors = exception.getResponse()['errors'];
+      message = 'Database query failed';
     }
 
     this.logger.error({
@@ -46,11 +44,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
       requestId,
       statusCode,
       message: exception.message,
-      stack: exception.stack,
+      // stack: exception.stack,
     });
     const responseBody = {
       statusCode: exception.status || statusCode,
-      message: exception.message || message,
+      message: message,
       errors,
       requestId,
     };

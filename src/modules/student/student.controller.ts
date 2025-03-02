@@ -5,6 +5,7 @@ import {
   HttpStatus,
   Post,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { Response } from 'express';
@@ -12,6 +13,10 @@ import { CreateStudentDto } from './dtos/createStudent.dto';
 import { SuccessResponse } from 'src/utils/response';
 import { Helpers } from 'src/utils/helpers';
 import { UserService } from '../user/user.service';
+import { Roles } from 'src/decorators/roles.decorator';
+import { EUserRole } from 'src/utils/enums/user.enum';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @Controller('students')
 export class StudentController {
@@ -20,6 +25,8 @@ export class StudentController {
     private readonly userService: UserService,
   ) {}
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles([EUserRole[EUserRole.ADMINISTRATOR]])
   @Post()
   async createStudent(@Body() data: CreateStudentDto, @Res() res: Response) {
     const user = await this.userService.getUserByEmail(data.email);
