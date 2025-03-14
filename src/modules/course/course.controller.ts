@@ -8,18 +8,18 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { FacultyService } from './faculty.service';
+import { CourseService } from './course.service';
+import { CreateCourseDto } from './dtos/createCourse.dto';
+import { UpdateCourseDto } from './dtos/updateCourse.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { EUserRole } from 'src/utils/enums/user.enum';
 import { Roles } from 'src/decorators/roles.decorator';
-import { CreateFacultyDto } from './dtos/createFaculty.dto';
-import { UpdateFacultyDto } from './dtos/updateFaculty.dto';
 
 @UseGuards(JwtAuthGuard)
-@Controller('faculties')
-export class FacultyController {
-  constructor(private readonly facultyService: FacultyService) {}
+@Controller('courses')
+export class CourseController {
+  constructor(private readonly courseService: CourseService) {}
 
   @UseGuards(RolesGuard)
   @Roles([
@@ -27,18 +27,18 @@ export class FacultyController {
     EUserRole[EUserRole.ADMINISTRATOR],
   ])
   @Post()
-  async create(@Body() createFacultyDto: CreateFacultyDto) {
-    return this.facultyService.create(createFacultyDto);
+  async create(@Body() createCourseDto: CreateCourseDto) {
+    return this.courseService.create(createCourseDto);
   }
 
   @Get()
   async findAll() {
-    return this.facultyService.findAll();
+    return this.courseService.findAll();
   }
 
   @Get(':id')
   async findOne(@Param('id') id: number) {
-    return this.facultyService.findOne(id);
+    return this.courseService.findOne(id);
   }
 
   @Roles([
@@ -48,9 +48,9 @@ export class FacultyController {
   @Patch(':id')
   async update(
     @Param('id') id: number,
-    @Body() updateFacultyDto: UpdateFacultyDto,
+    @Body() updateCourseDto: UpdateCourseDto,
   ) {
-    return this.facultyService.update(id, updateFacultyDto);
+    return this.courseService.update(id, updateCourseDto);
   }
 
   @Roles([
@@ -59,6 +59,6 @@ export class FacultyController {
   ])
   @Delete(':id')
   async remove(@Param('id') id: number) {
-    return this.facultyService.remove(id);
+    return this.courseService.remove(id);
   }
 }
