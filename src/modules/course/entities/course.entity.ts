@@ -15,7 +15,7 @@ export class CourseEntity {
   id: number;
 
   @Column({ unique: true })
-  course_code: string;
+  courseCode: string;
 
   @Column()
   name: string;
@@ -27,11 +27,11 @@ export class CourseEntity {
   description: string;
 
   @ManyToOne(() => CourseEntity, { nullable: true })
-  @JoinColumn({ name: 'prerequisite_course_id' })
+  @JoinColumn({ name: 'prerequisiteCourseId' })
   prerequisite: CourseEntity;
 
   @ManyToOne(() => MajorEntity, (major) => major.courses, { nullable: false })
-  @JoinColumn({ name: 'major_id' })
+  @JoinColumn({ name: 'majorId' })
   major: MajorEntity;
 
   @OneToMany(() => CourseSemesterEntity, (cs) => cs.course)

@@ -10,7 +10,10 @@ export class SemesterEntity {
   semesterCode: string;
 
   @Column({ type: 'int' })
-  year: number;
+  startYear: number;
+
+  @Column({ type: 'int' })
+  endYear: number;
 
   @Column({ type: 'enum', enum: [1, 2, 3] })
   term: number;

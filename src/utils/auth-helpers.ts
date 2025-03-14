@@ -10,9 +10,11 @@ export class AuthHelpers {
   ): string {
     const isAccessToken = type === 'access';
     return jwtService.sign(payload, {
-      secret: isAccessToken ? jwtConstants.secret : jwtConstants.refreshSecret,
+      secret: isAccessToken
+        ? jwtConstants.accessSecret
+        : jwtConstants.refreshSecret,
       expiresIn: isAccessToken
-        ? jwtConstants.expired
+        ? jwtConstants.accessExpired
         : jwtConstants.refreshExpired,
     });
   }

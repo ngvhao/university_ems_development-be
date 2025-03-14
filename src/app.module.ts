@@ -10,12 +10,12 @@ import { ClassModule } from './modules/class/class.module';
 import dataSource from 'db/data-source';
 import { StudentModule } from './modules/student/student.module';
 import { UserModule } from './modules/user/user.module';
-import { SemestersModule } from './modules/semester/semester.module';
+import { SemesterModule } from './modules/semester/semester.module';
 import { CourseModule } from './modules/course/course.module';
-import { EnrollmentModule } from './modules/enrollment/enrollment.module';
 import { CourseSemesterModule } from './modules/course_semester/course_semester.module';
 import { DepartmentModule } from './modules/department/department.module';
 import { FacultyModule } from './modules/faculty/faculty.module';
+import { EnrollmentCourseModule } from './modules/enrollment_course/enrollment_course.module';
 
 @Module({
   imports: [
@@ -27,9 +27,9 @@ import { FacultyModule } from './modules/faculty/faculty.module';
     MajorModule,
     FacultyModule,
     ClassModule,
-    SemestersModule,
+    SemesterModule,
     CourseModule,
-    EnrollmentModule,
+    EnrollmentCourseModule,
     CourseSemesterModule,
     DepartmentModule,
   ],

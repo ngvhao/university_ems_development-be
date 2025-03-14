@@ -1,6 +1,7 @@
 import * as bcrypt from 'bcrypt';
 import { SALT_ROUNDS } from './constants';
 import { EFacultyCode } from './enums/faculty.enum';
+import { EUserRole } from './enums/user.enum';
 
 export class Helpers {
   static async hashPassword({
@@ -32,5 +33,22 @@ export class Helpers {
     return `${EFacultyCode[facultyCode]}${enrollmentYear}${(studentCount + 1)
       .toString()
       .padStart(5, '0')}`;
+  }
+
+  static async generateAdminCode(
+    role: EUserRole,
+    lastIndx: number,
+  ): Promise<string> {
+    if (
+      role !== EUserRole.ADMINISTRATOR &&
+      role !== EUserRole.ACADEMIC_MANAGER
+    ) {
+      throw new Error('Invalid role for generating admin code');
+    }
+    if (role == EUserRole.ADMINISTRATOR) {
+      return `ADMIN${(lastIndx + 1).toString().padStart(5, '0')}`;
+    } else {
+      return `ACADEMIC${(lastIndx + 1).toString().padStart(5, '0')}`;
+    }
   }
 }
