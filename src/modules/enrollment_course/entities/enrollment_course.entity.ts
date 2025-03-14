@@ -1,5 +1,6 @@
 import { CourseSemesterEntity } from 'src/modules/course_semester/entities/course_semester.entity';
 import { StudentEntity } from 'src/modules/student/entities/student.entity';
+import { ECourseStatus } from 'src/utils/enums/course.enum';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -29,5 +30,5 @@ export class EnrollmentCourseEntity {
     enum: ['ENROLLED', 'PASSED', 'FAILED', 'WITHDRAWN'],
     default: 'ENROLLED',
   })
-  status: string;
+  status: ECourseStatus;
 }
