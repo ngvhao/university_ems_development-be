@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { SemesterService } from './semester.service';
@@ -16,6 +17,8 @@ import { EUserRole } from 'src/utils/enums/user.enum';
 import { Roles } from 'src/decorators/roles.decorator';
 import { CreateSemesterDto } from './dtos/createSemester.dto';
 import { UpdateSemesterDto } from './dtos/updateSemester.dto';
+import { SuccessResponse } from 'src/utils/response';
+import { Response } from 'express';
 
 @UseGuards(JwtAuthGuard)
 @Controller('semesters')
@@ -28,18 +31,33 @@ export class SemesterController {
     EUserRole[EUserRole.ADMINISTRATOR],
   ])
   @Post()
-  async create(@Body() createSemesterDto: CreateSemesterDto) {
-    return this.semesterService.create(createSemesterDto);
+  async create(
+    @Body() createSemesterDto: CreateSemesterDto,
+    @Res() res: Response,
+  ) {
+    const semester = await this.semesterService.create(createSemesterDto);
+    return new SuccessResponse({
+      data: semester,
+      message: 'Semester created',
+    }).send(res);
   }
 
   @Get()
-  async findAll() {
-    return this.semesterService.findAll();
+  async findAll(@Res() res: Response) {
+    const semesters = await this.semesterService.findAll();
+    return new SuccessResponse({
+      data: semesters,
+      message: 'Get all semesters successfully',
+    }).send(res);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number) {
-    return this.semesterService.findOne(id);
+  async findOne(@Param('id') id: number, @Res() res: Response) {
+    const semester = await this.semesterService.findOne(id);
+    return new SuccessResponse({
+      data: semester,
+      message: 'Get semester successfully',
+    }).send(res);
   }
 
   @UseGuards(RolesGuard)
@@ -51,8 +69,13 @@ export class SemesterController {
   async update(
     @Param('id') id: number,
     @Body() updateSemesterDto: UpdateSemesterDto,
+    @Res() res: Response,
   ) {
-    return this.semesterService.update(id, updateSemesterDto);
+    const semester = await this.semesterService.update(id, updateSemesterDto);
+    return new SuccessResponse({
+      data: semester,
+      message: 'Update semester successfully',
+    }).send(res);
   }
 
   @UseGuards(RolesGuard)
@@ -61,7 +84,10 @@ export class SemesterController {
     EUserRole[EUserRole.ADMINISTRATOR],
   ])
   @Delete(':id')
-  async remove(@Param('id') id: number) {
-    return this.semesterService.remove(id);
+  async remove(@Param('id') id: number, @Res() res: Response) {
+    await this.semesterService.remove(id);
+    return new SuccessResponse({
+      message: 'Delete semester successfully',
+    }).send(res);
   }
 }

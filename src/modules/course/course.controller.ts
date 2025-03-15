@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { CourseService } from './course.service';
@@ -15,6 +16,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { EUserRole } from 'src/utils/enums/user.enum';
 import { Roles } from 'src/decorators/roles.decorator';
+import { SuccessResponse } from 'src/utils/response';
+import { Response } from 'express';
 
 @UseGuards(JwtAuthGuard)
 @Controller('courses')
@@ -27,18 +30,30 @@ export class CourseController {
     EUserRole[EUserRole.ADMINISTRATOR],
   ])
   @Post()
-  async create(@Body() createCourseDto: CreateCourseDto) {
-    return this.courseService.create(createCourseDto);
+  async create(@Body() createCourseDto: CreateCourseDto, @Res() res: Response) {
+    const course = await this.courseService.create(createCourseDto);
+    return new SuccessResponse({
+      data: course,
+      message: 'Create course succesfully',
+    }).send(res);
   }
 
   @Get()
-  async findAll() {
-    return this.courseService.findAll();
+  async findAll(@Res() res: Response) {
+    const courses = this.courseService.findAll();
+    return new SuccessResponse({
+      data: courses,
+      message: 'Get all courses successfully',
+    }).send(res);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number) {
-    return this.courseService.findOne(id);
+  async findOne(@Param('id') id: number, @Res() res: Response) {
+    const course = this.courseService.findOne(id);
+    return new SuccessResponse({
+      data: course,
+      message: 'Get course successfully',
+    }).send(res);
   }
 
   @Roles([
@@ -49,8 +64,13 @@ export class CourseController {
   async update(
     @Param('id') id: number,
     @Body() updateCourseDto: UpdateCourseDto,
+    @Res() res: Response,
   ) {
-    return this.courseService.update(id, updateCourseDto);
+    const course = await this.courseService.update(id, updateCourseDto);
+    return new SuccessResponse({
+      data: course,
+      message: 'Update course successfully',
+    }).send(res);
   }
 
   @Roles([
@@ -58,7 +78,10 @@ export class CourseController {
     EUserRole[EUserRole.ADMINISTRATOR],
   ])
   @Delete(':id')
-  async remove(@Param('id') id: number) {
-    return this.courseService.remove(id);
+  async remove(@Param('id') id: number, @Res() res: Response) {
+    await this.courseService.remove(id);
+    return new SuccessResponse({
+      message: 'Delete course successfully',
+    }).send(res);
   }
 }

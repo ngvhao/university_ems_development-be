@@ -6,20 +6,18 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EnrollmentCourseEntity } from './entities/enrollment_course.entity';
-import { StudentEntity } from 'src/modules/student/entities/student.entity';
-import { CourseSemesterEntity } from 'src/modules/course_semester/entities/course_semester.entity';
 import { UpdateEnrollmentCourseDto } from './dtos/updateEnrollmentCourse.dto';
 import { CreateEnrollmentCourseDto } from './dtos/createEnrollmentCourse.dto';
+import { StudentService } from '../student/student.service';
+import { CourseSemesterService } from '../course_semester/course_semester.service';
 
 @Injectable()
 export class EnrollmentCourseService {
   constructor(
     @InjectRepository(EnrollmentCourseEntity)
     private readonly enrollmentCourseRepository: Repository<EnrollmentCourseEntity>,
-    @InjectRepository(StudentEntity)
-    private readonly studentRepository: Repository<StudentEntity>,
-    @InjectRepository(CourseSemesterEntity)
-    private readonly courseSemesterRepository: Repository<CourseSemesterEntity>,
+    private readonly studentService: StudentService,
+    private readonly courseSemesterService: CourseSemesterService,
   ) {}
 
   async create(
@@ -27,15 +25,13 @@ export class EnrollmentCourseService {
   ): Promise<EnrollmentCourseEntity> {
     const { studentId, courseSemesterId, status } = createEnrollmentCourseDto;
 
-    const student = await this.studentRepository.findOne({
-      where: { id: studentId },
-    });
+    const student = await this.studentService.getOne({ id: studentId });
     if (!student) {
       throw new NotFoundException(`Student with ID ${studentId} not found`);
     }
 
-    const courseSemester = await this.courseSemesterRepository.findOne({
-      where: { id: courseSemesterId },
+    const courseSemester = await this.courseSemesterService.getOne({
+      id: courseSemesterId,
     });
     if (!courseSemester) {
       throw new NotFoundException(
@@ -84,8 +80,8 @@ export class EnrollmentCourseService {
     const enrollment = await this.findOne(id);
 
     if (updateEnrollmentCourseDto.studentId) {
-      const student = await this.studentRepository.findOne({
-        where: { id: updateEnrollmentCourseDto.studentId },
+      const student = await this.studentService.getOne({
+        id: updateEnrollmentCourseDto.studentId,
       });
       if (!student) {
         throw new NotFoundException(
@@ -96,8 +92,8 @@ export class EnrollmentCourseService {
     }
 
     if (updateEnrollmentCourseDto.courseSemesterId) {
-      const courseSemester = await this.courseSemesterRepository.findOne({
-        where: { id: updateEnrollmentCourseDto.courseSemesterId },
+      const courseSemester = await this.courseSemesterService.getOne({
+        id: updateEnrollmentCourseDto.courseSemesterId,
       });
       if (!courseSemester) {
         throw new NotFoundException(

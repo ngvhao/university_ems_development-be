@@ -12,3 +12,7 @@ export enum EUserStatus {
   SUSPENDED = 2,
   DEACTIVATED = 3,
 }
+
+export enum EALLROLE {
+  ALL = -1,
+}

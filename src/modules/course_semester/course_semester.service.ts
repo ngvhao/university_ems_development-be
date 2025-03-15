@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CourseSemesterEntity } from './entities/course_semester.entity';
-import { Repository } from 'typeorm';
+import { FindOptionsRelations, FindOptionsWhere, Repository } from 'typeorm';
 
 @Injectable()
 export class CourseSemesterService {
@@ -24,5 +24,21 @@ export class CourseSemesterService {
       },
     });
     return courses;
+  }
+
+  async getOne(
+    condition:
+      | FindOptionsWhere<CourseSemesterEntity>
+      | FindOptionsWhere<CourseSemesterEntity>[],
+    relations?: FindOptionsRelations<CourseSemesterEntity>,
+  ): Promise<CourseSemesterEntity> {
+    const courseSemester = await this.courseSemesterRepository.findOne({
+      where: condition,
+      relations,
+    });
+    if (!courseSemester) {
+      throw new NotFoundException('No course found in this semester');
+    }
+    return courseSemester;
   }
 }

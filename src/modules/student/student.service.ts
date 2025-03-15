@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, FindOptionsWhere, Repository } from 'typeorm';
 import { UserEntity } from '../user/entities/user.entity';
 import { StudentEntity } from './entities/student.entity';
 import { EUserRole } from 'src/utils/enums/user.enum';
@@ -82,5 +82,13 @@ export class StudentService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async getOne(
+    condition:
+      | FindOptionsWhere<StudentEntity>
+      | FindOptionsWhere<StudentEntity>[],
+  ): Promise<StudentEntity> {
+    return this.studentRepository.findOne({ where: condition });
   }
 }

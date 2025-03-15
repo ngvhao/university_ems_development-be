@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { FacultyService } from './faculty.service';
@@ -15,6 +16,8 @@ import { EUserRole } from 'src/utils/enums/user.enum';
 import { Roles } from 'src/decorators/roles.decorator';
 import { CreateFacultyDto } from './dtos/createFaculty.dto';
 import { UpdateFacultyDto } from './dtos/updateFaculty.dto';
+import { SuccessResponse } from 'src/utils/response';
+import { Response } from 'express';
 
 @UseGuards(JwtAuthGuard)
 @Controller('faculties')
@@ -27,18 +30,33 @@ export class FacultyController {
     EUserRole[EUserRole.ADMINISTRATOR],
   ])
   @Post()
-  async create(@Body() createFacultyDto: CreateFacultyDto) {
-    return this.facultyService.create(createFacultyDto);
+  async create(
+    @Body() createFacultyDto: CreateFacultyDto,
+    @Res() res: Response,
+  ) {
+    const faculty = await this.facultyService.create(createFacultyDto);
+    return new SuccessResponse({
+      data: faculty,
+      message: 'Faculty created',
+    }).send(res);
   }
 
   @Get()
-  async findAll() {
-    return this.facultyService.findAll();
+  async findAll(@Res() res: Response) {
+    const faculties = await this.facultyService.findAll();
+    return new SuccessResponse({
+      data: faculties,
+      message: 'Get all faculties successfully',
+    }).send(res);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number) {
-    return this.facultyService.findOne(id);
+  async findOne(@Param('id') id: number, @Res() res: Response) {
+    const faculty = await this.facultyService.findOne(id);
+    return new SuccessResponse({
+      data: faculty,
+      message: 'Get faculty successfully',
+    }).send(res);
   }
 
   @Roles([
@@ -49,8 +67,13 @@ export class FacultyController {
   async update(
     @Param('id') id: number,
     @Body() updateFacultyDto: UpdateFacultyDto,
+    @Res() res: Response,
   ) {
-    return this.facultyService.update(id, updateFacultyDto);
+    const faculty = await this.facultyService.update(id, updateFacultyDto);
+    return new SuccessResponse({
+      data: faculty,
+      message: 'Update faculty successfully',
+    }).send(res);
   }
 
   @Roles([
@@ -58,7 +81,10 @@ export class FacultyController {
     EUserRole[EUserRole.ADMINISTRATOR],
   ])
   @Delete(':id')
-  async remove(@Param('id') id: number) {
-    return this.facultyService.remove(id);
+  async remove(@Param('id') id: number, @Res() res: Response) {
+    await this.facultyService.remove(id);
+    return new SuccessResponse({
+      message: 'Delete faculty successfully',
+    }).send(res);
   }
 }
