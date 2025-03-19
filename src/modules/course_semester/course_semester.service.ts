@@ -26,19 +26,34 @@ export class CourseSemesterService {
     return courses;
   }
 
-  async getOne(
+  async getMany(
     condition:
       | FindOptionsWhere<CourseSemesterEntity>
       | FindOptionsWhere<CourseSemesterEntity>[],
     relations?: FindOptionsRelations<CourseSemesterEntity>,
+  ): Promise<[CourseSemesterEntity[], number]> {
+    const [courseSemesters, total] =
+      await this.courseSemesterRepository.findAndCount({
+        where: condition,
+        relations,
+      });
+
+    return [courseSemesters, total];
+  }
+
+  async getOne(
+    condition:
+      | FindOptionsWhere<CourseSemesterEntity>
+      | FindOptionsWhere<CourseSemesterEntity>[],
   ): Promise<CourseSemesterEntity> {
     const courseSemester = await this.courseSemesterRepository.findOne({
       where: condition,
-      relations,
     });
+
     if (!courseSemester) {
       throw new NotFoundException('No course found in this semester');
     }
+
     return courseSemester;
   }
 }

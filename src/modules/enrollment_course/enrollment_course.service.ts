@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsRelations, FindOptionsWhere, Repository } from 'typeorm';
 import { EnrollmentCourseEntity } from './entities/enrollment_course.entity';
 import { UpdateEnrollmentCourseDto } from './dtos/updateEnrollmentCourse.dto';
 import { CreateEnrollmentCourseDto } from './dtos/createEnrollmentCourse.dto';
@@ -25,13 +25,21 @@ export class EnrollmentCourseService {
   ): Promise<EnrollmentCourseEntity> {
     const { studentId, courseSemesterId, status } = createEnrollmentCourseDto;
 
-    const student = await this.studentService.getOne({ id: studentId });
+    const student = await this.studentService.getOne(
+      { id: studentId },
+      { major: true },
+    );
     if (!student) {
       throw new NotFoundException(`Student with ID ${studentId} not found`);
     }
 
     const courseSemester = await this.courseSemesterService.getOne({
       id: courseSemesterId,
+      course: {
+        major: {
+          id: student.major.id,
+        },
+      },
     });
     if (!courseSemester) {
       throw new NotFoundException(
@@ -54,6 +62,19 @@ export class EnrollmentCourseService {
       }
       throw error;
     }
+  }
+
+  async getMany(
+    condition:
+      | FindOptionsWhere<EnrollmentCourseEntity>
+      | FindOptionsWhere<EnrollmentCourseEntity>[],
+    relations?: FindOptionsRelations<EnrollmentCourseEntity>,
+  ): Promise<EnrollmentCourseEntity[]> {
+    const courses = await this.enrollmentCourseRepository.find({
+      where: condition,
+      relations,
+    });
+    return courses;
   }
 
   async findAll(): Promise<EnrollmentCourseEntity[]> {

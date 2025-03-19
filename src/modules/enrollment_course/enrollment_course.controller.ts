@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -9,6 +10,7 @@ import {
   Request,
   Res,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { EnrollmentCourseService } from './enrollment_course.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -22,9 +24,11 @@ import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
 import { ECourseStatus } from 'src/utils/enums/course.enum';
 import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
+import { StudentEntity } from '../student/entities/student.entity';
+import { StudentInterceptor } from 'src/interceptors/get-student.interceptor';
 
 @ApiTags('enrollment-courses')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('enrollment-courses')
 @ApiBearerAuth()
 export class EnrollmentCourseController {
@@ -32,7 +36,6 @@ export class EnrollmentCourseController {
     private readonly enrollmentCourseService: EnrollmentCourseService,
   ) {}
 
-  @UseGuards(RolesGuard)
   @Roles([
     EUserRole[EUserRole.ACADEMIC_MANAGER],
     EUserRole[EUserRole.ADMINISTRATOR],
@@ -52,18 +55,18 @@ export class EnrollmentCourseController {
     }).send(res);
   }
 
-  @UseGuards(RolesGuard)
+  @UseInterceptors(StudentInterceptor)
   @Roles([EUserRole[EUserRole.STUDENT]])
   @Post('register')
   @ApiOperation({ summary: 'Student registers for a course semester' })
   async registerCourse(
     @Body('courseSemesterId') courseSemesterId: number,
-    @Request() req: RequestHasUserDto & Request,
+    @Request() req: RequestHasUserDto & Request & { student: StudentEntity },
     @Res() res: Response,
   ) {
-    const studentId = req.user.id;
+    const { student } = req;
     const createEnrollmentCourseDto: CreateEnrollmentCourseDto = {
-      studentId,
+      studentId: student.id,
       courseSemesterId,
       status: ECourseStatus.ENROLLED,
     };
@@ -76,15 +79,29 @@ export class EnrollmentCourseController {
     }).send(res);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles([
-    EUserRole[EUserRole.ACADEMIC_MANAGER],
-    EUserRole[EUserRole.ADMINISTRATOR],
-  ])
-  @Get()
+  @UseInterceptors(StudentInterceptor)
+  @Roles([EUserRole[EUserRole.STUDENT]])
+  @Get(':semesterCode')
   @ApiOperation({ summary: 'Get all enrollment records (admin/manager only)' })
-  async findAll(@Res() res: Response) {
-    const enrollmentCourses = await this.enrollmentCourseService.findAll();
+  async findAll(
+    @Param('semesterCode') semesterCode: string,
+    @Res() res: Response,
+    @Request() req: RequestHasUserDto & Request & { student: StudentEntity },
+  ) {
+    if (!semesterCode) {
+      throw new BadRequestException('SemesterCode not found');
+    }
+    const { student } = req;
+    const enrollmentCourses = await this.enrollmentCourseService.getMany({
+      student: {
+        id: student.id,
+      },
+      courseSemester: {
+        semester: {
+          semesterCode: semesterCode,
+        },
+      },
+    });
     return new SuccessResponse({
       data: enrollmentCourses,
       message: 'Get all enrollmentCourses successfully',
@@ -101,7 +118,6 @@ export class EnrollmentCourseController {
     }).send(res);
   }
 
-  @UseGuards(RolesGuard)
   @Roles([
     EUserRole[EUserRole.ACADEMIC_MANAGER],
     EUserRole[EUserRole.ADMINISTRATOR],
@@ -123,7 +139,6 @@ export class EnrollmentCourseController {
     }).send(res);
   }
 
-  @UseGuards(RolesGuard)
   @Roles([
     EUserRole[EUserRole.ACADEMIC_MANAGER],
     EUserRole[EUserRole.ADMINISTRATOR],

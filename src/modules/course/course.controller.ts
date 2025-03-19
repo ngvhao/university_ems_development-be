@@ -40,7 +40,7 @@ export class CourseController {
 
   @Get()
   async findAll(@Res() res: Response) {
-    const courses = this.courseService.findAll();
+    const courses = await this.courseService.findAll();
     return new SuccessResponse({
       data: courses,
       message: 'Get all courses successfully',
@@ -49,7 +49,7 @@ export class CourseController {
 
   @Get(':id')
   async findOne(@Param('id') id: number, @Res() res: Response) {
-    const course = this.courseService.findOne(id);
+    const course = await this.courseService.findOne(id);
     return new SuccessResponse({
       data: course,
       message: 'Get course successfully',

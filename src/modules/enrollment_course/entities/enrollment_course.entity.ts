@@ -27,8 +27,8 @@ export class EnrollmentCourseEntity {
 
   @Column({
     type: 'enum',
-    enum: ['ENROLLED', 'PASSED', 'FAILED', 'WITHDRAWN'],
-    default: 'ENROLLED',
+    enum: ECourseStatus,
+    default: ECourseStatus.ENROLLED,
   })
   status: ECourseStatus;
 }

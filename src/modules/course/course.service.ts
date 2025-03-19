@@ -28,6 +28,7 @@ export class CourseService {
       where: { id },
       relations: ['major', 'prerequisite', 'courseSemesters'],
     });
+    console.log(course);
     if (!course) {
       throw new NotFoundException(`Course with ID ${id} not found`);
     }

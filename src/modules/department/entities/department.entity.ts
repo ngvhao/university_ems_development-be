@@ -12,9 +12,6 @@ export class DepartmentEntity extends IEntity {
   @Column()
   name: string;
 
-  @Column()
-  facultyId: number;
-
   @ManyToOne(() => FacultyEntity, (faculty) => faculty.departments)
   @JoinColumn({ name: 'facultyId' })
   faculty: FacultyEntity;

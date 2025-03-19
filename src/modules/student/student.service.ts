@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, FindOptionsWhere, Repository } from 'typeorm';
+import {
+  DataSource,
+  FindOptionsRelations,
+  FindOptionsWhere,
+  Repository,
+} from 'typeorm';
 import { UserEntity } from '../user/entities/user.entity';
 import { StudentEntity } from './entities/student.entity';
 import { EUserRole } from 'src/utils/enums/user.enum';
@@ -88,7 +93,11 @@ export class StudentService {
     condition:
       | FindOptionsWhere<StudentEntity>
       | FindOptionsWhere<StudentEntity>[],
+    relations?: FindOptionsRelations<StudentEntity>,
   ): Promise<StudentEntity> {
-    return this.studentRepository.findOne({ where: condition });
+    return this.studentRepository.findOne({
+      where: condition,
+      relations: relations,
+    });
   }
 }
