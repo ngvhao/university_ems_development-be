@@ -6,27 +6,25 @@ import {
   Param,
   Patch,
   Post,
-  Query,
-  Res,
   UseGuards,
+  Res,
+  Query,
 } from '@nestjs/common';
-import { ClassService } from './class.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { EUserRole } from 'src/utils/enums/user.enum';
 import { Roles } from 'src/decorators/roles.decorator';
-import { CreateClassDto } from './dtos/createClass.dto';
-import { UpdateClassDto } from './dtos/updateClass.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { StudyPlanService } from './study_plan.service';
+import { CreateStudyPlanDto } from './dtos/createStudyPlan.dto';
+import { UpdateStudyPlanDto } from './dtos/updateStudyPlan.dto';
 import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 
-@ApiTags('classes')
 @UseGuards(JwtAuthGuard)
-@Controller('classes')
-export class ClassController {
-  constructor(private readonly classService: ClassService) {}
+@Controller('study-plans')
+export class StudyPlanController {
+  constructor(private readonly studyPlanService: StudyPlanService) {}
 
   @UseGuards(RolesGuard)
   @Roles([
@@ -34,30 +32,33 @@ export class ClassController {
     EUserRole[EUserRole.ADMINISTRATOR],
   ])
   @Post()
-  async create(@Body() createClassDto: CreateClassDto, @Res() res: Response) {
-    const classCreated = await this.classService.create(createClassDto);
+  async create(
+    @Body() createStudyPlanDto: CreateStudyPlanDto,
+    @Res() res: Response,
+  ) {
+    const studyPlan = await this.studyPlanService.create(createStudyPlanDto);
     return new SuccessResponse({
-      data: classCreated,
-      message: 'Class created',
+      data: studyPlan,
+      message: 'Create study plan successfully',
     }).send(res);
   }
 
   @Get()
   async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
-    const { data, meta } = await this.classService.findAll(paginationDto);
+    const { data, meta } = await this.studyPlanService.findAll(paginationDto);
     return new SuccessResponse({
-      data: data,
+      data,
       metadata: meta,
-      message: 'Get all courses successfully',
+      message: 'Get all study plans successfully',
     }).send(res);
   }
 
   @Get(':id')
   async findOne(@Param('id') id: number, @Res() res: Response) {
-    const classQueried = await this.classService.findOne(id);
+    const studyPlan = await this.studyPlanService.findOne(id);
     return new SuccessResponse({
-      data: classQueried,
-      message: 'Get class successfully',
+      data: studyPlan,
+      message: 'Get study plan successfully',
     }).send(res);
   }
 
@@ -69,13 +70,16 @@ export class ClassController {
   @Patch(':id')
   async update(
     @Param('id') id: number,
-    @Body() updateClassDto: UpdateClassDto,
+    @Body() updateStudyPlanDto: UpdateStudyPlanDto,
     @Res() res: Response,
   ) {
-    const updatedClass = await this.classService.update(id, updateClassDto);
+    const studyPlan = await this.studyPlanService.update(
+      id,
+      updateStudyPlanDto,
+    );
     return new SuccessResponse({
-      data: updatedClass,
-      message: 'Update class successfuly',
+      data: studyPlan,
+      message: 'Update study plan successfully',
     }).send(res);
   }
 
@@ -86,9 +90,9 @@ export class ClassController {
   ])
   @Delete(':id')
   async remove(@Param('id') id: number, @Res() res: Response) {
-    await this.classService.remove(id);
+    await this.studyPlanService.remove(id);
     return new SuccessResponse({
-      message: 'Remove class successfully',
+      message: 'Delete study plan successfully',
     }).send(res);
   }
 }

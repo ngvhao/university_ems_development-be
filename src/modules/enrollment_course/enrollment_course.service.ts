@@ -10,6 +10,9 @@ import { UpdateEnrollmentCourseDto } from './dtos/updateEnrollmentCourse.dto';
 import { CreateEnrollmentCourseDto } from './dtos/createEnrollmentCourse.dto';
 import { StudentService } from '../student/student.service';
 import { CourseSemesterService } from '../course_semester/course_semester.service';
+import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
+import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 
 @Injectable()
 export class EnrollmentCourseService {
@@ -68,13 +71,21 @@ export class EnrollmentCourseService {
     condition:
       | FindOptionsWhere<EnrollmentCourseEntity>
       | FindOptionsWhere<EnrollmentCourseEntity>[],
+    paginationDto: PaginationDto,
     relations?: FindOptionsRelations<EnrollmentCourseEntity>,
-  ): Promise<EnrollmentCourseEntity[]> {
-    const courses = await this.enrollmentCourseRepository.find({
+  ): Promise<{ data: EnrollmentCourseEntity[]; meta: MetaDataInterface }> {
+    const { page = 1, limit = 10 } = paginationDto;
+
+    const [data, total] = await this.enrollmentCourseRepository.findAndCount({
       where: condition,
       relations,
+      skip: (page - 1) * limit,
+      take: limit,
     });
-    return courses;
+
+    const meta = generatePaginationMeta(total, page, limit);
+
+    return { data, meta };
   }
 
   async findAll(): Promise<EnrollmentCourseEntity[]> {

@@ -4,6 +4,9 @@ import { Repository } from 'typeorm';
 import { CourseEntity } from './entities/course.entity';
 import { CreateCourseDto } from './dtos/createCourse.dto';
 import { UpdateCourseDto } from './dtos/updateCourse.dto';
+import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
+import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 
 @Injectable()
 export class CourseService {
@@ -17,10 +20,18 @@ export class CourseService {
     return await this.courseRepository.save(course);
   }
 
-  async findAll(): Promise<CourseEntity[]> {
-    return this.courseRepository.find({
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<{ data: CourseEntity[]; meta: MetaDataInterface }> {
+    const { page = 1, limit = 10 } = paginationDto;
+    const [data, total] = await this.courseRepository.findAndCount({
       relations: ['major', 'prerequisite', 'courseSemesters'],
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    const meta = generatePaginationMeta(total, page, limit);
+
+    return { data, meta };
   }
 
   async findOne(id: number): Promise<CourseEntity> {

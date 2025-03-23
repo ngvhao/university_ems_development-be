@@ -16,6 +16,9 @@ import { CourseSemesterModule } from './modules/course_semester/course_semester.
 import { DepartmentModule } from './modules/department/department.module';
 import { FacultyModule } from './modules/faculty/faculty.module';
 import { EnrollmentCourseModule } from './modules/enrollment_course/enrollment_course.module';
+import { CurriculumModule } from './modules/curriculum/curriculum.module';
+import { StudyPlanModule } from './modules/study_plan/study_plan.module';
+import { CurriculumCourseModule } from './modules/curriculum_course/curriculum_course.module';
 
 @Module({
   imports: [
@@ -32,6 +35,9 @@ import { EnrollmentCourseModule } from './modules/enrollment_course/enrollment_c
     EnrollmentCourseModule,
     CourseSemesterModule,
     DepartmentModule,
+    CurriculumModule,
+    StudyPlanModule,
+    CurriculumCourseModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -18,6 +19,7 @@ import { CreateDepartmentDto } from './dtos/createDepartment.dto';
 import { UpdateDepartmentDto } from './dtos/updateDepartment.dto';
 import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('departments')
@@ -42,10 +44,11 @@ export class DepartmentController {
   }
 
   @Get()
-  async findAll(@Res() res: Response) {
-    const departments = await this.departmentService.findAll();
+  async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
+    const { data, meta } = await this.departmentService.findAll(paginationDto);
     return new SuccessResponse({
-      data: departments,
+      data,
+      metadata: meta,
       message: 'Get departments successfully',
     }).send(res);
   }

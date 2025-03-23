@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   Res,
   UseGuards,
@@ -26,6 +27,7 @@ import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
 import { StudentEntity } from '../student/entities/student.entity';
 import { StudentInterceptor } from 'src/interceptors/get-student.interceptor';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 
 @ApiTags('enrollment-courses')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -82,9 +84,12 @@ export class EnrollmentCourseController {
   @UseInterceptors(StudentInterceptor)
   @Roles([EUserRole[EUserRole.STUDENT]])
   @Get(':semesterCode')
-  @ApiOperation({ summary: 'Get all enrollment records (admin/manager only)' })
+  @ApiOperation({
+    summary: 'Get all enrollment records for a student by semester',
+  })
   async findAll(
     @Param('semesterCode') semesterCode: string,
+    @Query() paginationDto: PaginationDto,
     @Res() res: Response,
     @Request() req: RequestHasUserDto & Request & { student: StudentEntity },
   ) {
@@ -92,18 +97,16 @@ export class EnrollmentCourseController {
       throw new BadRequestException('SemesterCode not found');
     }
     const { student } = req;
-    const enrollmentCourses = await this.enrollmentCourseService.getMany({
-      student: {
-        id: student.id,
+    const { data, meta } = await this.enrollmentCourseService.getMany(
+      {
+        student: { id: student.id },
+        courseSemester: { semester: { semesterCode } },
       },
-      courseSemester: {
-        semester: {
-          semesterCode: semesterCode,
-        },
-      },
-    });
+      paginationDto,
+    );
     return new SuccessResponse({
-      data: enrollmentCourses,
+      data,
+      metadata: meta,
       message: 'Get all enrollmentCourses successfully',
     }).send(res);
   }

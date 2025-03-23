@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -18,6 +19,7 @@ import { CreateMajorDto } from './dtos/createMajor.dto';
 import { UpdateMajorDto } from './dtos/updateMajor.dto';
 import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('majors')
@@ -39,10 +41,11 @@ export class MajorController {
   }
 
   @Get()
-  async findAll(@Res() res: Response) {
-    const majors = await this.majorService.findAll();
+  async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
+    const { data, meta } = await this.majorService.findAll(paginationDto);
     return new SuccessResponse({
-      data: majors,
+      data,
+      metadata: meta,
       message: 'Get all majors successfully',
     }).send(res);
   }

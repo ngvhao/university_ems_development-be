@@ -8,6 +8,8 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
+import { CurriculumCourseEntity } from 'src/modules/curriculum_course/entities/curriculum_course.entity';
+import { StudyPlanEntity } from 'src/modules/study_plan/entities/study_plan.entity';
 
 @Entity('courses')
 export class CourseEntity {
@@ -36,4 +38,13 @@ export class CourseEntity {
 
   @OneToMany(() => CourseSemesterEntity, (cs) => cs.course)
   courseSemesters: CourseSemesterEntity[];
+
+  @OneToMany(
+    () => CurriculumCourseEntity,
+    (curriculumCourse) => curriculumCourse.course,
+  )
+  curriculumCourses: CurriculumCourseEntity[];
+
+  @OneToMany(() => StudyPlanEntity, (studyPlan) => studyPlan.course)
+  studyPlans: StudyPlanEntity[];
 }

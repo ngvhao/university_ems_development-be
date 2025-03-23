@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -19,6 +20,7 @@ import { CreateSemesterDto } from './dtos/createSemester.dto';
 import { UpdateSemesterDto } from './dtos/updateSemester.dto';
 import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('semesters')
@@ -43,10 +45,11 @@ export class SemesterController {
   }
 
   @Get()
-  async findAll(@Res() res: Response) {
-    const semesters = await this.semesterService.findAll();
+  async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
+    const { data, meta } = await this.semesterService.findAll(paginationDto);
     return new SuccessResponse({
-      data: semesters,
+      data,
+      metadata: meta,
       message: 'Get all semesters successfully',
     }).send(res);
   }

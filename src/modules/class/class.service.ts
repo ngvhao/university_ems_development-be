@@ -9,6 +9,9 @@ import { Repository } from 'typeorm';
 import { UpdateClassDto } from './dtos/updateClass.dto';
 import { CreateClassDto } from './dtos/createClass.dto';
 import { MajorService } from '../major/major.service';
+import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
+import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 
 @Injectable()
 export class ClassService {
@@ -58,10 +61,18 @@ export class ClassService {
     }
   }
 
-  async findAll(): Promise<ClassEntity[]> {
-    return this.classRepository.find({
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<{ data: ClassEntity[]; meta: MetaDataInterface }> {
+    const { page = 1, limit = 10 } = paginationDto;
+    const [data, total] = await this.classRepository.findAndCount({
       relations: ['major', 'students'],
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    const meta = generatePaginationMeta(total, page, limit);
+
+    return { data, meta };
   }
 
   async findOne(id: number): Promise<ClassEntity> {

@@ -1,8 +1,16 @@
-import { Entity, Column, OneToOne, JoinColumn, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  Column,
+  OneToOne,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { IEntity } from 'src/utils/interfaces/IEntity';
 import { UserEntity } from 'src/modules/user/entities/user.entity';
 import { MajorEntity } from 'src/modules/major/entities/major.entity';
 import { ClassEntity } from 'src/modules/class/entities/class.entity';
+import { StudyPlanEntity } from 'src/modules/study_plan/entities/study_plan.entity';
 
 @Entity('students')
 export class StudentEntity extends IEntity {
@@ -31,4 +39,7 @@ export class StudentEntity extends IEntity {
   })
   @JoinColumn({ name: 'classId' })
   class: ClassEntity;
+
+  @OneToMany(() => StudyPlanEntity, (studyPlan) => studyPlan.student)
+  studyPlans: StudyPlanEntity[];
 }

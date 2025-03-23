@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -18,6 +19,7 @@ import { EUserRole } from 'src/utils/enums/user.enum';
 import { Roles } from 'src/decorators/roles.decorator';
 import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('courses')
@@ -39,10 +41,11 @@ export class CourseController {
   }
 
   @Get()
-  async findAll(@Res() res: Response) {
-    const courses = await this.courseService.findAll();
+  async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
+    const { data, meta } = await this.courseService.findAll(paginationDto);
     return new SuccessResponse({
-      data: courses,
+      data: data,
+      metadata: meta,
       message: 'Get all courses successfully',
     }).send(res);
   }

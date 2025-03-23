@@ -4,6 +4,9 @@ import { Repository } from 'typeorm';
 import { FacultyEntity } from './entities/faculty.entity';
 import { CreateFacultyDto } from './dtos/createFaculty.dto';
 import { UpdateFacultyDto } from './dtos/updateFaculty.dto';
+import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
+import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 
 @Injectable()
 export class FacultyService {
@@ -17,8 +20,20 @@ export class FacultyService {
     return this.facultyRepository.save(faculty);
   }
 
-  async findAll(): Promise<FacultyEntity[]> {
-    return this.facultyRepository.find({ relations: ['departments'] });
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<{ data: FacultyEntity[]; meta: MetaDataInterface }> {
+    const { page = 1, limit = 10 } = paginationDto;
+
+    const [data, total] = await this.facultyRepository.findAndCount({
+      relations: ['departments'],
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    const meta = generatePaginationMeta(total, page, limit);
+
+    return { data, meta };
   }
 
   async findOne(id: number): Promise<FacultyEntity> {

@@ -4,6 +4,9 @@ import { Repository } from 'typeorm';
 import { LecturerEntity } from './entities/lecture.entity';
 import { CreateLecturerDto } from './dtos/createLecture.dto';
 import { UpdateLecturerDto } from './dtos/updateLecture.dto';
+import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
+import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 
 @Injectable()
 export class LecturerService {
@@ -17,8 +20,20 @@ export class LecturerService {
     return this.lecturerRepository.save(lecturer);
   }
 
-  async findAll(): Promise<LecturerEntity[]> {
-    return this.lecturerRepository.find({ relations: ['user', 'department'] });
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<{ data: LecturerEntity[]; meta: MetaDataInterface }> {
+    const { page = 1, limit = 10 } = paginationDto;
+
+    const [data, total] = await this.lecturerRepository.findAndCount({
+      relations: ['user', 'department'],
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    const meta = generatePaginationMeta(total, page, limit);
+
+    return { data, meta };
   }
 
   async findOne(id: number): Promise<LecturerEntity> {

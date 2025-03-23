@@ -10,23 +10,21 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
-import { ClassService } from './class.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { EUserRole } from 'src/utils/enums/user.enum';
 import { Roles } from 'src/decorators/roles.decorator';
-import { CreateClassDto } from './dtos/createClass.dto';
-import { UpdateClassDto } from './dtos/updateClass.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { CurriculumService } from './curriculum.service';
+import { CreateCurriculumDto } from './dtos/createCurriculum.dto';
+import { UpdateCurriculumDto } from './dtos/updateCurriculum.dto';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
-import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 
-@ApiTags('classes')
 @UseGuards(JwtAuthGuard)
-@Controller('classes')
-export class ClassController {
-  constructor(private readonly classService: ClassService) {}
+@Controller('curriculums')
+export class CurriculumController {
+  constructor(private readonly curriculumService: CurriculumService) {}
 
   @UseGuards(RolesGuard)
   @Roles([
@@ -34,30 +32,33 @@ export class ClassController {
     EUserRole[EUserRole.ADMINISTRATOR],
   ])
   @Post()
-  async create(@Body() createClassDto: CreateClassDto, @Res() res: Response) {
-    const classCreated = await this.classService.create(createClassDto);
+  async create(
+    @Body() createCurriculumDto: CreateCurriculumDto,
+    @Res() res: Response,
+  ) {
+    const curriculum = await this.curriculumService.create(createCurriculumDto);
     return new SuccessResponse({
-      data: classCreated,
-      message: 'Class created',
+      data: curriculum,
+      message: 'Create curriculum successfully',
     }).send(res);
   }
 
   @Get()
   async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
-    const { data, meta } = await this.classService.findAll(paginationDto);
+    const { data, meta } = await this.curriculumService.findAll(paginationDto);
     return new SuccessResponse({
-      data: data,
+      data,
       metadata: meta,
-      message: 'Get all courses successfully',
+      message: 'Get all curriculums successfully',
     }).send(res);
   }
 
   @Get(':id')
   async findOne(@Param('id') id: number, @Res() res: Response) {
-    const classQueried = await this.classService.findOne(id);
+    const curriculum = await this.curriculumService.findOne(id);
     return new SuccessResponse({
-      data: classQueried,
-      message: 'Get class successfully',
+      data: curriculum,
+      message: 'Get curriculum successfully',
     }).send(res);
   }
 
@@ -69,13 +70,16 @@ export class ClassController {
   @Patch(':id')
   async update(
     @Param('id') id: number,
-    @Body() updateClassDto: UpdateClassDto,
+    @Body() updateCurriculumDto: UpdateCurriculumDto,
     @Res() res: Response,
   ) {
-    const updatedClass = await this.classService.update(id, updateClassDto);
+    const curriculum = await this.curriculumService.update(
+      id,
+      updateCurriculumDto,
+    );
     return new SuccessResponse({
-      data: updatedClass,
-      message: 'Update class successfuly',
+      data: curriculum,
+      message: 'Update curriculum successfully',
     }).send(res);
   }
 
@@ -86,9 +90,9 @@ export class ClassController {
   ])
   @Delete(':id')
   async remove(@Param('id') id: number, @Res() res: Response) {
-    await this.classService.remove(id);
+    await this.curriculumService.remove(id);
     return new SuccessResponse({
-      message: 'Remove class successfully',
+      message: 'Delete curriculum successfully',
     }).send(res);
   }
 }

@@ -1,5 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { CourseSemesterEntity } from 'src/modules/course_semester/entities/course_semester.entity';
+import { CurriculumCourseEntity } from 'src/modules/curriculum_course/entities/curriculum_course.entity';
+import { StudyPlanEntity } from 'src/modules/study_plan/entities/study_plan.entity';
 
 @Entity('semesters')
 export class SemesterEntity {
@@ -29,4 +31,13 @@ export class SemesterEntity {
     (courseSemester) => courseSemester.semester,
   )
   courseSemesters: CourseSemesterEntity[];
+
+  @OneToMany(
+    () => CurriculumCourseEntity,
+    (curriculumCourse) => curriculumCourse.semester,
+  )
+  curriculumCourses: CurriculumCourseEntity[];
+
+  @OneToMany(() => StudyPlanEntity, (studyPlan) => studyPlan.semester)
+  studyPlans: StudyPlanEntity[];
 }

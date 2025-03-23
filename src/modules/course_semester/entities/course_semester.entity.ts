@@ -23,7 +23,9 @@ export class CourseSemesterEntity {
   @Column({ type: 'int', default: 0 })
   currentRegisterd: number;
 
-  @ManyToOne(() => SemesterEntity, { nullable: false })
+  @ManyToOne(() => SemesterEntity, (course) => course.courseSemesters, {
+    nullable: false,
+  })
   @JoinColumn({ name: 'semesterId' })
   semester: SemesterEntity;
 }
