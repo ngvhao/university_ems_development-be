@@ -5,7 +5,6 @@ import {
   Post,
   Res,
   UseGuards,
-  UnauthorizedException,
   BadRequestException,
   Request,
 } from '@nestjs/common';
@@ -51,12 +50,6 @@ export class AuthController {
       'refresh',
     );
 
-    // Save refreshToken into database
-    await this.authService.updateRefreshToken({
-      userId: user.id,
-      refreshToken,
-    });
-
     // Set token into cookie
     AuthHelpers.setTokenCookies(res, accessToken, refreshToken);
     return new SuccessResponse({
@@ -78,14 +71,6 @@ export class AuthController {
       });
     } catch {
       throw new BadRequestException('Invalid or expired refresh token');
-    }
-    //Check if refreshToken is valid
-    const isValid = await this.authService.validateRefreshToken(
-      payload.id,
-      refreshToken,
-    );
-    if (!isValid) {
-      throw new UnauthorizedException('Invalid refresh token');
     }
     // Create new accessToken
     const newAccessToken = AuthHelpers.generateToken(

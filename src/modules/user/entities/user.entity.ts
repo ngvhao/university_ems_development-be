@@ -31,9 +31,6 @@ export class UserEntity extends IEntity {
   status: EUserStatus;
 
   @Column({ nullable: true })
-  refreshToken: string;
-
-  @Column({ nullable: true })
   phoneNumber: string;
 
   @Column({ nullable: true })

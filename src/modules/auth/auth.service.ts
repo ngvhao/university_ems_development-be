@@ -22,21 +22,21 @@ export class AuthService {
     throw new UnauthorizedException('Invalid credentials');
   }
 
-  async updateRefreshToken({
-    userId,
-    refreshToken,
-  }: {
-    userId: number;
-    refreshToken: string;
-  }): Promise<void> {
-    this.userService.updateUser({ refreshToken }, userId);
-  }
+  // async updateRefreshToken({
+  //   userId,
+  //   refreshToken,
+  // }: {
+  //   userId: number;
+  //   refreshToken: string;
+  // }): Promise<void> {
+  //   this.userService.updateUser({ refreshToken }, userId);
+  // }
 
-  async validateRefreshToken(
-    userId: number,
-    refreshToken: string,
-  ): Promise<boolean> {
-    const user = await this.userService.getUserById(userId);
-    return user?.refreshToken === refreshToken;
-  }
+  // async validateRefreshToken(
+  //   userId: number,
+  //   refreshToken: string,
+  // ): Promise<boolean> {
+  //   const user = await this.userService.getUserById(userId);
+  //   return user?.refreshToken === refreshToken;
+  // }
 }
