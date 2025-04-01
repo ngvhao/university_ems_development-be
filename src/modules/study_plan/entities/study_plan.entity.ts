@@ -1,28 +1,11 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { StudentEntity } from 'src/modules/student/entities/student.entity';
 import { SemesterEntity } from 'src/modules/semester/entities/semester.entity';
 import { CourseEntity } from 'src/modules/course/entities/course.entity';
+import { IEntity } from 'src/utils/interfaces/IEntity';
 
 @Entity()
-export class StudyPlanEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column({ name: 'studentId' })
-  studentId: number;
-
-  @Column({ name: 'semesterId' })
-  semesterId: number;
-
-  @Column({ name: 'courseId' })
-  courseId: number;
-
+export class StudyPlanEntity extends IEntity {
   @Column()
   status: string;
 

@@ -1,31 +1,41 @@
+import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.entity';
 import { CourseEntity } from 'src/modules/course/entities/course.entity';
 import { SemesterEntity } from 'src/modules/semester/entities/semester.entity';
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  ManyToOne,
-  JoinColumn,
-  Column,
-} from 'typeorm';
+import { ERegistrationStatus } from 'src/utils/enums/course.enum';
+import { IEntity } from 'src/utils/interfaces/IEntity';
+import { Entity, ManyToOne, JoinColumn, Column, OneToMany } from 'typeorm';
 
 @Entity('course_semesters')
-export class CourseSemesterEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @ManyToOne(() => CourseEntity, { nullable: false })
+export class CourseSemesterEntity extends IEntity {
+  @ManyToOne(() => CourseEntity, (course) => course.courseSemesters, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'courseId' })
   course: CourseEntity;
 
-  @Column({ type: 'int', default: 50 })
-  maxStudents: number;
-
-  @Column({ type: 'int', default: 0 })
-  currentRegisterd: number;
-
-  @ManyToOne(() => SemesterEntity, (course) => course.courseSemesters, {
-    nullable: false,
+  @ManyToOne(() => SemesterEntity, (semester) => semester.courseSemesters, {
+    onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'semesterId' })
   semester: SemesterEntity;
+
+  @Column({
+    type: 'enum',
+    enum: ERegistrationStatus,
+    default: ERegistrationStatus.CLOSED,
+  })
+  preRegistrationStatus: ERegistrationStatus;
+
+  @Column({
+    type: 'enum',
+    enum: ERegistrationStatus,
+    default: ERegistrationStatus.CLOSED,
+  })
+  registrationStatus: ERegistrationStatus;
+
+  @Column({ type: 'int', default: 0 })
+  preRegisteredStudents: number;
+
+  @OneToMany(() => ClassGroupEntity, (classGroup) => classGroup.courseSemester)
+  classGroups: ClassGroupEntity[];
 }

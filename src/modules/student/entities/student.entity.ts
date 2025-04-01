@@ -11,6 +11,7 @@ import { UserEntity } from 'src/modules/user/entities/user.entity';
 import { MajorEntity } from 'src/modules/major/entities/major.entity';
 import { ClassEntity } from 'src/modules/class/entities/class.entity';
 import { StudyPlanEntity } from 'src/modules/study_plan/entities/study_plan.entity';
+import { EnrollmentCourseEntity } from 'src/modules/enrollment_course/entities/enrollment_course.entity';
 
 @Entity('students')
 export class StudentEntity extends IEntity {
@@ -42,4 +43,7 @@ export class StudentEntity extends IEntity {
 
   @OneToMany(() => StudyPlanEntity, (studyPlan) => studyPlan.student)
   studyPlans: StudyPlanEntity[];
+
+  @OneToMany(() => EnrollmentCourseEntity, (enrollment) => enrollment.student)
+  enrollments: EnrollmentCourseEntity[];
 }

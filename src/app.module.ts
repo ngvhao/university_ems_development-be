@@ -19,6 +19,9 @@ import { EnrollmentCourseModule } from './modules/enrollment_course/enrollment_c
 import { CurriculumModule } from './modules/curriculum/curriculum.module';
 import { StudyPlanModule } from './modules/study_plan/study_plan.module';
 import { CurriculumCourseModule } from './modules/curriculum_course/curriculum_course.module';
+import { RoomModule } from './modules/room/room.module';
+import { CourseMajorModule } from './modules/course_major/course-major.module';
+import { ClassGroupModule } from './modules/class_group/class_group.module';
 
 @Module({
   imports: [
@@ -38,6 +41,9 @@ import { CurriculumCourseModule } from './modules/curriculum_course/curriculum_c
     CurriculumModule,
     StudyPlanModule,
     CurriculumCourseModule,
+    RoomModule,
+    CourseMajorModule,
+    ClassGroupModule,
   ],
   controllers: [AppController],
   providers: [AppService],

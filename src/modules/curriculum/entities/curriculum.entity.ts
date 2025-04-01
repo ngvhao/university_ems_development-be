@@ -1,19 +1,10 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-  OneToMany,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { MajorEntity } from 'src/modules/major/entities/major.entity';
 import { CurriculumCourseEntity } from 'src/modules/curriculum_course/entities/curriculum_course.entity';
+import { IEntity } from 'src/utils/interfaces/IEntity';
 
 @Entity()
-export class CurriculumEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class CurriculumEntity extends IEntity {
   @Column({ name: 'totalCreditsRequired' })
   totalCreditsRequired: number;
 

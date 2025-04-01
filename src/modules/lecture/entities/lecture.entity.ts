@@ -1,7 +1,15 @@
+import { ClassEntity } from 'src/modules/class/entities/class.entity';
 import { DepartmentEntity } from 'src/modules/department/entities/department.entity';
 import { UserEntity } from 'src/modules/user/entities/user.entity';
 import { IEntity } from 'src/utils/interfaces/IEntity';
-import { Entity, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
+import {
+  Entity,
+  Column,
+  ManyToOne,
+  JoinColumn,
+  OneToOne,
+  OneToMany,
+} from 'typeorm';
 
 @Entity('lecturers')
 export class LecturerEntity extends IEntity {
@@ -24,4 +32,7 @@ export class LecturerEntity extends IEntity {
   @ManyToOne(() => DepartmentEntity, (department) => department.lecturers)
   @JoinColumn({ name: 'departmentId' })
   department: DepartmentEntity;
+
+  @OneToMany(() => ClassEntity, (classEntity) => classEntity.lecturer)
+  classes: ClassEntity[];
 }

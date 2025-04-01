@@ -16,7 +16,6 @@ export class LocalStrategy extends PassportStrategy(Strategy, 'local') {
     userCode: string,
     password: string,
   ): Promise<Partial<UserEntity>> {
-    console.log('userCode:', userCode);
     if (!userCode || !password) {
       throw new BadRequestException('Invalid credentials');
     }

@@ -1,5 +1,5 @@
 import { ClassEntity } from 'src/modules/class/entities/class.entity';
-import { CourseEntity } from 'src/modules/course/entities/course.entity';
+import { CourseMajorEntity } from 'src/modules/course-major/entities/course-major.entity';
 import { CurriculumEntity } from 'src/modules/curriculum/entities/curriculum.entity';
 import { DepartmentEntity } from 'src/modules/department/entities/department.entity';
 import { StudentEntity } from 'src/modules/student/entities/student.entity';
@@ -21,9 +21,9 @@ export class MajorEntity extends IEntity {
   @OneToMany(() => ClassEntity, (classs) => classs.major)
   classes: ClassEntity[];
 
-  @OneToMany(() => CourseEntity, (course) => course.major)
-  courses: CourseEntity[];
-
   @OneToMany(() => CurriculumEntity, (curriculum) => curriculum.major)
   curriculums: CurriculumEntity[];
+
+  @OneToMany(() => CourseMajorEntity, (courseMajor) => courseMajor.major)
+  courseMajors: CourseMajorEntity[];
 }

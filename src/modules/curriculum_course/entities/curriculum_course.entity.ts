@@ -1,19 +1,11 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  ManyToOne,
-  JoinColumn,
-} from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { CurriculumEntity } from 'src/modules/curriculum/entities/curriculum.entity';
 import { CourseEntity } from 'src/modules/course/entities/course.entity';
 import { SemesterEntity } from 'src/modules/semester/entities/semester.entity';
+import { IEntity } from 'src/utils/interfaces/IEntity';
 
 @Entity()
-export class CurriculumCourseEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class CurriculumCourseEntity extends IEntity {
   @Column({ name: 'isMandatory' })
   isMandatory: boolean;
 

@@ -1,13 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, Column, OneToMany } from 'typeorm';
 import { CourseSemesterEntity } from 'src/modules/course_semester/entities/course_semester.entity';
 import { CurriculumCourseEntity } from 'src/modules/curriculum_course/entities/curriculum_course.entity';
 import { StudyPlanEntity } from 'src/modules/study_plan/entities/study_plan.entity';
+import { IEntity } from 'src/utils/interfaces/IEntity';
 
 @Entity('semesters')
-export class SemesterEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
-
+export class SemesterEntity extends IEntity {
   @Column({ unique: true })
   semesterCode: string;
 

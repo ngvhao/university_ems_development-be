@@ -1,5 +1,5 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { FindOptionsRelations, FindOptionsWhere, Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from './dtos/createUser.dto';
@@ -19,6 +19,39 @@ export class UserService {
 
   async getUserByUserCode(userCode: string): Promise<UserEntity> {
     return this.userRepository.findOne({ where: { userCode } });
+  }
+
+  async getOne(
+    condition: FindOptionsWhere<UserEntity> | FindOptionsWhere<UserEntity>[],
+    relations?: FindOptionsRelations<UserEntity>,
+    selectFields?: string[],
+    selectRelationsFields?: { [key: string]: string[] },
+  ): Promise<Partial<UserEntity>> {
+    const query = this.userRepository.createQueryBuilder('user');
+
+    query.where(condition);
+
+    if (selectFields?.length) {
+      query.select(selectFields.map((field) => `user.${field}`));
+    }
+
+    if (relations) {
+      for (const relation of Object.keys(relations)) {
+        if (relations[relation]) {
+          query.leftJoinAndSelect(`user.${relation}`, relation);
+
+          if (selectRelationsFields?.[relation]?.length) {
+            query.addSelect(
+              selectRelationsFields[relation].map(
+                (field) => `${relation}.${field}`,
+              ),
+            );
+          }
+        }
+      }
+    }
+
+    return query.getOne();
   }
 
   async getUserByEmail(email: string): Promise<UserEntity> {
@@ -54,7 +87,6 @@ export class UserService {
       .orderBy('user.userCode', 'DESC')
       .getOne();
 
-    console.log('lastUSer:', lastUser);
     const lastIndex = lastUser ? parseInt(lastUser.userCode.slice(-5)) : 0;
     let studentCode: string | PromiseLike<string>;
     let retryCount = 0;

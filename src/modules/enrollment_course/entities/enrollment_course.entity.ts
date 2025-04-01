@@ -1,34 +1,46 @@
-import { CourseSemesterEntity } from 'src/modules/course_semester/entities/course_semester.entity';
-import { StudentEntity } from 'src/modules/student/entities/student.entity';
-import { ECourseStatus } from 'src/utils/enums/course.enum';
 import {
   Entity,
-  PrimaryGeneratedColumn,
+  Column,
   ManyToOne,
   JoinColumn,
-  Column,
+  Index,
+  CreateDateColumn,
 } from 'typeorm';
+import { StudentEntity } from 'src/modules/student/entities/student.entity';
+import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.entity';
+import { IEntity } from 'src/utils/interfaces/IEntity';
+import { EEnrollmentStatus } from 'src/utils/enums/course.enum';
 
 @Entity('enrollment_courses')
-export class EnrollmentCourseEntity {
-  @PrimaryGeneratedColumn()
-  id: number;
+@Index(['studentId', 'classGroupId'], { unique: true })
+export class EnrollmentCourseEntity extends IEntity {
+  @Column({
+    type: 'enum',
+    enum: EEnrollmentStatus,
+    default: EEnrollmentStatus.ENROLLED,
+  })
+  status: EEnrollmentStatus;
 
-  @ManyToOne(() => StudentEntity, { nullable: false })
+  @CreateDateColumn({ type: 'timestamptz' })
+  enrollmentDate: Date;
+
+  @ManyToOne(() => StudentEntity, (student) => student.enrollments, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'studentId' })
   student: StudentEntity;
 
-  @ManyToOne(() => CourseSemesterEntity, { nullable: false })
-  @JoinColumn({ name: 'courseSemesterId' })
-  courseSemester: CourseSemesterEntity;
+  @Column()
+  studentId: number;
 
-  @Column({ type: 'float', nullable: true })
-  grade: number;
-
-  @Column({
-    type: 'enum',
-    enum: ECourseStatus,
-    default: ECourseStatus.ENROLLED,
+  @ManyToOne(() => ClassGroupEntity, (classGroup) => classGroup.enrollments, {
+    nullable: false,
+    onDelete: 'CASCADE',
   })
-  status: ECourseStatus;
+  @JoinColumn({ name: 'classGroupId' })
+  classGroup: ClassGroupEntity;
+
+  @Column()
+  classGroupId: number;
 }

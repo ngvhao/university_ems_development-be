@@ -45,7 +45,7 @@ export class CourseSemesterController {
     const courses = await this.courseSemesterService.getMany(
       {
         semester: { semesterCode },
-        course: { major: { id: student.major.id } },
+        course: { courseMajors: { id: student.major.id } },
       },
       { course: true, semester: true },
     );
