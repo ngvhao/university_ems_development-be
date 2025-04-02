@@ -4,7 +4,7 @@ import { CourseEntity } from 'src/modules/course/entities/course.entity';
 import { SemesterEntity } from 'src/modules/semester/entities/semester.entity';
 import { IEntity } from 'src/utils/interfaces/IEntity';
 
-@Entity()
+@Entity('curriculum_courses')
 export class CurriculumCourseEntity extends IEntity {
   @Column({ name: 'isMandatory' })
   isMandatory: boolean;

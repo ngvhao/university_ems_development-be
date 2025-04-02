@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { LectureModule } from './modules/lecture/lecture.module';
+import { LectureModule } from './modules/lecturer/lecturer.module';
 import { MajorModule } from './modules/major/major.module';
 import { ClassModule } from './modules/class/class.module';
 import dataSource from 'db/data-source';
@@ -20,8 +20,9 @@ import { CurriculumModule } from './modules/curriculum/curriculum.module';
 import { StudyPlanModule } from './modules/study_plan/study_plan.module';
 import { CurriculumCourseModule } from './modules/curriculum_course/curriculum_course.module';
 import { RoomModule } from './modules/room/room.module';
-import { CourseMajorModule } from './modules/course_major/course-major.module';
+import { CourseMajorModule } from './modules/course_major/course_major.module';
 import { ClassGroupModule } from './modules/class_group/class_group.module';
+import { FacultyRegistrationScheduleModule } from './modules/faculty_registration_schedule/faculty_registration_schedule.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { ClassGroupModule } from './modules/class_group/class_group.module';
     RoomModule,
     CourseMajorModule,
     ClassGroupModule,
+    FacultyRegistrationScheduleModule,
   ],
   controllers: [AppController],
   providers: [AppService],

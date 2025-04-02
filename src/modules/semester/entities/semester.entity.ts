@@ -3,6 +3,7 @@ import { CourseSemesterEntity } from 'src/modules/course_semester/entities/cours
 import { CurriculumCourseEntity } from 'src/modules/curriculum_course/entities/curriculum_course.entity';
 import { StudyPlanEntity } from 'src/modules/study_plan/entities/study_plan.entity';
 import { IEntity } from 'src/utils/interfaces/IEntity';
+import { FacultyRegistrationScheduleEntity } from 'src/modules/faculty_registration_schedule/entities/faculty_registration_schedule.entity';
 
 @Entity('semesters')
 export class SemesterEntity extends IEntity {
@@ -38,4 +39,11 @@ export class SemesterEntity extends IEntity {
 
   @OneToMany(() => StudyPlanEntity, (studyPlan) => studyPlan.semester)
   studyPlans: StudyPlanEntity[];
+
+  @OneToMany(
+    () => FacultyRegistrationScheduleEntity,
+    (schedule) => schedule.semester,
+    { cascade: true },
+  )
+  registrationSchedules: FacultyRegistrationScheduleEntity[];
 }

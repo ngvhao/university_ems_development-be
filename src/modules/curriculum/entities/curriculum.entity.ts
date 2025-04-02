@@ -3,7 +3,7 @@ import { MajorEntity } from 'src/modules/major/entities/major.entity';
 import { CurriculumCourseEntity } from 'src/modules/curriculum_course/entities/curriculum_course.entity';
 import { IEntity } from 'src/utils/interfaces/IEntity';
 
-@Entity()
+@Entity('curriculums')
 export class CurriculumEntity extends IEntity {
   @Column({ name: 'totalCreditsRequired' })
   totalCreditsRequired: number;

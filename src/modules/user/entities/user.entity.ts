@@ -1,4 +1,4 @@
-import { LecturerEntity } from 'src/modules/lecture/entities/lecture.entity';
+import { LecturerEntity } from 'src/modules/lecturer/entities/lecturer.entity';
 import { StudentEntity } from 'src/modules/student/entities/student.entity';
 import { EUserRole, EUserStatus } from 'src/utils/enums/user.enum';
 import { IEntity } from 'src/utils/interfaces/IEntity';

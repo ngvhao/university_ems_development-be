@@ -26,7 +26,8 @@ import { UserEntity } from '../user/entities/user.entity';
 import { StudentService } from '../student/student.service';
 import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
 
-@UseGuards(JwtAuthGuard) // Yêu cầu đăng nhập cho tất cả
+@UseGuards(JwtAuthGuard)
+@UseGuards(RolesGuard)
 @Controller('enrollments') // Base route: /enrollments
 export class EnrollmentCourseController {
   constructor(
@@ -34,7 +35,6 @@ export class EnrollmentCourseController {
     private readonly studentService: StudentService,
   ) {}
 
-  @UseGuards(RolesGuard)
   @Roles([
     EUserRole[EUserRole.STUDENT],
     EUserRole[EUserRole.ACADEMIC_MANAGER],
@@ -54,7 +54,6 @@ export class EnrollmentCourseController {
     }).send(res);
   }
 
-  @UseGuards(RolesGuard)
   // Chỉ Admin/Manager xem được tất cả hoặc lọc theo studentId/classGroupId
   // Student sẽ tự động bị lọc theo studentId của mình trong service nếu không phải admin/manager
   @Roles([
@@ -106,7 +105,6 @@ export class EnrollmentCourseController {
   }
 
   // Endpoint tiện lợi cho sinh viên xem enrollment của mình
-  @UseGuards(RolesGuard)
   @Roles([
     EUserRole[EUserRole.STUDENT],
     EUserRole[EUserRole.ACADEMIC_MANAGER],
@@ -142,7 +140,6 @@ export class EnrollmentCourseController {
     }).send(res);
   }
 
-  @UseGuards(RolesGuard)
   @Roles([
     EUserRole[EUserRole.STUDENT],
     EUserRole[EUserRole.ACADEMIC_MANAGER],
@@ -164,7 +161,6 @@ export class EnrollmentCourseController {
   }
 
   // Dùng PATCH hoặc DELETE để hủy đăng ký
-  @UseGuards(RolesGuard)
   @Roles([
     EUserRole[EUserRole.STUDENT],
     EUserRole[EUserRole.ACADEMIC_MANAGER],

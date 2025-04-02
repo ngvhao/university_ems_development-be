@@ -1,9 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LecturerEntity } from './entities/lecture.entity';
-import { CreateLecturerDto } from './dtos/createLecture.dto';
-import { UpdateLecturerDto } from './dtos/updateLecture.dto';
+import { LecturerEntity } from './entities/lecturer.entity';
+import { CreateLecturerDto } from './dtos/createLecturer.dto';
+import { UpdateLecturerDto } from './dtos/updateLecturer.dto';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
