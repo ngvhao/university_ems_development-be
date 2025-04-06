@@ -4,7 +4,7 @@ import { CurriculumCourseEntity } from 'src/modules/curriculum_course/entities/c
 import { StudyPlanEntity } from 'src/modules/study_plan/entities/study_plan.entity';
 import { IEntity } from 'src/utils/interfaces/IEntity';
 import { ECourseType } from 'src/utils/enums/course-type.enum';
-import { CourseMajorEntity } from 'src/modules/course-major/entities/course-major.entity';
+import { CourseMajorEntity } from 'src/modules/course_major/entities/course_major.entity';
 
 @Entity('courses')
 export class CourseEntity extends IEntity {

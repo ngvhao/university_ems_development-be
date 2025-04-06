@@ -16,9 +16,9 @@ import { EUserRole } from 'src/utils/enums/user.enum';
 import { Roles } from 'src/decorators/roles.decorator';
 import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
-import { CreateLecturerDto } from './dtos/createLecture.dto';
-import { UpdateLecturerDto } from './dtos/updateLecture.dto';
-import { LecturerService } from './lecture.service';
+import { CreateLecturerDto } from './dtos/createLecturer.dto';
+import { UpdateLecturerDto } from './dtos/updateLecturer.dto';
+import { LecturerService } from './lecturer.service';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 
 @UseGuards(JwtAuthGuard)

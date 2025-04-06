@@ -1,4 +1,4 @@
-import { LecturerEntity } from 'src/modules/lecture/entities/lecture.entity';
+import { LecturerEntity } from 'src/modules/lecturer/entities/lecturer.entity';
 import { MajorEntity } from 'src/modules/major/entities/major.entity';
 import { StudentEntity } from 'src/modules/student/entities/student.entity';
 import { IEntity } from 'src/utils/interfaces/IEntity';

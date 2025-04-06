@@ -4,7 +4,7 @@ import { SemesterEntity } from 'src/modules/semester/entities/semester.entity';
 import { CourseEntity } from 'src/modules/course/entities/course.entity';
 import { IEntity } from 'src/utils/interfaces/IEntity';
 
-@Entity()
+@Entity('study_plans')
 export class StudyPlanEntity extends IEntity {
   @Column()
   status: string;

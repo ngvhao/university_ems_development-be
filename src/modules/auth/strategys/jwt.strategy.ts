@@ -25,8 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       if (!user) {
         throw new UnauthorizedException();
       }
-
-      return _.omit(user, ['password', 'refreshToken']);
+      return _.omit(user, ['password', 'refreshToken']) as LoggedInterface;
     } catch (error) {
       this.logger.error(`JWT validation failed: ${error.message}`);
       throw new UnauthorizedException();

@@ -2,7 +2,7 @@ import { RoomType } from 'src/utils/enums/room.enum';
 import { IEntity } from 'src/utils/interfaces/IEntity';
 import { Entity, Column } from 'typeorm';
 
-@Entity()
+@Entity('rooms')
 export class RoomEntity extends IEntity {
   @Column()
   roomNumber: string;
