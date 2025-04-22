@@ -23,6 +23,9 @@ import { RoomModule } from './modules/room/room.module';
 import { CourseMajorModule } from './modules/course_major/course_major.module';
 import { ClassGroupModule } from './modules/class_group/class_group.module';
 import { FacultyRegistrationScheduleModule } from './modules/faculty_registration_schedule/faculty_registration_schedule.module';
+import { TimeSlotsModule } from './modules/time_slots/time_slots.module';
+import { ClassWeeklyScheduleModule } from './modules/class_weekly_schedule/class_weekly_schedule.module';
+import { ClassAdjustmentScheduleModule } from './modules/class_adjustment_schedule/class_adjustment_schedule.module';
 
 @Module({
   imports: [
@@ -46,6 +49,11 @@ import { FacultyRegistrationScheduleModule } from './modules/faculty_registratio
     CourseMajorModule,
     ClassGroupModule,
     FacultyRegistrationScheduleModule,
+    ClassWeeklyScheduleModule,
+    TimeSlotsModule,
+    ClassWeeklyScheduleModule,
+    ClassAdjustmentScheduleModule,
+    ClassWeeklyScheduleModule,
   ],
   controllers: [AppController],
   providers: [AppService],

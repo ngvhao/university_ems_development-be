@@ -1,11 +1,4 @@
-import { IsString, IsInt, IsOptional } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { CreateMajorDto } from './createMajor.dto';
 
-export class UpdateMajorDto {
-  @IsOptional()
-  @IsString()
-  name?: string;
-
-  @IsOptional()
-  @IsInt()
-  departmentId?: number;
-}
+export class UpdateMajorDto extends PartialType(CreateMajorDto) {}

@@ -1,5 +1,5 @@
 import { CourseSemesterEntity } from 'src/modules/course_semester/entities/course_semester.entity';
-import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, Column, OneToMany } from 'typeorm';
 import { CurriculumCourseEntity } from 'src/modules/curriculum_course/entities/curriculum_course.entity';
 import { StudyPlanEntity } from 'src/modules/study_plan/entities/study_plan.entity';
 import { IEntity } from 'src/utils/interfaces/IEntity';
@@ -27,10 +27,6 @@ export class CourseEntity extends IEntity {
     default: ECourseType.MAJOR_REQUIRED,
   })
   courseType: ECourseType;
-
-  @ManyToOne(() => CourseEntity, { nullable: true })
-  @JoinColumn({ name: 'prerequisiteCourseId' })
-  prerequisite: CourseEntity;
 
   @OneToMany(() => CourseSemesterEntity, (cs) => cs.course)
   courseSemesters: CourseSemesterEntity[];

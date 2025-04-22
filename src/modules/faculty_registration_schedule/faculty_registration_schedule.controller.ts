@@ -5,28 +5,30 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe, // Sử dụng ParseIntPipe để chuyển đổi id
+  ParseIntPipe,
   Patch,
   Post,
   Query,
   Res,
   UseGuards,
-  NotFoundException, // Import NotFoundException
+  NotFoundException,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'; // Đường dẫn có thể cần điều chỉnh
-import { RolesGuard } from '../auth/guards/roles.guard'; // Đường dẫn có thể cần điều chỉnh
-import { EUserRole } from 'src/utils/enums/user.enum'; // Đường dẫn có thể cần điều chỉnh
-import { Roles } from 'src/decorators/roles.decorator'; // Đường dẫn có thể cần điều chỉnh
-import { SuccessResponse } from 'src/utils/response'; // Đường dẫn có thể cần điều chỉnh
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { EUserRole } from 'src/utils/enums/user.enum';
+import { Roles } from 'src/decorators/roles.decorator';
+import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
-import { PaginationDto } from 'src/utils/dtos/pagination.dto'; // Đường dẫn có thể cần điều chỉnh
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { FacultyRegistrationScheduleService } from './faculty_registration_schedule.service';
 import { CreateFacultyRegistrationScheduleDto } from './dtos/createFacultyRegistrationSchedule.dto';
 import { UpdateFacultyRegistrationScheduleDto } from './dtos/updateFacultyRegistrationSchedule.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('FacultyRegistrationSchedules')
 @UseGuards(JwtAuthGuard)
 @UseGuards(RolesGuard)
-@Controller('faculty-registration-schedules') // Đặt tên route hợp lý
+@Controller('faculty-registration-schedules')
 export class FacultyRegistrationScheduleController {
   constructor(
     private readonly scheduleService: FacultyRegistrationScheduleService,

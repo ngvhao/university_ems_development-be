@@ -21,7 +21,7 @@ export class CreateFacultyRegistrationScheduleDto {
 
   @IsNotEmpty({ message: 'Ngày bắt đầu đăng ký trước không được để trống' })
   @IsDateString({}, { message: 'Ngày bắt đầu đăng ký trước không hợp lệ' })
-  preRegistrationStartDate: Date; // Nhận vào dạng string ISO 8601
+  preRegistrationStartDate: Date;
 
   @IsNotEmpty({ message: 'Ngày kết thúc đăng ký trước không được để trống' })
   @IsDateString({}, { message: 'Ngày kết thúc đăng ký trước không hợp lệ' })

@@ -22,6 +22,7 @@ import { FilterStudentDto } from './dtos/filterStudent.dto';
 import { UpdateStudentDto } from './dtos/updateStudent.dto';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
+import { Helpers } from 'src/utils/helpers';
 @Injectable()
 export class StudentService {
   constructor(
@@ -32,13 +33,13 @@ export class StudentService {
     private userService: UserService,
   ) {}
 
-  // --- Hàm CREATE đã có ---
   async createStudent(
     studentDTO: CreateStudentDto,
     hashedPassword: string,
   ): Promise<Partial<UserEntity>> {
     const {
-      email,
+      // email,
+      personal_email,
       firstName,
       lastName,
       classId,
@@ -50,18 +51,17 @@ export class StudentService {
     await queryRunner.startTransaction();
 
     try {
-      // Kiểm tra email tồn tại (đã làm ở controller, nhưng có thể check lại trong transaction)
-      const existingUser = await queryRunner.manager.findOneBy(UserEntity, {
-        email,
-      });
-      if (existingUser) {
-        throw new BadRequestException(`Email '${email}' đã tồn tại.`);
-      }
+      // const existingUser = await queryRunner.manager.findOneBy(UserEntity, {
+      //   university_email,
+      // });
+      // if (existingUser) {
+      //   throw new BadRequestException(`Email '${email}' đã tồn tại.`);
+      // }
 
       // Lấy thông tin lớp và kiểm tra tồn tại
       const classEntity = await queryRunner.manager.findOne(ClassEntity, {
         where: { id: classId },
-        relations: { major: { department: { faculty: true } } }, // Load đủ quan hệ cần thiết
+        relations: { major: { department: { faculty: true } } },
       });
       if (!classEntity) {
         throw new NotFoundException(`Không tìm thấy lớp với ID ${classId}`);
@@ -82,44 +82,42 @@ export class StudentService {
         majorId,
       );
 
+      const uniEmail = Helpers.generateStudentEmail(studentCode);
+
       // Tạo user
       const user = queryRunner.manager.create(UserEntity, {
-        email,
+        personal_email,
         firstName,
         password: hashedPassword,
         lastName,
         userCode: studentCode,
         role: EUserRole.STUDENT,
-        // Các trường khác có thể thêm nếu cần
       });
       const savedUser = await queryRunner.manager.save(user);
 
       // Tạo student
       const student = queryRunner.manager.create(StudentEntity, {
-        userId: savedUser.id, // Gán userId mới tạo
+        university_email: uniEmail,
+        userId: savedUser.id,
         majorId: majorId,
         classId: classId,
         academicYear,
-        enrollmentDate: new Date(enrollmentDate), // Chuyển string thành Date
-        // expectedGraduationDate có thể tính toán hoặc để null
+        enrollmentDate: new Date(enrollmentDate),
       });
       await queryRunner.manager.save(student);
 
       await queryRunner.commitTransaction();
 
-      return _.omit(savedUser, ['password']); // Trả về thông tin user đã tạo
+      return _.omit(savedUser, ['password']);
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      // Log lỗi ra để debug nếu cần
       console.error('Error creating student:', error);
-      // Ném lại lỗi để controller hoặc exception filter xử lý
       throw error;
     } finally {
       await queryRunner.release();
     }
   }
 
-  // --- Hàm READ (All with Pagination and Filter) ---
   async findAll(
     filterDto: FilterStudentDto,
   ): Promise<{ data: StudentEntity[]; meta: MetaDataInterface }> {
@@ -264,14 +262,11 @@ export class StudentService {
           );
         }
         studentUpdateData.classId = classId;
-        studentUpdateData.majorId = newClass.major.id; // Cập nhật majorId theo lớp mới
-        // Cập nhật biến này để dùng nếu cần regenerate student code
-        // Lưu ý: Có thể cần logic phức tạp hơn nếu việc đổi lớp/ngành cần cập nhật lại mã sinh viên
+        studentUpdateData.majorId = newClass.major.id;
       }
 
       // 4. Cập nhật UserEntity (chỉ cập nhật các trường có giá trị)
-      const cleanUserUpdateData = _.omitBy(userUpdateData, _.isNil); // Loại bỏ các key có value là null/undefined
-      // Chuyển đổi Date string sang Date object nếu có
+      const cleanUserUpdateData = _.omitBy(userUpdateData, _.isNil);
       if (cleanUserUpdateData.dateOfBirth) {
         cleanUserUpdateData.dateOfBirth = new Date(
           cleanUserUpdateData.dateOfBirth,

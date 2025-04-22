@@ -21,7 +21,9 @@ import { UpdateSemesterDto } from './dtos/updateSemester.dto';
 import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Semesters')
 @UseGuards(JwtAuthGuard)
 @Controller('semesters')
 export class SemesterController {

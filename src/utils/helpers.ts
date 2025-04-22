@@ -1,5 +1,5 @@
 import * as bcrypt from 'bcrypt';
-import { SALT_ROUNDS } from './constants';
+import { emailTailConstants, SALT_ROUNDS } from './constants';
 import { EFacultyCode } from './enums/faculty.enum';
 import { EUserRole } from './enums/user.enum';
 
@@ -50,5 +50,9 @@ export class Helpers {
     } else {
       return `ACADEMIC${(lastIndx + 1).toString().padStart(5, '0')}`;
     }
+  }
+
+  static generateStudentEmail(studentCode: string) {
+    return studentCode + emailTailConstants.student;
   }
 }

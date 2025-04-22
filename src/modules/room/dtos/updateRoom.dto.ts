@@ -1,20 +1,4 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
-import { RoomType } from 'src/utils/enums/room.enum';
+import { PartialType } from '@nestjs/mapped-types';
+import { CreateRoomDto } from './createRoom.dto';
 
-export class UpdateRoomDto {
-  @IsString()
-  @IsOptional()
-  roomNumber?: string;
-
-  @IsString()
-  @IsOptional()
-  buildingName?: string;
-
-  @IsString()
-  @IsOptional()
-  floor?: string;
-
-  @IsEnum(RoomType)
-  @IsOptional()
-  roomType?: RoomType;
-}
+export class UpdateRoomDto extends PartialType(CreateRoomDto) {}

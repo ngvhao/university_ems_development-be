@@ -7,6 +7,8 @@ import { INestApplication } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import * as bodyParser from 'body-parser';
+import { API_PREFIX_PATH } from './utils/constants';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 export function setupMiddlewares(app: INestApplication) {
   const expressApp = app as NestExpressApplication;
@@ -40,6 +42,21 @@ export function setupMiddlewares(app: INestApplication) {
       },
     }),
   );
+
+  const apiPath = `${API_PREFIX_PATH}/docs`;
+
+  const config = new DocumentBuilder()
+    .setTitle('Xypass')
+    .setDescription('Xypass project')
+    .setVersion('1.0')
+    .addBearerAuth({ type: 'http', scheme: 'bearer', in: 'header' }, 'token')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup(apiPath, app, document, {
+    swaggerOptions: { persistAuthorization: true },
+  });
+
   app.use(bodyParser.json());
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new HttpExceptionFilter());

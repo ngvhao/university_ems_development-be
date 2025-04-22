@@ -20,7 +20,9 @@ import { UpdateDepartmentDto } from './dtos/updateDepartment.dto';
 import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Departments')
 @UseGuards(JwtAuthGuard)
 @Controller('departments')
 export class DepartmentController {

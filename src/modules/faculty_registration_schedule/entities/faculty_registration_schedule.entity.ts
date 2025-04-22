@@ -40,25 +40,25 @@ export class FacultyRegistrationScheduleEntity extends IEntity {
   semester: SemesterEntity;
 
   @Column({ type: 'timestamp' })
-  @Type(() => Date) // Đảm bảo chuyển đổi đúng kiểu Date
-  preRegistrationStartDate: Date; // Bắt đầu đăng ký trước
+  @Type(() => Date)
+  preRegistrationStartDate: Date;
 
   @Column({ type: 'timestamp' })
   @Type(() => Date)
-  preRegistrationEndDate: Date; // Kết thúc đăng ký trước
+  preRegistrationEndDate: Date;
 
   @Column({ type: 'timestamp' })
   @Type(() => Date)
-  registrationStartDate: Date; // Bắt đầu đăng ký chính thức
+  registrationStartDate: Date;
 
   @Column({ type: 'timestamp' })
   @Type(() => Date)
-  registrationEndDate: Date; // Kết thúc đăng ký chính thức
+  registrationEndDate: Date;
 
   @Column({
     type: 'enum',
     enum: EFacultyRegistrationScheduleStatus,
-    default: EFacultyRegistrationScheduleStatus.PENDING, // Giá trị mặc định
+    default: EFacultyRegistrationScheduleStatus.PENDING,
   })
-  status: EFacultyRegistrationScheduleStatus; // Trạng thái lịch trình
+  status: EFacultyRegistrationScheduleStatus;
 }

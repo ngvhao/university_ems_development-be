@@ -27,10 +27,10 @@ export class InsertFacultyDepartmentMajorClass1700000000000
 
     // Insert Classes
     await queryRunner.query(`
-      INSERT INTO classes ("classCode", "majorId") VALUES
-      ('25050201', (SELECT id FROM majors WHERE name = 'Kỹ thuật phần mềm')),
-      ('25050202', (SELECT id FROM majors WHERE name = 'Kỹ thuật phần mềm')),
-      ('25050203', (SELECT id FROM majors WHERE name = 'Trí tuệ nhân tạo'))
+      INSERT INTO classes ("classCode", "className", "majorId", "yearOfAdmission", "homeroomLecturerId") VALUES
+      ('25050201', 'Kỹ thuật phần mềm', (SELECT id FROM majors WHERE name = 'Kỹ thuật phần mềm'), 2025, null),
+      ('25050202', 'Kỹ thuật phần mềm', (SELECT id FROM majors WHERE name = 'Kỹ thuật phần mềm'), 2025, null),
+      ('25050203', 'Trí tuệ nhân tạo', (SELECT id FROM majors WHERE name = 'Trí tuệ nhân tạo'), 2025, null)
     `);
   }
 

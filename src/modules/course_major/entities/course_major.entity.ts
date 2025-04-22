@@ -1,8 +1,7 @@
 import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { CourseEntity } from 'src/modules/course/entities/course.entity'; // Điều chỉnh đường dẫn nếu cần
-import { MajorEntity } from 'src/modules/major/entities/major.entity'; // Điều chỉnh đường dẫn nếu cần
-import { IEntity } from 'src/utils/interfaces/IEntity'; // Giả định bạn có base entity này
-
+import { CourseEntity } from 'src/modules/course/entities/course.entity';
+import { MajorEntity } from 'src/modules/major/entities/major.entity';
+import { IEntity } from 'src/utils/interfaces/IEntity';
 @Entity('course_major')
 export class CourseMajorEntity extends IEntity {
   @Column({ type: 'boolean', default: true })
@@ -14,6 +13,10 @@ export class CourseMajorEntity extends IEntity {
   })
   @JoinColumn({ name: 'courseId' })
   course: CourseEntity;
+
+  @ManyToOne(() => CourseEntity, { nullable: true })
+  @JoinColumn({ name: 'prerequisiteCourseId' })
+  prerequisite: CourseEntity;
 
   @Column()
   courseId: number;

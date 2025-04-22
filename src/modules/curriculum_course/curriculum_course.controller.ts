@@ -20,7 +20,9 @@ import { UpdateCurriculumCourseDto } from './dtos/updateCurriculumCourse.dto';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('CurriculumCourses')
 @UseGuards(JwtAuthGuard)
 @Controller('curriculum-courses')
 export class CurriculumCourseController {

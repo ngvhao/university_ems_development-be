@@ -18,7 +18,6 @@ export class FacultyRegistrationScheduleService {
   async create(
     createDto: CreateFacultyRegistrationScheduleDto,
   ): Promise<FacultyRegistrationScheduleEntity> {
-    // Chuyển đổi chuỗi ngày thành đối tượng Date trước khi lưu
     const scheduleData = {
       ...createDto,
       preRegistrationStartDate: new Date(createDto.preRegistrationStartDate),
@@ -40,8 +39,8 @@ export class FacultyRegistrationScheduleService {
     const [data, total] = await this.scheduleRepository.findAndCount({
       skip,
       take: limit,
-      relations: ['faculty', 'semester'], // Lấy thêm thông tin khoa và học kỳ
-      order: { createdAt: 'DESC' }, // Sắp xếp theo ngày tạo mới nhất
+      relations: ['faculty', 'semester'],
+      order: { createdAt: 'DESC' },
     });
 
     const meta = generatePaginationMeta(total, page, limit);
@@ -52,7 +51,7 @@ export class FacultyRegistrationScheduleService {
   async findOne(id: number): Promise<FacultyRegistrationScheduleEntity> {
     const schedule = await this.scheduleRepository.findOne({
       where: { id },
-      relations: ['faculty', 'semester'], // Lấy thêm thông tin khoa và học kỳ
+      relations: ['faculty', 'semester'],
     });
     if (!schedule) {
       throw new NotFoundException(`Không tìm thấy lịch đăng ký với ID ${id}`);

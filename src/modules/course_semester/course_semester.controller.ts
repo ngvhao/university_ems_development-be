@@ -16,7 +16,9 @@ import { EUserRole } from 'src/utils/enums/user.enum';
 import { Roles } from 'src/decorators/roles.decorator';
 import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
 import { StudentService } from '../student/student.service';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('CourseSemesters')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('course-semester')
 export class CourseSemesterController {

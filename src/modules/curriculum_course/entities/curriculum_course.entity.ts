@@ -23,6 +23,10 @@ export class CurriculumCourseEntity extends IEntity {
   @JoinColumn({ name: 'courseId' })
   course: CourseEntity;
 
+  @ManyToOne(() => CourseEntity, { nullable: true })
+  @JoinColumn({ name: 'prerequisiteCourseId' })
+  prerequisite: CourseEntity;
+
   @ManyToOne(() => SemesterEntity, (semester) => semester.curriculumCourses)
   @JoinColumn({ name: 'semesterId' })
   semester: SemesterEntity;
