@@ -3,16 +3,16 @@ import {
   Get,
   Post,
   Body,
-  Patch, // Dùng Patch cho việc cancel (cập nhật status)
-  Param, // Có thể dùng Delete thay Patch cho cancel nếu muốn
+  Patch,
+  Param,
   Query,
   Res,
   UseGuards,
   ParseIntPipe,
-  Req, // Import Req để lấy thông tin user
+  Req,
   ForbiddenException,
 } from '@nestjs/common';
-import { Response, Request } from 'express'; // Import Request
+import { Response, Request } from 'express';
 import { EnrollmentCourseService } from './enrollment_course.service';
 import { Roles } from 'src/decorators/roles.decorator';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
@@ -25,10 +25,12 @@ import { FilterEnrollmentCourseDto } from './dtos/filterEnrollmentCourse.dto';
 import { UserEntity } from '../user/entities/user.entity';
 import { StudentService } from '../student/student.service';
 import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Enrollments')
 @UseGuards(JwtAuthGuard)
 @UseGuards(RolesGuard)
-@Controller('enrollments') // Base route: /enrollments
+@Controller('enrollments')
 export class EnrollmentCourseController {
   constructor(
     private readonly enrollmentService: EnrollmentCourseService,
@@ -104,7 +106,6 @@ export class EnrollmentCourseController {
     }).send(res);
   }
 
-  // Endpoint tiện lợi cho sinh viên xem enrollment của mình
   @Roles([
     EUserRole[EUserRole.STUDENT],
     EUserRole[EUserRole.ACADEMIC_MANAGER],
@@ -126,7 +127,7 @@ export class EnrollmentCourseController {
     if (!studentId) {
       throw new ForbiddenException('User profile does not contain student ID.');
     }
-    // Ghi đè studentId trong filter bằng studentId của user đang đăng nhập
+
     filterDto.studentId = studentId;
     const { data, meta } = await this.enrollmentService.findAll(
       paginationDto,
@@ -152,7 +153,6 @@ export class EnrollmentCourseController {
     @Res() res: Response,
   ) {
     const currentUser = req.user as UserEntity;
-    // Service sẽ kiểm tra quyền truy cập chi tiết
     const data = await this.enrollmentService.findOne(id, currentUser);
     return new SuccessResponse({
       data: data,
@@ -160,20 +160,18 @@ export class EnrollmentCourseController {
     }).send(res);
   }
 
-  // Dùng PATCH hoặc DELETE để hủy đăng ký
   @Roles([
     EUserRole[EUserRole.STUDENT],
     EUserRole[EUserRole.ACADEMIC_MANAGER],
     EUserRole[EUserRole.ADMINISTRATOR],
   ])
-  @Patch(':id/cancel') // Hoặc @Delete(':id')
+  @Patch(':id/cancel')
   async cancel(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: RequestHasUserDto & Request,
     @Res() res: Response,
   ) {
     const currentUser = req.user as UserEntity;
-    // Service sẽ kiểm tra quyền và xử lý transaction
     const data = await this.enrollmentService.cancel(id, currentUser);
     return new SuccessResponse({
       data: data,

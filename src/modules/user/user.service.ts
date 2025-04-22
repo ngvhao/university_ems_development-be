@@ -1,4 +1,4 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { FindOptionsRelations, FindOptionsWhere, Repository } from 'typeorm';
 import { UserEntity } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -54,15 +54,19 @@ export class UserService {
     return query.getOne();
   }
 
-  async getUserByEmail(email: string): Promise<UserEntity> {
-    return this.userRepository.findOne({ where: { email } });
+  async getUserByPersonalEmail(email: string): Promise<UserEntity[]> {
+    return this.userRepository.find({ where: { personal_email: email } });
+  }
+
+  async getUserByUniEmail(email: string): Promise<UserEntity> {
+    return this.userRepository.findOne({ where: { university_email: email } });
   }
 
   async createUser(userDto: CreateUserDto): Promise<UserEntity> {
-    const userExists = await this.getUserByEmail(userDto.email);
-    if (userExists) {
-      throw new ConflictException('User email already existed');
-    }
+    // const userExists = await this.getUserByEmail(userDto.email);
+    // if (userExists) {
+    //   throw new ConflictException('User email already existed');
+    // }
     return this.userRepository.save({
       ...userDto,
       role: EUserRole.ADMINISTRATOR,

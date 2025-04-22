@@ -20,7 +20,9 @@ import { CreateLecturerDto } from './dtos/createLecturer.dto';
 import { UpdateLecturerDto } from './dtos/updateLecturer.dto';
 import { LecturerService } from './lecturer.service';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Lecturers')
 @UseGuards(JwtAuthGuard)
 @Controller('lecturers')
 export class LecturerController {

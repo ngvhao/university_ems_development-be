@@ -57,3 +57,12 @@ export const jwtConstants = {
   accessExpired: JWT_EXPIRED_TIME_UPDATE_TOKEN,
   refreshExpired: JWT_REFRESH_EXPIRED_TIME_UPDATE_TOKEN,
 };
+
+export const emailTailConstants = {
+  student: '@student.university.edu.vn',
+  staff: '@staff.university.edu.vn',
+  faculty: '@faculty.university.edu.vn',
+  admin: '@admin.university.edu.vn',
+  academic: '@academic.university.edu.vn',
+  lecturer: '@lecturer.university.edu.vn',
+};

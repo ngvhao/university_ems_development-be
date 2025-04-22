@@ -20,7 +20,9 @@ import { Roles } from 'src/decorators/roles.decorator';
 import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Courses')
 @UseGuards(JwtAuthGuard)
 @Controller('courses')
 export class CourseController {

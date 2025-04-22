@@ -14,8 +14,6 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ClassGroupService } from './class_group.service';
-import { EClassGroupStatus } from 'src/utils/enums/class.enum';
-import { IsNotEmpty, IsEnum } from 'class-validator';
 import { Roles } from 'src/decorators/roles.decorator';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { EUserRole } from 'src/utils/enums/user.enum';
@@ -25,18 +23,16 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreateClassGroupDto } from './dtos/createClassGroup.dto';
 import { FilterClassGroupDto } from './dtos/filterClassGroup.dto';
 import { UpdateClassGroupDto } from './dtos/updateClassGroup.dto';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
+import { UpdateClassGroupStatusDto } from './dtos/updateClassGroupStatus.dto';
 
-class UpdateClassGroupStatusDto {
-  @IsNotEmpty()
-  @IsEnum(EClassGroupStatus)
-  status: EClassGroupStatus;
-}
-
+@ApiTags('ClassGroups')
 @UseGuards(JwtAuthGuard)
 @Controller('class-groups')
 export class ClassGroupController {
   constructor(private readonly classGroupService: ClassGroupService) {}
 
+  @ApiBody({ type: CreateClassGroupDto })
   @UseGuards(RolesGuard)
   @Roles([
     EUserRole[EUserRole.ACADEMIC_MANAGER],
@@ -77,6 +73,7 @@ export class ClassGroupController {
     }).send(res);
   }
 
+  @ApiBody({ type: UpdateClassGroupDto })
   @UseGuards(RolesGuard)
   @Roles([
     EUserRole[EUserRole.ACADEMIC_MANAGER],

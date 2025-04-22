@@ -61,9 +61,10 @@ export class EnrollmentCourseService {
     } else {
       if (
         currentUser.role !== EUserRole.STUDENT &&
-        ![EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER].includes(
-          currentUser.role,
-        )
+        ![
+          EUserRole[EUserRole.ACADEMIC_MANAGER],
+          EUserRole[EUserRole.ADMINISTRATOR],
+        ].includes(EUserRole[currentUser.role])
       ) {
         throw new ForbiddenException(
           'Insufficient permissions to enroll other students.',
@@ -243,9 +244,10 @@ export class EnrollmentCourseService {
       }
       if (
         currentUser.role !== EUserRole.STUDENT &&
-        ![EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER].includes(
-          currentUser.role,
-        )
+        ![
+          EUserRole[EUserRole.ACADEMIC_MANAGER],
+          EUserRole[EUserRole.ADMINISTRATOR],
+        ].includes(EUserRole[currentUser.role])
       ) {
         throw new ForbiddenException(
           'Insufficient permissions to cancel this enrollment.',
@@ -258,7 +260,7 @@ export class EnrollmentCourseService {
         );
       }
 
-      // Kiểm tra trạng thái lớp học có cho phép hủy không (ví dụ: không cho hủy khi lớp đã LOCK)
+      // Kiểm tra trạng thái lớp học có cho phép hủy không
       if (enrollment.classGroup.status === EClassGroupStatus.LOCKED) {
         throw new BadRequestException(
           `Cannot cancel enrollment because the class group (ID: ${enrollment.classGroupId}) is locked.`,
@@ -269,9 +271,6 @@ export class EnrollmentCourseService {
       enrollment.status = EEnrollmentStatus.CANCELLED;
       const updatedEnrollment = await queryRunner.manager.save(enrollment);
 
-      // 2. Giảm số lượng sinh viên đã đăng ký trong ClassGroup
-      // Chỉ giảm nếu trạng thái trước đó là ENROLLED (có thể có các trạng thái khác trong tương lai)
-      // Hàm decrementRegistered cần được điều chỉnh để chỉ giảm khi cần thiết, hoặc kiểm tra ở đây
       await this.classGroupService.decrementRegistered(
         enrollment.classGroupId,
         1,

@@ -17,14 +17,15 @@ import { EUserRole } from 'src/utils/enums/user.enum';
 import { Roles } from 'src/decorators/roles.decorator';
 import { CreateClassDto } from './dtos/createClass.dto';
 import { UpdateClassDto } from './dtos/updateClass.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 
-@ApiTags('classes')
+@ApiTags('Classes')
 @UseGuards(JwtAuthGuard)
 @Controller('classes')
+@ApiBearerAuth('token')
 export class ClassController {
   constructor(private readonly classService: ClassService) {}
 

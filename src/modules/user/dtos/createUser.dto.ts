@@ -14,7 +14,7 @@ import { PASSWORD_VALID_REGEX, PHONE_NUMBER_REGEX } from 'src/utils/constants';
 export class CreateUserDto {
   @IsNotEmpty()
   @IsEmail()
-  email: string;
+  personal_email: string;
 
   @IsNotEmpty()
   @Matches(PASSWORD_VALID_REGEX, {

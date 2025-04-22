@@ -1,31 +1,4 @@
-import { IsInt, IsDateString, IsOptional } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { CreateCurriculumDto } from './createCurriculum.dto';
 
-export class UpdateCurriculumDto {
-  @IsOptional()
-  @IsInt()
-  totalCreditsRequired?: number;
-
-  @IsOptional()
-  @IsInt()
-  electiveCreditsRequired?: number;
-
-  @IsOptional()
-  @IsDateString()
-  effectiveDate?: Date;
-
-  @IsOptional()
-  @IsDateString()
-  expiryDate?: Date;
-
-  @IsOptional()
-  @IsInt()
-  majorId?: number;
-
-  @IsOptional()
-  @IsInt()
-  startAcademicYear?: number;
-
-  @IsOptional()
-  @IsInt()
-  endAcademicYear?: number;
-}
+export class UpdateCurriculumDto extends PartialType(CreateCurriculumDto) {}

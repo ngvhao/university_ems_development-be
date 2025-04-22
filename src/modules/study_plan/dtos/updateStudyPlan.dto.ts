@@ -1,23 +1,4 @@
-import { IsInt, IsString, IsDateString, IsOptional } from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { CreateStudyPlanDto } from './createStudyPlan.dto';
 
-export class UpdateStudyPlanDto {
-  @IsOptional()
-  @IsInt()
-  studentId?: number;
-
-  @IsOptional()
-  @IsInt()
-  semesterId?: number;
-
-  @IsOptional()
-  @IsInt()
-  courseId?: number;
-
-  @IsOptional()
-  @IsString()
-  status?: string;
-
-  @IsOptional()
-  @IsDateString()
-  plannedDate?: Date;
-}
+export class UpdateStudyPlanDto extends PartialType(CreateStudyPlanDto) {}

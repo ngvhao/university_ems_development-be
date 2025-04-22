@@ -24,13 +24,6 @@ export class CourseSemesterEntity extends IEntity {
     enum: ERegistrationStatus,
     default: ERegistrationStatus.CLOSED,
   })
-  preRegistrationStatus: ERegistrationStatus;
-
-  @Column({
-    type: 'enum',
-    enum: ERegistrationStatus,
-    default: ERegistrationStatus.CLOSED,
-  })
   registrationStatus: ERegistrationStatus;
 
   @Column({ type: 'int', default: 0 })

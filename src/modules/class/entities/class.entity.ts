@@ -16,6 +16,7 @@ export class ClassEntity extends IEntity {
   students: StudentEntity[];
 
   @ManyToOne(() => MajorEntity, (major) => major.classes)
+  @JoinColumn({ name: 'majorId' })
   major: MajorEntity;
 
   @Column({ nullable: false })

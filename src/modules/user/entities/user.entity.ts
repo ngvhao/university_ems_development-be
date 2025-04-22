@@ -7,7 +7,11 @@ import { Column, Entity, OneToOne } from 'typeorm';
 @Entity('users')
 export class UserEntity extends IEntity {
   @Column({ unique: true })
-  email: string;
+  university_email: string;
+
+  // @Column({ unique: true })
+  @Column()
+  personal_email: string;
 
   @Column()
   password: string;

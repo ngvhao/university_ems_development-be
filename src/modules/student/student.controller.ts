@@ -10,7 +10,6 @@ import {
   ParseIntPipe,
   Res,
   UseGuards,
-  BadRequestException,
 } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { Response } from 'express';
@@ -24,7 +23,9 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { FilterStudentDto } from './dtos/filterStudent.dto';
 import { UpdateStudentDto } from './dtos/updateStudent.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Students')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('students')
 export class StudentController {
@@ -36,10 +37,10 @@ export class StudentController {
   @Roles([EUserRole[EUserRole.ADMINISTRATOR]])
   @Post()
   async createStudent(@Body() data: CreateStudentDto, @Res() res: Response) {
-    const user = await this.userService.getUserByEmail(data.email);
-    if (user) {
-      throw new BadRequestException('Email already exists');
-    }
+    // const user = await this.userService.getUserByEmail(data.email);
+    // if (user) {
+    //   throw new BadRequestException('Email already exists');
+    // }
     const hashedPassword = await Helpers.hashPassword({
       password: data.password,
     });

@@ -20,7 +20,9 @@ import { Response } from 'express';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { CreateRoomDto } from './dtos/createRoom.dto';
 import { UpdateRoomDto } from './dtos/updateRoom.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Rooms')
 @UseGuards(JwtAuthGuard)
 @Controller('rooms')
 export class RoomController {

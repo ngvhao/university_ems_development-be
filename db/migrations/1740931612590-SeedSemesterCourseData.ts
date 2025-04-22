@@ -10,33 +10,33 @@ export class SeedSemesterCourseData1740931612590 implements MigrationInterface {
           `);
 
     await queryRunner.query(`
-            INSERT INTO courses ("courseCode", name, credit, description, "majorId") VALUES
-            ('CS101', 'Introduction to Programming', 3, 'Basic programming concepts', 1),
-            ('CS102', 'Data Structures', 4, 'Fundamental data structures', 1),
-            ('CS103', 'Algorithms', 4, 'Basic algorithms', 1),
-            ('MATH101', 'Calculus I', 3, 'Introduction to calculus', 1),
-            ('ENG101', 'English for Academic Purposes', 2, 'English skills for university', 1);
+            INSERT INTO courses ("courseCode", name, credit, description) VALUES
+            ('CS101', 'Introduction to Programming', 3, 'Basic programming concepts'),
+            ('CS102', 'Data Structures', 4, 'Fundamental data structures'),
+            ('CS103', 'Algorithms', 4, 'Basic algorithms'),
+            ('MATH101', 'Calculus I', 3, 'Introduction to calculus'),
+            ('ENG101', 'English for Academic Purposes', 2, 'English skills for university');
           `);
 
-    await queryRunner.query(`
-            UPDATE courses SET "prerequisiteCourseId" = 1 WHERE "courseCode" = 'CS102';
-            UPDATE courses SET "prerequisiteCourseId" = 2 WHERE "courseCode" = 'CS103';
-          `);
+    // await queryRunner.query(`
+    //         UPDATE courses SET "prerequisiteCourseId" = 1 WHERE "courseCode" = 'CS102';
+    //         UPDATE courses SET "prerequisiteCourseId" = 2 WHERE "courseCode" = 'CS103';
+    //       `);
 
-    await queryRunner.query(`
-            INSERT INTO course_semesters ("courseId", "semesterId", "maxStudents") VALUES
-            (1, 1, 50),
-            (2, 2, 50),
-            (3, 3, 50),
-            (4, 1, 50),
-            (5, 2, 50);
-          `);
-  }
+    // await queryRunner.query(`
+    //         INSERT INTO course_semesters ("courseId", "semesterId", "maxStudents") VALUES
+    //         (1, 1, 50),
+    //         (2, 2, 50),
+    //         (3, 3, 50),
+    //         (4, 1, 50),
+    //         (5, 2, 50);
+    //       `);
+    }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`
-        DELETE FROM course_semesters WHERE "courseId" IN (1, 2, 3, 4, 5);
-      `);
+    // await queryRunner.query(`
+    //     DELETE FROM course_semesters WHERE "courseId" IN (1, 2, 3, 4, 5);
+    //   `);
     await queryRunner.query(`
         DELETE FROM courses WHERE "courseCode" IN ('CS101', 'CS102', 'CS103', 'MATH101', 'ENG101');
       `);

@@ -15,18 +15,20 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { JwtService } from '@nestjs/jwt';
 import { jwtConstants } from 'src/utils/constants';
 import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
-import { AuthService } from './auth.service';
 import { SuccessResponse } from 'src/utils/response';
 import { AuthHelpers } from 'src/utils/auth-helpers';
+import { ApiBody, ApiTags } from '@nestjs/swagger';
 
 @Controller('auth')
+@ApiTags('Auth')
 export class AuthController {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly authService: AuthService,
+    // private readonly authService: AuthService,
   ) {}
 
   @UseGuards(LocalAuthGuard)
+  @ApiBody({ type: LoginDto })
   @Post('/login')
   async login(
     @Body() _body: LoginDto,

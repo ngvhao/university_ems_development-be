@@ -20,7 +20,9 @@ import { UpdateMajorDto } from './dtos/updateMajor.dto';
 import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Majors')
 @UseGuards(JwtAuthGuard)
 @Controller('majors')
 export class MajorController {
