@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { MajorEntity } from 'src/modules/major/entities/major.entity';
 import { CurriculumCourseEntity } from 'src/modules/curriculum_course/entities/curriculum_course.entity';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity('curriculums')

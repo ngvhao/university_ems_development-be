@@ -2,7 +2,7 @@
 import { ClassEntity } from 'src/modules/class/entities/class.entity';
 import { DepartmentEntity } from 'src/modules/department/entities/department.entity';
 import { UserEntity } from 'src/modules/user/entities/user.entity';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import {
   Entity,
   Column,

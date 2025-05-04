@@ -1,6 +1,6 @@
 import { DepartmentEntity } from 'src/modules/department/entities/department.entity';
 import { FacultyRegistrationScheduleEntity } from 'src/modules/faculty_registration_schedule/entities/faculty_registration_schedule.entity';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { Entity, Column, OneToMany, Index } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 

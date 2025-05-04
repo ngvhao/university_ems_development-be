@@ -1,7 +1,7 @@
 import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { CourseEntity } from 'src/modules/course/entities/course.entity';
 import { MajorEntity } from 'src/modules/major/entities/major.entity';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { ApiProperty } from '@nestjs/swagger';
 
 @Entity('course_major')

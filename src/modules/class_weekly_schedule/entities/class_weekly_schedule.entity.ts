@@ -1,5 +1,5 @@
 import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.entity';
 import { RoomEntity } from 'src/modules/room/entities/room.entity';
 import { EDayOfWeek } from 'src/utils/enums/schedule.enum';

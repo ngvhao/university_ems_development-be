@@ -2,7 +2,7 @@ import { CourseSemesterEntity } from 'src/modules/course_semester/entities/cours
 import { Entity, Column, OneToMany } from 'typeorm';
 import { CurriculumCourseEntity } from 'src/modules/curriculum_course/entities/curriculum_course.entity';
 import { StudyPlanEntity } from 'src/modules/study_plan/entities/study_plan.entity';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { ECourseType } from 'src/utils/enums/course-type.enum';
 import { CourseMajorEntity } from 'src/modules/course_major/entities/course_major.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';

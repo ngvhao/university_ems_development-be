@@ -7,7 +7,7 @@ import {
   OneToMany,
   Index,
 } from 'typeorm';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { UserEntity } from 'src/modules/user/entities/user.entity';
 import { MajorEntity } from 'src/modules/major/entities/major.entity';
 import { ClassEntity } from 'src/modules/class/entities/class.entity';

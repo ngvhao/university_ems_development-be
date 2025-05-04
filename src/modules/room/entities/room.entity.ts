@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { RoomType } from 'src/utils/enums/room.enum';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { Entity, Column } from 'typeorm';
 
 @Entity('rooms')

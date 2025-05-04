@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LecturerEntity } from 'src/modules/lecturer/entities/lecturer.entity';
 import { StudentEntity } from 'src/modules/student/entities/student.entity';
 import { EAccountStatus, EUserRole } from 'src/utils/enums/user.enum';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { Column, Entity, OneToOne, Index } from 'typeorm';
 
 @Entity('users')

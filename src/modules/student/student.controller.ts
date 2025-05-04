@@ -77,11 +77,11 @@ export class StudentController {
     description: 'Lỗi máy chủ nội bộ.',
   })
   async createStudent(@Body() data: CreateStudentDto, @Res() res: Response) {
-    const newUserInfo = await this.studentService.createStudent(data);
+    await this.studentService.testQueue(data);
     return new SuccessResponse({
       message: 'Tạo sinh viên thành công',
       statusCode: HttpStatus.CREATED,
-      data: newUserInfo,
+      data: null,
     }).send(res);
   }
 

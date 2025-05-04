@@ -3,7 +3,7 @@ import { CourseMajorEntity } from 'src/modules/course_major/entities/course_majo
 import { CurriculumEntity } from 'src/modules/curriculum/entities/curriculum.entity';
 import { DepartmentEntity } from 'src/modules/department/entities/department.entity';
 import { StudentEntity } from 'src/modules/student/entities/student.entity';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import {
   Entity,
   Column,

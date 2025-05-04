@@ -31,6 +31,7 @@ import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { Helpers } from 'src/utils/helpers';
 import { UserService } from '../user/user.service';
 import { EFacultyCode } from 'src/utils/enums/faculty.enum';
+import { QueueProducer } from 'src/common/queue/queue.producer';
 
 @Injectable()
 export class StudentService {
@@ -40,7 +41,16 @@ export class StudentService {
     private studentRepository: Repository<StudentEntity>,
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
+    private readonly queueProducer: QueueProducer,
   ) {}
+
+  async testQueue(studentDTO: CreateStudentDto): Promise<void> {
+    console.log('Queue sent');
+    await this.queueProducer.produce(process.env.QUEUE_STUDENT_CREATION_URL, {
+      type: 'student',
+      data: studentDTO,
+    });
+  }
 
   /**
    * Tạo mới một sinh viên bao gồm cả việc tạo tài khoản người dùng liên kết.

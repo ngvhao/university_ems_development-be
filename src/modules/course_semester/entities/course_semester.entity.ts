@@ -2,7 +2,7 @@ import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.e
 import { CourseEntity } from 'src/modules/course/entities/course.entity';
 import { SemesterEntity } from 'src/modules/semester/entities/semester.entity';
 import { ERegistrationStatus } from 'src/utils/enums/course.enum';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { Entity, ManyToOne, JoinColumn, Column, OneToMany } from 'typeorm';
 
 @Entity('course_semesters')

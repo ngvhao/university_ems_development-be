@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { StudentEntity } from 'src/modules/student/entities/student.entity';
 import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.entity';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { EEnrollmentStatus } from 'src/utils/enums/course.enum';
 import { ApiProperty } from '@nestjs/swagger';
 

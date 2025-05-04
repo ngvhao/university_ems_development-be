@@ -3,7 +3,7 @@ import { CourseSemesterEntity } from 'src/modules/course_semester/entities/cours
 import { CurriculumCourseEntity } from 'src/modules/curriculum_course/entities/curriculum_course.entity';
 import { FacultyRegistrationScheduleEntity } from 'src/modules/faculty_registration_schedule/entities/faculty_registration_schedule.entity';
 import { StudyPlanEntity } from 'src/modules/study_plan/entities/study_plan.entity';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { Entity, Column, OneToMany } from 'typeorm';
 
 @Entity('semesters')

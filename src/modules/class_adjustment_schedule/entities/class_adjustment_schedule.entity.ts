@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.entity';
 import { RoomEntity } from 'src/modules/room/entities/room.entity';
 import { TimeSlotEntity } from 'src/modules/time_slot/entities/time_slot.entity';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity('class_adjustment_schedules')

@@ -3,7 +3,7 @@ import { Type } from 'class-transformer';
 import { FacultyEntity } from 'src/modules/faculty/entities/faculty.entity';
 import { SemesterEntity } from 'src/modules/semester/entities/semester.entity';
 import { EFacultyRegistrationScheduleStatus } from 'src/utils/enums/faculty.enum';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { ApiProperty } from '@nestjs/swagger';
 
 @Entity('faculty_registration_schedules')

@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { CourseSemesterEntity } from 'src/modules/course_semester/entities/course_semester.entity';
 import { EnrollmentCourseEntity } from 'src/modules/enrollment_course/entities/enrollment_course.entity';
 import { EClassGroupStatus } from 'src/utils/enums/class.enum';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import {
   Entity,
   Column,

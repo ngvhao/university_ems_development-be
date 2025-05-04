@@ -27,6 +27,23 @@ functions:
           method: ANY
           path: '{proxy+}'
 
+  studentQueueHandler:
+    handler: dist/src/handler/createStudentHandler.handler
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - StudentQueue
+              - Arn
+
+resources:
+  Resources:
+    StudentQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: student-creation-queue.fifo
+        FifoQueue: true
+
 custom:
   dotenv:
     exclude:

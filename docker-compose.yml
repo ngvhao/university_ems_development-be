@@ -24,5 +24,18 @@ services:
     depends_on:
       - postgres
 
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    ports:
+      - '4566:4566'
+    environment:
+      - SERVICES=sqs
+      - DEBUG=1
+      - DATA_DIR=/var/lib/localstack
+    volumes:
+      - ./localstack_data:/var/lib/localstack
+
 volumes:
   postgres_data:
+  localstack_data:

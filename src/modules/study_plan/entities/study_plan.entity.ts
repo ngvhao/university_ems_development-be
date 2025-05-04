@@ -2,7 +2,7 @@ import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { StudentEntity } from 'src/modules/student/entities/student.entity';
 import { SemesterEntity } from 'src/modules/semester/entities/semester.entity';
 import { CourseEntity } from 'src/modules/course/entities/course.entity';
-import { IEntity } from 'src/utils/interfaces/IEntity';
+import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { EStudyPlanStatus } from 'src/utils/enums/study-plan.enum';
 import { ApiProperty } from '@nestjs/swagger';
 
