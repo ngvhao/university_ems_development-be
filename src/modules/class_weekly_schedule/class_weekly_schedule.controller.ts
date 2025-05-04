@@ -11,8 +11,18 @@ import {
   Res,
   UseGuards,
   UseInterceptors,
+  ParseIntPipe,
+  HttpStatus,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiQuery,
+  ApiBody,
+} from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { JwtAuthGuard } from 'src/modules/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/modules/auth/guards/roles.guard';
@@ -25,8 +35,10 @@ import { UpdateClassWeeklyScheduleDto } from './dtos/updateClassWeeklySchedule.d
 import { StudentInterceptor } from 'src/interceptors/get-student.interceptor';
 import { RequestHasStudentDto } from 'src/utils/request-has-student-dto';
 import { ClassWeeklyScheduleService } from './class_weekly_schedule.service';
+import { ClassWeeklyScheduleEntity } from './entities/class_weekly_schedule.entity';
 
-@ApiTags('ClassWeeklySchedules')
+@ApiTags('Quản lý Lịch học Hàng tuần (Class Weekly Schedules)')
+@ApiBearerAuth('token')
 @UseGuards(JwtAuthGuard)
 @Controller('class-weekly-schedules')
 export class ClassWeeklyScheduleController {
@@ -34,107 +46,255 @@ export class ClassWeeklyScheduleController {
     private readonly classWeeklyScheduleService: ClassWeeklyScheduleService,
   ) {}
 
-  @UseGuards(RolesGuard)
-  @Roles([
-    EUserRole[EUserRole.ACADEMIC_MANAGER],
-    EUserRole[EUserRole.ADMINISTRATOR],
-  ])
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @ApiOperation({ summary: 'Tạo một lịch học hàng tuần mới' })
+  @ApiBody({ type: CreateClassWeeklyScheduleDto })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Tạo lịch học thành công.',
+    type: ClassWeeklyScheduleEntity,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dữ liệu không hợp lệ.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền thực hiện.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy Nhóm lớp, Phòng hoặc Khung giờ.',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description:
+      'Lịch học bị trùng lặp (cùng nhóm, ngày, giờ hoặc cùng phòng, ngày, giờ).',
+  })
   async create(
     @Body() dto: CreateClassWeeklyScheduleDto,
     @Res() res: Response,
   ) {
     const data = await this.classWeeklyScheduleService.create(dto);
     return new SuccessResponse({
+      statusCode: HttpStatus.CREATED,
       data,
-      message: 'Create class weekly schedule successfully',
+      message: 'Tạo lịch học hàng tuần thành công',
     }).send(res);
   }
 
   @Get()
+  @ApiOperation({ summary: 'Lấy danh sách lịch học hàng tuần (có phân trang)' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng kết quả mỗi trang',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách lịch học thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
   async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
     const { data, meta } =
       await this.classWeeklyScheduleService.findAll(paginationDto);
     return new SuccessResponse({
       data,
       metadata: meta,
-      message: 'Get all class weekly schedules successfully',
+      message: 'Lấy danh sách lịch học hàng tuần thành công',
     }).send(res);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles([
-    EUserRole[EUserRole.ACADEMIC_MANAGER],
-    EUserRole[EUserRole.ADMINISTRATOR],
-  ])
   @Get('student/:studentId')
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @ApiOperation({
+    summary: '[Admin/Academic] Lấy lịch học của một sinh viên cụ thể',
+  })
+  @ApiParam({
+    name: 'studentId',
+    type: Number,
+    description: 'ID của sinh viên cần xem lịch',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy lịch học của sinh viên thành công.',
+    type: [ClassWeeklyScheduleEntity],
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền thực hiện.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy sinh viên.',
+  })
   async getScheduleByStudentId(
-    @Param('studentId') studentId: number,
+    @Param('studentId', ParseIntPipe) studentId: number,
     @Res() res: Response,
   ) {
     const data =
       await this.classWeeklyScheduleService.getScheduleByStudentId(studentId);
     return new SuccessResponse({
       data,
-      message: 'Get student schedule successfully',
+      message: `Lấy lịch học của sinh viên ID ${studentId} thành công`,
     }).send(res);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles([EUserRole[EUserRole.STUDENT]])
-  @UseInterceptors(StudentInterceptor)
   @Get('student/my-schedule')
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.STUDENT])
+  @UseInterceptors(StudentInterceptor)
+  @ApiOperation({ summary: '[Student] Lấy lịch học cá nhân' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy lịch học cá nhân thành công.',
+    type: [ClassWeeklyScheduleEntity],
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực hoặc không phải sinh viên.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền (ví dụ: không phải là sinh viên).',
+  })
   async getMySchedule(
     @Req() req: RequestHasStudentDto & Request,
     @Res() res: Response,
   ) {
-    const student = req.student;
+    const student = req.student!;
     const data = await this.classWeeklyScheduleService.getScheduleByStudentId(
       student.id,
     );
     return new SuccessResponse({
       data,
-      message: 'Get your schedule successfully',
+      message: 'Lấy lịch học cá nhân thành công',
     }).send(res);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number, @Res() res: Response) {
+  @ApiOperation({
+    summary: 'Lấy thông tin chi tiết một lịch học hàng tuần bằng ID',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'ID của lịch học' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy thông tin lịch học thành công.',
+    type: ClassWeeklyScheduleEntity,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy lịch học.',
+  })
+  async findOne(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
     const data = await this.classWeeklyScheduleService.findOne(id);
     return new SuccessResponse({
       data,
-      message: 'Get class weekly schedule successfully',
+      message: 'Lấy thông tin lịch học hàng tuần thành công',
     }).send(res);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles([
-    EUserRole[EUserRole.ACADEMIC_MANAGER],
-    EUserRole[EUserRole.ADMINISTRATOR],
-  ])
   @Patch(':id')
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @ApiOperation({ summary: 'Cập nhật thông tin một lịch học hàng tuần' })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'ID của lịch học cần cập nhật',
+  })
+  @ApiBody({ type: UpdateClassWeeklyScheduleDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Cập nhật lịch học thành công.',
+    type: ClassWeeklyScheduleEntity,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dữ liệu không hợp lệ.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền thực hiện.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy lịch học hoặc Nhóm lớp/Phòng/Khung giờ mới.',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Lịch học cập nhật bị trùng lặp.',
+  })
   async update(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateClassWeeklyScheduleDto,
     @Res() res: Response,
   ) {
     const data = await this.classWeeklyScheduleService.update(id, dto);
     return new SuccessResponse({
       data,
-      message: 'Update class weekly schedule successfully',
+      message: 'Cập nhật lịch học hàng tuần thành công',
     }).send(res);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles([
-    EUserRole[EUserRole.ACADEMIC_MANAGER],
-    EUserRole[EUserRole.ADMINISTRATOR],
-  ])
   @Delete(':id')
-  async remove(@Param('id') id: number, @Res() res: Response) {
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @ApiOperation({ summary: 'Xóa một lịch học hàng tuần' })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'ID của lịch học cần xóa',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Xóa lịch học thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền thực hiện.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy lịch học.',
+  })
+  async remove(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
     await this.classWeeklyScheduleService.remove(id);
     return new SuccessResponse({
-      message: 'Delete class weekly schedule successfully',
+      message: 'Xóa lịch học hàng tuần thành công',
     }).send(res);
   }
 }

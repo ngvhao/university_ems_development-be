@@ -6,13 +6,12 @@ import {
   ForbiddenException,
   Inject,
   forwardRef,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, FindManyOptions } from 'typeorm';
+import { Repository, DataSource, FindOptionsWhere } from 'typeorm';
 import { EnrollmentCourseEntity } from './entities/enrollment_course.entity';
 import { StudentService } from 'src/modules/student/student.service';
-import { ClassGroupService } from 'src/modules/class_group/class_group.service';
-
 import { EUserRole } from 'src/utils/enums/user.enum';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
@@ -22,6 +21,7 @@ import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { CreateEnrollmentCourseDto } from './dtos/createEnrollmentCourse.dto';
 import { FilterEnrollmentCourseDto } from './dtos/filterEnrollmentCourse.dto';
 import { UserEntity } from '../user/entities/user.entity';
+import { ClassGroupEntity } from '../class_group/entities/class_group.entity';
 
 @Injectable()
 export class EnrollmentCourseService {
@@ -31,10 +31,74 @@ export class EnrollmentCourseService {
     private readonly dataSource: DataSource,
     @Inject(forwardRef(() => StudentService))
     private readonly studentService: StudentService,
-    @Inject(forwardRef(() => ClassGroupService))
-    private readonly classGroupService: ClassGroupService,
   ) {}
 
+  /**
+   * Helper: Tìm Enrollment theo ID, ném lỗi nếu không tìm thấy.
+   * @param id - ID của Enrollment.
+   * @param relations - Các mối quan hệ cần load.
+   * @returns Promise<EnrollmentCourseEntity> - Enrollment tìm được.
+   * @throws NotFoundException nếu không tìm thấy.
+   */
+  private async findEnrollmentByIdOrThrow(
+    id: number,
+    relations?: string[],
+  ): Promise<EnrollmentCourseEntity> {
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: { id },
+      relations,
+    });
+    if (!enrollment) {
+      throw new NotFoundException(`Không tìm thấy lượt đăng ký với ID ${id}`);
+    }
+    return enrollment;
+  }
+
+  /**
+   * Helper: Kiểm tra quyền truy cập enrollment của người dùng hiện tại.
+   * @param enrollment - Bản ghi enrollment cần kiểm tra.
+   * @param currentUser - Thông tin người dùng hiện tại.
+   * @throws ForbiddenException nếu không có quyền.
+   */
+  private async checkEnrollmentAccessPermission(
+    enrollment: EnrollmentCourseEntity,
+    currentUser: UserEntity,
+  ): Promise<void> {
+    if (!currentUser) {
+      throw new ForbiddenException('Hành động yêu cầu xác thực.');
+    }
+
+    if (
+      [EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER].includes(
+        currentUser.role,
+      )
+    ) {
+      return;
+    }
+    if (currentUser.role === EUserRole.STUDENT) {
+      const studentProfile = await this.studentService.findOneById(
+        currentUser.id,
+      );
+      if (!studentProfile || enrollment.studentId !== studentProfile.id) {
+        throw new ForbiddenException(
+          'Bạn không có quyền truy cập lượt đăng ký này.',
+        );
+      }
+      return;
+    }
+    throw new ForbiddenException('Bạn không có quyền thực hiện hành động này.');
+  }
+
+  /**
+   * Tạo một lượt đăng ký môn học mới.
+   * @param createDto - Dữ liệu đăng ký.
+   * @param currentUser - Thông tin người dùng thực hiện hành động.
+   * @returns Promise<EnrollmentCourseEntity> - Lượt đăng ký vừa tạo.
+   * @throws BadRequestException nếu thiếu studentId (khi admin/manager tạo) hoặc lớp không mở/đã đầy.
+   * @throws ForbiddenException nếu không có quyền hoặc user không có profile student.
+   * @throws ConflictException nếu sinh viên đã đăng ký lớp này rồi.
+   * @throws NotFoundException nếu ClassGroup hoặc Student (nếu studentId được cung cấp) không tồn tại.
+   */
   async create(
     createDto: CreateEnrollmentCourseDto,
     currentUser: UserEntity,
@@ -42,34 +106,33 @@ export class EnrollmentCourseService {
     const { classGroupId } = createDto;
     let studentId = createDto.studentId;
 
-    // Xác định studentId: Ưu tiên studentId từ DTO (nếu là admin/manager), nếu không thì lấy từ currentUser (nếu là student)
     if (!studentId) {
+      // Trường hợp student tự đăng ký
       if (currentUser.role !== EUserRole.STUDENT) {
-        throw new BadRequestException(
-          'studentId is required when enrolling by admin/manager.',
-        );
+        throw new ForbiddenException('Chỉ sinh viên mới có thể tự đăng ký.');
       }
-      const { id: studentIdExist } = await this.studentService.getOne({
-        user: { id: currentUser.id },
-      });
-      if (!studentIdExist) {
+      const studentProfile = await this.studentService.findOneById(
+        currentUser.id,
+      );
+      if (!studentProfile) {
         throw new ForbiddenException(
-          'User does not have a linked student profile.',
+          'Tài khoản của bạn chưa được liên kết với hồ sơ sinh viên.',
         );
       }
-      studentId = studentIdExist;
+      studentId = studentProfile.id;
     } else {
+      // Trường hợp admin/manager đăng ký cho sinh viên
       if (
-        currentUser.role !== EUserRole.STUDENT &&
-        ![
-          EUserRole[EUserRole.ACADEMIC_MANAGER],
-          EUserRole[EUserRole.ADMINISTRATOR],
-        ].includes(EUserRole[currentUser.role])
+        ![EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER].includes(
+          currentUser.role,
+        )
       ) {
         throw new ForbiddenException(
-          'Insufficient permissions to enroll other students.',
+          'Bạn không có quyền đăng ký cho sinh viên khác.',
         );
       }
+      // Kiểm tra studentId được cung cấp có tồn tại không
+      await this.studentService.findOneById(studentId);
     }
 
     // --- Bắt đầu Transaction ---
@@ -78,22 +141,31 @@ export class EnrollmentCourseService {
     await queryRunner.startTransaction();
 
     try {
-      // 1. Kiểm tra ClassGroup tồn tại và trạng thái
-      const classGroup = await this.classGroupService.findOne(classGroupId); // findOne đã bao gồm kiểm tra tồn tại
+      // Lock ClassGroup để tránh race condition khi kiểm tra và cập nhật số lượng
+      const classGroup = await queryRunner.manager.findOne(ClassGroupEntity, {
+        where: { id: classGroupId },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!classGroup) {
+        throw new NotFoundException(
+          `Không tìm thấy Nhóm lớp học với ID ${classGroupId}`,
+        );
+      }
+
+      // Kiểm tra trạng thái và số lượng chỗ trống của ClassGroup
       if (classGroup.status !== EClassGroupStatus.OPEN) {
         throw new BadRequestException(
-          `Class Group ID ${classGroupId} is not open for enrollment (status: ${classGroup.status}).`,
+          `Nhóm lớp học ID ${classGroupId} không mở để đăng ký (trạng thái: ${classGroup.status}).`,
         );
       }
-
-      // 2. Kiểm tra số lượng chỗ trống
       if (classGroup.registeredStudents >= classGroup.maxStudents) {
         throw new BadRequestException(
-          `Class Group ID ${classGroupId} is full (${classGroup.registeredStudents}/${classGroup.maxStudents}).`,
+          `Nhóm lớp học ID ${classGroupId} đã đầy (${classGroup.registeredStudents}/${classGroup.maxStudents}).`,
         );
       }
 
-      // 3. Kiểm tra sinh viên đã đăng ký nhóm này chưa (trạng thái ENROLLED)
+      // Kiểm tra sinh viên đã đăng ký nhóm này chưa
       const existingEnrollment = await queryRunner.manager.findOne(
         EnrollmentCourseEntity,
         {
@@ -102,60 +174,106 @@ export class EnrollmentCourseService {
             classGroupId,
             status: EEnrollmentStatus.ENROLLED,
           },
+          select: ['id'],
         },
       );
       if (existingEnrollment) {
         throw new ConflictException(
-          `Student ID ${studentId} is already enrolled in Class Group ID ${classGroupId}.`,
+          `Sinh viên ID ${studentId} đã đăng ký Nhóm lớp học ID ${classGroupId}.`,
         );
       }
 
-      // 4. Tạo bản ghi Enrollment mới (hoặc cập nhật nếu đã CANCELLED trước đó - tùy logic)
-      // Ví dụ: Luôn tạo mới theo unique constraint
-      const newEnrollment = queryRunner.manager.create(EnrollmentCourseEntity, {
+      // Tạo bản ghi Enrollment mới
+      const newEnrollmentData = {
         studentId,
         classGroupId,
-        status: createDto.status || EEnrollmentStatus.ENROLLED, // Mặc định là ENROLLED
-      });
+        status: EEnrollmentStatus.ENROLLED,
+      };
+      const newEnrollment = queryRunner.manager.create(
+        EnrollmentCourseEntity,
+        newEnrollmentData,
+      );
       const savedEnrollment = await queryRunner.manager.save(newEnrollment);
 
-      // 5. Tăng số lượng sinh viên đã đăng ký trong ClassGroup
-      await this.classGroupService.incrementRegistered(classGroupId, 1); // Dùng hàm đã có trong ClassGroupService
+      // Tăng số lượng sinh viên đã đăng ký trong ClassGroup
+      await queryRunner.manager.update(ClassGroupEntity, classGroupId, {
+        registeredStudents: () => `"registeredStudents" + 1`,
+      });
+      // Cập nhật trạng thái lớp
+      if (classGroup.registeredStudents + 1 === classGroup.maxStudents) {
+        await queryRunner.manager.update(ClassGroupEntity, classGroupId, {
+          status: EClassGroupStatus.CLOSED,
+        });
+      }
 
-      // --- Commit Transaction ---
       await queryRunner.commitTransaction();
-      return savedEnrollment; // Trả về bản ghi enrollment đã lưu
+
+      return this.findEnrollmentByIdOrThrow(savedEnrollment.id, [
+        'student',
+        'classGroup',
+      ]);
     } catch (error) {
-      // --- Rollback Transaction ---
       await queryRunner.rollbackTransaction();
-      // Rethrow lỗi để controller xử lý
+      if (
+        error instanceof ConflictException ||
+        (error.code === '23505' &&
+          error.detail?.includes('(studentId, classGroupId)'))
+      ) {
+        throw new ConflictException(
+          `Sinh viên ID ${studentId} có thể đã đăng ký Nhóm lớp học ID ${classGroupId}.`,
+        );
+      }
       throw error;
     } finally {
-      // --- Release Query Runner ---
       await queryRunner.release();
     }
   }
 
+  /**
+   * Lấy danh sách các lượt đăng ký (có phân trang và lọc).
+   * Áp dụng tự động lọc theo sinh viên nếu người dùng là STUDENT.
+   * @param paginationDto - Thông tin phân trang.
+   * @param filterDto - Thông tin lọc.
+   * @param currentUser - Thông tin người dùng hiện tại (để phân quyền).
+   * @returns Promise<{ data: EnrollmentCourseEntity[]; meta: MetaDataInterface }> - Danh sách và metadata.
+   */
   async findAll(
     paginationDto: PaginationDto,
     filterDto: FilterEnrollmentCourseDto,
-    currentUser?: UserEntity,
+    currentUser: UserEntity,
   ): Promise<{ data: EnrollmentCourseEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
-    const { studentId, classGroupId, status } = filterDto;
+    const { classGroupId, status } = filterDto;
+    let { studentId } = filterDto;
 
-    const where: FindManyOptions<EnrollmentCourseEntity>['where'] = {};
+    const where: FindOptionsWhere<EnrollmentCourseEntity> = {};
 
-    // Nếu người dùng là sinh viên và không có studentId filter, chỉ hiển thị của họ
-    if (currentUser?.role === EUserRole.STUDENT && !studentId) {
-      const { id: studentIdExist } = await this.studentService.getOne({
-        user: { id: currentUser.id },
-      });
-      // TODO: Lấy studentId từ currentUser.id hoặc currentUser.studentId
-      where.studentId = studentIdExist; // Giả sử có studentId trong IUser
-    } else if (studentId) {
-      // Nếu là admin/manager hoặc student xem của chính mình (đã check ở controller)
+    if (currentUser.role === EUserRole.STUDENT) {
+      const studentProfile = await this.studentService.findOneById(
+        currentUser.id,
+      );
+      if (!studentProfile) {
+        return { data: [], meta: generatePaginationMeta(0, page, limit) };
+      }
+
+      if (!studentId) {
+        studentId = studentProfile.id;
+      } else if (studentId !== studentProfile.id) {
+        throw new ForbiddenException(
+          'Sinh viên chỉ được xem đăng ký của chính mình.',
+        );
+      }
       where.studentId = studentId;
+    } else if (
+      [EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER].includes(
+        currentUser.role,
+      )
+    ) {
+      if (studentId) {
+        where.studentId = studentId;
+      }
+    } else {
+      return { data: [], meta: generatePaginationMeta(0, page, limit) };
     }
 
     if (classGroupId) {
@@ -165,6 +283,7 @@ export class EnrollmentCourseService {
       where.status = status;
     }
 
+    // Query dữ liệu
     const [data, total] = await this.enrollmentRepository.findAndCount({
       where,
       relations: [
@@ -173,7 +292,7 @@ export class EnrollmentCourseService {
         'classGroup.courseSemester',
         'classGroup.courseSemester.course',
         'classGroup.courseSemester.semester',
-      ], // Load nhiều thông tin hơn
+      ],
       skip: (page - 1) * limit,
       take: limit,
       order: { enrollmentDate: 'DESC' },
@@ -183,34 +302,41 @@ export class EnrollmentCourseService {
     return { data, meta };
   }
 
+  /**
+   * Lấy thông tin chi tiết một lượt đăng ký theo ID.
+   * Kiểm tra quyền truy cập của người dùng hiện tại.
+   * @param id - ID của lượt đăng ký.
+   * @param currentUser - Thông tin người dùng hiện tại.
+   * @returns Promise<EnrollmentCourseEntity> - Thông tin chi tiết.
+   * @throws NotFoundException nếu không tìm thấy.
+   * @throws ForbiddenException nếu không có quyền xem.
+   */
   async findOne(
     id: number,
-    currentUser?: UserEntity,
+    currentUser: UserEntity,
   ): Promise<EnrollmentCourseEntity> {
-    const enrollment = await this.enrollmentRepository.findOne({
-      where: { id },
-      relations: ['student', 'classGroup'],
-    });
-    if (!enrollment) {
-      throw new NotFoundException(`Enrollment with ID ${id} not found`);
-    }
+    const enrollment = await this.findEnrollmentByIdOrThrow(id, [
+      'student',
+      'classGroup',
+      'classGroup.courseSemester',
+      'classGroup.courseSemester.course',
+      'classGroup.courseSemester.semester',
+    ]);
 
-    // Authorization: Student chỉ xem được enrollment của mình
-    const { id: studentIdExist } = await this.studentService.getOne({
-      user: { id: currentUser.id },
-    });
-    if (
-      currentUser?.role === EUserRole.STUDENT &&
-      enrollment.studentId !== studentIdExist
-    ) {
-      throw new ForbiddenException(
-        'You are not authorized to view this enrollment.',
-      );
-    }
+    await this.checkEnrollmentAccessPermission(enrollment, currentUser);
 
     return enrollment;
   }
 
+  /**
+   * Hủy một lượt đăng ký môn học (chuyển trạng thái sang CANCELLED).
+   * @param id - ID của lượt đăng ký cần hủy.
+   * @param currentUser - Thông tin người dùng thực hiện.
+   * @returns Promise<EnrollmentCourseEntity> - Lượt đăng ký sau khi đã hủy.
+   * @throws NotFoundException nếu không tìm thấy lượt đăng ký.
+   * @throws ForbiddenException nếu không có quyền hủy.
+   * @throws BadRequestException nếu lượt đăng ký đã bị hủy hoặc lớp đã bị khóa.
+   */
   async cancel(
     id: number,
     currentUser: UserEntity,
@@ -225,67 +351,73 @@ export class EnrollmentCourseService {
         {
           where: { id },
           relations: ['classGroup'],
+          lock: { mode: 'pessimistic_write' },
         },
       );
 
       if (!enrollment) {
-        throw new NotFoundException(`Enrollment with ID ${id} not found`);
+        throw new NotFoundException(`Không tìm thấy lượt đăng ký với ID ${id}`);
       }
-      const { id: studentIdExist } = await this.studentService.getOne({
-        user: { id: currentUser.id },
-      });
-      if (
-        currentUser.role === EUserRole.STUDENT &&
-        enrollment.studentId !== studentIdExist
-      ) {
-        throw new ForbiddenException(
-          'You are not authorized to cancel this enrollment.',
-        );
-      }
-      if (
-        currentUser.role !== EUserRole.STUDENT &&
-        ![
-          EUserRole[EUserRole.ACADEMIC_MANAGER],
-          EUserRole[EUserRole.ADMINISTRATOR],
-        ].includes(EUserRole[currentUser.role])
-      ) {
-        throw new ForbiddenException(
-          'Insufficient permissions to cancel this enrollment.',
-        );
-      }
+
+      await this.checkEnrollmentAccessPermission(enrollment, currentUser);
 
       if (enrollment.status === EEnrollmentStatus.CANCELLED) {
         throw new BadRequestException(
-          `Enrollment ID ${id} is already cancelled.`,
+          `Lượt đăng ký ID ${id} đã bị hủy trước đó.`,
         );
       }
 
-      // Kiểm tra trạng thái lớp học có cho phép hủy không
-      if (enrollment.classGroup.status === EClassGroupStatus.LOCKED) {
+      const classGroup = await queryRunner.manager.findOne(ClassGroupEntity, {
+        where: { id: enrollment.classGroupId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!classGroup) {
+        throw new InternalServerErrorException(
+          `Không tìm thấy ClassGroup ID ${enrollment.classGroupId} liên kết với Enrollment ID ${id}.`,
+        );
+      }
+
+      if (
+        classGroup.status === EClassGroupStatus.LOCKED ||
+        classGroup.status === EClassGroupStatus.CANCELLED
+      ) {
         throw new BadRequestException(
-          `Cannot cancel enrollment because the class group (ID: ${enrollment.classGroupId}) is locked.`,
+          `Không thể hủy đăng ký vì Nhóm lớp học (ID: ${enrollment.classGroupId}) đã bị khóa hoặc hủy.`,
         );
       }
 
-      // 1. Cập nhật trạng thái Enrollment thành CANCELLED
       enrollment.status = EEnrollmentStatus.CANCELLED;
-      const updatedEnrollment = await queryRunner.manager.save(enrollment);
-
-      await this.classGroupService.decrementRegistered(
-        enrollment.classGroupId,
-        1,
+      const updatedEnrollment = await queryRunner.manager.save(
+        EnrollmentCourseEntity,
+        enrollment,
       );
 
-      // --- Commit Transaction ---
+      await queryRunner.manager.update(
+        ClassGroupEntity,
+        enrollment.classGroupId,
+        {
+          registeredStudents: () => `"registeredStudents" - 1`,
+        },
+      );
+
       await queryRunner.commitTransaction();
+
       return updatedEnrollment;
     } catch (error) {
-      // --- Rollback Transaction ---
       await queryRunner.rollbackTransaction();
       throw error;
     } finally {
-      // --- Release Query Runner ---
       await queryRunner.release();
     }
+  }
+
+  /**
+   * [Admin Only] Xóa vĩnh viễn một lượt đăng ký.
+   * @param id - ID của lượt đăng ký cần xóa.
+   * @throws NotFoundException nếu không tìm thấy.
+   */
+  async hardRemove(id: number): Promise<void> {
+    const enrollment = await this.findEnrollmentByIdOrThrow(id);
+    await this.enrollmentRepository.remove(enrollment);
   }
 }

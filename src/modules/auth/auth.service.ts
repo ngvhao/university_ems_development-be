@@ -3,17 +3,54 @@ import { UserEntity } from '../user/entities/user.entity';
 import { UserService } from '../user/user.service';
 import _ from 'lodash';
 import { Helpers } from 'src/utils/helpers';
+import { StudentService } from '../student/student.service';
+import { EUserRole } from 'src/utils/enums/user.enum';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly studentService: StudentService,
+  ) {}
 
-  async validateUser(
-    userCode: string,
+  /**
+   * Xác thực người dùng dựa trên mã sinh viên và mật khẩu.
+   * @param studentCode - Mã sinh viên.
+   * @param password - Mật khẩu của người dùng.
+   * @returns Thông tin người dùng nếu xác thực thành công, ngược lại ném ra UnauthorizedException.
+   */
+  async validateStudent(
+    studentCode: string,
     password: string,
   ): Promise<Partial<UserEntity>> {
-    const user = await this.userService.getUserByUserCode(userCode);
+    const student = await this.studentService.getStudentByStudentCode(
+      studentCode,
+      false,
+    );
+    if (!student) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    if (await Helpers.comparePassword(password, student.user.password)) {
+      return _.omit(student.user, ['password']);
+    }
+    throw new UnauthorizedException('Invalid credentials');
+  }
+
+  /**
+   * Xác thực người dùng dựa trên email và mật khẩu.
+   * @param uniEmail - Email của người dùng.
+   * @param password - Mật khẩu của người dùng.
+   * @returns Thông tin người dùng nếu xác thực thành công, ngược lại ném ra UnauthorizedException.
+   */
+  async validateOther(
+    uniEmail: string,
+    password: string,
+  ): Promise<Partial<UserEntity>> {
+    const user = await this.userService.getUserByUniEmail(uniEmail);
     if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    if (user.role === EUserRole.STUDENT) {
       throw new UnauthorizedException('Invalid credentials');
     }
     if (user && (await Helpers.comparePassword(password, user.password))) {

@@ -1,13 +1,20 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClassAdjustmentScheduleService } from './class_adjustment_schedule.service';
 import { ClassAdjustmentScheduleController } from './class_adjustment_schedule.controller';
-import { ClassAdjustmentScheduleEntity } from './entities/class_adjustment_schedule.dto';
-import { TypeOrmModule } from '@nestjs/typeorm';
-
+import { RoomModule } from 'src/modules/room/room.module';
+import { ClassGroupModule } from '../class_group/class_group.module';
+import { ClassAdjustmentScheduleEntity } from './entities/class_adjustment_schedule.entity';
+import { TimeSlotModule } from '../time_slot/time_slot.module';
 @Module({
-  imports: [TypeOrmModule.forFeature([ClassAdjustmentScheduleEntity])],
-  providers: [ClassAdjustmentScheduleService],
+  imports: [
+    TypeOrmModule.forFeature([ClassAdjustmentScheduleEntity]),
+    forwardRef(() => ClassGroupModule),
+    forwardRef(() => RoomModule),
+    forwardRef(() => TimeSlotModule),
+  ],
   controllers: [ClassAdjustmentScheduleController],
+  providers: [ClassAdjustmentScheduleService],
   exports: [ClassAdjustmentScheduleService],
 })
 export class ClassAdjustmentScheduleModule {}

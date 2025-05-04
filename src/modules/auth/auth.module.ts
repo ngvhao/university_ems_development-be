@@ -5,9 +5,10 @@ import { UserModule } from '../user/user.module';
 import { JwtService } from '@nestjs/jwt';
 import { LocalStrategy } from './strategys/local.strategy';
 import { JwtStrategy } from './strategys/jwt.strategy';
+import { StudentModule } from '../student/student.module';
 
 @Module({
-  imports: [UserModule],
+  imports: [UserModule, StudentModule],
   controllers: [AuthController],
   providers: [AuthService, JwtService, LocalStrategy, JwtStrategy],
 })

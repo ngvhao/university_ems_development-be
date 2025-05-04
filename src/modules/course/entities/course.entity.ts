@@ -5,21 +5,42 @@ import { StudyPlanEntity } from 'src/modules/study_plan/entities/study_plan.enti
 import { IEntity } from 'src/utils/interfaces/IEntity';
 import { ECourseType } from 'src/utils/enums/course-type.enum';
 import { CourseMajorEntity } from 'src/modules/course_major/entities/course_major.entity';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity('courses')
 export class CourseEntity extends IEntity {
-  @Column({ unique: true })
+  @ApiProperty({
+    description: 'Mã duy nhất của môn học',
+    example: 'IT101',
+    maxLength: 20,
+  })
+  @Column({ unique: true, length: 20, nullable: false })
   courseCode: string;
 
-  @Column()
+  @ApiProperty({
+    description: 'Tên đầy đủ của môn học',
+    example: 'Nhập môn Công nghệ Thông tin',
+    maxLength: 255,
+  })
+  @Column({ length: 255, nullable: false })
   name: string;
 
-  @Column({ type: 'int' })
+  @ApiProperty({ description: 'Số tín chỉ', example: 3, minimum: 0 })
+  @Column({ type: 'int', nullable: false })
   credit: number;
 
+  @ApiPropertyOptional({
+    description: 'Mô tả chi tiết',
+    example: 'Cung cấp kiến thức cơ bản về ngành CNTT.',
+  })
   @Column({ type: 'text', nullable: true })
-  description: string;
+  description: string | null;
 
+  @ApiProperty({
+    description: 'Loại môn học',
+    enum: ECourseType,
+    default: ECourseType.MAJOR_REQUIRED,
+  })
   @Column({
     type: 'enum',
     enum: ECourseType,
@@ -31,15 +52,12 @@ export class CourseEntity extends IEntity {
   @OneToMany(() => CourseSemesterEntity, (cs) => cs.course)
   courseSemesters: CourseSemesterEntity[];
 
-  @OneToMany(
-    () => CurriculumCourseEntity,
-    (curriculumCourse) => curriculumCourse.course,
-  )
+  @OneToMany(() => CurriculumCourseEntity, (cc) => cc.course)
   curriculumCourses: CurriculumCourseEntity[];
 
-  @OneToMany(() => StudyPlanEntity, (studyPlan) => studyPlan.course)
+  @OneToMany(() => StudyPlanEntity, (sp) => sp.course)
   studyPlans: StudyPlanEntity[];
 
-  @OneToMany(() => CourseMajorEntity, (courseMajor) => courseMajor.course)
+  @OneToMany(() => CourseMajorEntity, (cm) => cm.course)
   courseMajors: CourseMajorEntity[];
 }

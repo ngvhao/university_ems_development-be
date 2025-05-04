@@ -1,5 +1,5 @@
 export enum EFacultyCode {
-  IT = 5,
+  CNTT = 5,
   MARKETING = 7,
 }
 

@@ -10,55 +10,62 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateSemesterDto {
-  @IsString({ message: 'Semester code must be a string' })
-  @IsNotEmpty({ message: 'Semester code is required' })
-  @MaxLength(20, { message: 'Semester code must not exceed 20 characters' })
   @ApiProperty({
-    description: 'Unique code identifying the semester',
-    example: '2024-S1',
+    description: 'Mã định danh duy nhất của học kỳ',
+    example: '2024-HK1',
+    maxLength: 20,
   })
+  @IsString({ message: 'Mã học kỳ phải là chuỗi' })
+  @IsNotEmpty({ message: 'Mã học kỳ là bắt buộc' })
+  @MaxLength(20, { message: 'Mã học kỳ không được vượt quá 20 ký tự' })
   semesterCode: string;
 
-  @IsInt({ message: 'Start year must be an integer' })
-  @Min(2000, { message: 'Start year must be 2000 or later' })
-  @IsNotEmpty({ message: 'Start year is required' })
   @ApiProperty({
-    description: 'The starting year of the semester',
+    description: 'Năm bắt đầu của học kỳ',
     example: 2024,
+    minimum: 2000,
   })
+  @IsInt({ message: 'Năm bắt đầu phải là số nguyên' })
+  @Min(2000, { message: 'Năm bắt đầu phải từ 2000 trở lên' })
+  @IsNotEmpty({ message: 'Năm bắt đầu là bắt buộc' })
   startYear: number;
 
-  @IsInt({ message: 'End year must be an integer' })
-  @Min(2000, { message: 'End year must be 2000 or later' })
-  @IsNotEmpty({ message: 'End year is required' })
   @ApiProperty({
-    description: 'The ending year of the semester',
+    description: 'Năm kết thúc của học kỳ',
     example: 2024,
+    minimum: 2000,
   })
+  @IsInt({ message: 'Năm kết thúc phải là số nguyên' })
+  @Min(2000, { message: 'Năm kết thúc phải từ 2000 trở lên' })
+  @IsNotEmpty({ message: 'Năm kết thúc là bắt buộc' })
   endYear: number;
 
-  @IsEnum([1, 2, 3], { message: 'Term must be 1, 2, or 3' })
-  @IsNotEmpty({ message: 'Term is required' })
   @ApiProperty({
-    description: 'The term number of the semester (1, 2, or 3)',
+    description: 'Kỳ học trong năm (1, 2, hoặc 3)',
     example: 1,
     enum: [1, 2, 3],
   })
+  @IsEnum([1, 2, 3], { message: 'Kỳ học phải là 1, 2, hoặc 3' })
+  @IsNotEmpty({ message: 'Kỳ học là bắt buộc' })
   term: number;
 
-  @IsDateString({}, { message: 'Start date must be a valid ISO date string' })
-  @IsNotEmpty({ message: 'Start date is required' })
   @ApiProperty({
-    description: 'The start date of the semester in ISO format',
+    description: 'Ngày bắt đầu học kỳ (định dạng ISO 8601)',
     example: '2024-03-01T00:00:00Z',
+    type: String,
+    format: 'date-time',
   })
+  @IsDateString({}, { message: 'Ngày bắt đầu phải là chuỗi ngày ISO hợp lệ' })
+  @IsNotEmpty({ message: 'Ngày bắt đầu là bắt buộc' })
   startDate: Date;
 
-  @IsDateString({}, { message: 'End date must be a valid ISO date string' })
-  @IsNotEmpty({ message: 'End date is required' })
   @ApiProperty({
-    description: 'The end date of the semester in ISO format',
+    description: 'Ngày kết thúc học kỳ (định dạng ISO 8601)',
     example: '2024-06-30T23:59:59Z',
+    type: String,
+    format: 'date-time',
   })
+  @IsDateString({}, { message: 'Ngày kết thúc phải là chuỗi ngày ISO hợp lệ' })
+  @IsNotEmpty({ message: 'Ngày kết thúc là bắt buộc' })
   endDate: Date;
 }

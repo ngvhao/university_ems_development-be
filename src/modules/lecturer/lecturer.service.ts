@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsRelations, FindOptionsWhere, Repository } from 'typeorm';
 import { LecturerEntity } from './entities/lecturer.entity';
 import { CreateLecturerDto } from './dtos/createLecturer.dto';
 import { UpdateLecturerDto } from './dtos/updateLecturer.dto';
@@ -16,6 +16,7 @@ export class LecturerService {
   ) {}
 
   async create(createLecturerDto: CreateLecturerDto): Promise<LecturerEntity> {
+    // const { userDto, ...lecturerData } = createLecturerDto;
     const lecturer = this.lecturerRepository.create(createLecturerDto);
     return this.lecturerRepository.save(lecturer);
   }
@@ -47,6 +48,22 @@ export class LecturerService {
     return lecturer;
   }
 
+  async getOne(
+    condition:
+      | FindOptionsWhere<LecturerEntity>
+      | FindOptionsWhere<LecturerEntity>[],
+    relations?: FindOptionsRelations<LecturerEntity>,
+  ): Promise<LecturerEntity> {
+    const lecturer = await this.lecturerRepository.findOne({
+      where: condition,
+      relations: relations,
+    });
+    if (!lecturer) {
+      throw new NotFoundException(`Lecturer not found`);
+    }
+    return lecturer;
+  }
+
   async update(
     id: number,
     updateLecturerDto: UpdateLecturerDto,
@@ -58,5 +75,12 @@ export class LecturerService {
 
   async remove(id: number): Promise<void> {
     await this.lecturerRepository.delete(id);
+  }
+
+  async getLecturerCountByDepartmentId(departmentId: number): Promise<number> {
+    const lecturerCount = await this.lecturerRepository.count({
+      where: { departmentId: departmentId },
+    });
+    return lecturerCount;
   }
 }

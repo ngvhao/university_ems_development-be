@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { LoggerMiddleware } from './middlewares/logger.middleware';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { LectureModule } from './modules/lecturer/lecturer.module';
+import { LecturerModule } from './modules/lecturer/lecturer.module';
 import { MajorModule } from './modules/major/major.module';
 import { ClassModule } from './modules/class/class.module';
 import dataSource from 'db/data-source';
@@ -23,9 +23,9 @@ import { RoomModule } from './modules/room/room.module';
 import { CourseMajorModule } from './modules/course_major/course_major.module';
 import { ClassGroupModule } from './modules/class_group/class_group.module';
 import { FacultyRegistrationScheduleModule } from './modules/faculty_registration_schedule/faculty_registration_schedule.module';
-import { TimeSlotsModule } from './modules/time_slots/time_slots.module';
-import { ClassWeeklyScheduleModule } from './modules/class_weekly_schedule/class_weekly_schedule.module';
 import { ClassAdjustmentScheduleModule } from './modules/class_adjustment_schedule/class_adjustment_schedule.module';
+import { TimeSlotModule } from './modules/time_slot/time_slot.module';
+import { ClassWeeklyScheduleModule } from './modules/class_weekly_schedule/class_weekly_schedule.module';
 
 @Module({
   imports: [
@@ -33,7 +33,7 @@ import { ClassAdjustmentScheduleModule } from './modules/class_adjustment_schedu
     AuthModule,
     UserModule,
     StudentModule,
-    LectureModule,
+    LecturerModule,
     MajorModule,
     FacultyModule,
     ClassModule,
@@ -50,10 +50,8 @@ import { ClassAdjustmentScheduleModule } from './modules/class_adjustment_schedu
     ClassGroupModule,
     FacultyRegistrationScheduleModule,
     ClassWeeklyScheduleModule,
-    TimeSlotsModule,
-    ClassWeeklyScheduleModule,
     ClassAdjustmentScheduleModule,
-    ClassWeeklyScheduleModule,
+    TimeSlotModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,4 +1,3 @@
-// src/modules/semester/semester.controller.ts
 import {
   Body,
   Controller,
@@ -10,7 +9,10 @@ import {
   Query,
   Res,
   UseGuards,
+  ParseIntPipe,
+  HttpStatus,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { SemesterService } from './semester.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -19,22 +21,50 @@ import { Roles } from 'src/decorators/roles.decorator';
 import { CreateSemesterDto } from './dtos/createSemester.dto';
 import { UpdateSemesterDto } from './dtos/updateSemester.dto';
 import { SuccessResponse } from 'src/utils/response';
-import { Response } from 'express';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
-import { ApiTags } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBody,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 
-@ApiTags('Semesters')
+@ApiTags('Quản lý Học kỳ (Semesters)')
+@ApiBearerAuth('token')
 @UseGuards(JwtAuthGuard)
 @Controller('semesters')
 export class SemesterController {
   constructor(private readonly semesterService: SemesterService) {}
 
-  @UseGuards(RolesGuard)
-  @Roles([
-    EUserRole[EUserRole.ACADEMIC_MANAGER],
-    EUserRole[EUserRole.ADMINISTRATOR],
-  ])
   @Post()
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @ApiOperation({ summary: 'Tạo học kỳ mới' })
+  @ApiBody({ type: CreateSemesterDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description:
+      'Tạo học kỳ thành công. Dữ liệu trả về chứa thông tin học kỳ vừa tạo.',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dữ liệu không hợp lệ.',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Mã học kỳ đã tồn tại.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực hoặc token không hợp lệ.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền truy cập.',
+  })
   async create(
     @Body() createSemesterDto: CreateSemesterDto,
     @Res() res: Response,
@@ -42,57 +72,142 @@ export class SemesterController {
     const semester = await this.semesterService.create(createSemesterDto);
     return new SuccessResponse({
       data: semester,
-      message: 'Semester created',
+      message: 'Tạo học kỳ thành công.',
     }).send(res);
   }
 
   @Get()
+  @ApiOperation({ summary: 'Lấy danh sách học kỳ (phân trang)' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng mục mỗi trang',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description:
+      'Lấy danh sách học kỳ thành công. Dữ liệu trả về chứa danh sách học kỳ và các thông tin liên quan (khóa học, lịch đăng ký,...).' /* type: FindAllSemestersSuccessResponseDto */,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực hoặc token không hợp lệ.',
+  })
   async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
     const { data, meta } = await this.semesterService.findAll(paginationDto);
     return new SuccessResponse({
       data,
       metadata: meta,
-      message: 'Get all semesters successfully',
+      message: 'Lấy danh sách học kỳ thành công.',
     }).send(res);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: number, @Res() res: Response) {
+  @ApiOperation({ summary: 'Lấy chi tiết một học kỳ' })
+  @ApiParam({ name: 'id', description: 'ID của học kỳ', type: Number })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description:
+      'Lấy thông tin học kỳ thành công. Dữ liệu trả về chứa thông tin chi tiết học kỳ và các thông tin liên quan.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy học kỳ.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực hoặc token không hợp lệ.',
+  })
+  async findOne(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
     const semester = await this.semesterService.findOne(id);
     return new SuccessResponse({
       data: semester,
-      message: 'Get semester successfully',
+      message: 'Lấy thông tin học kỳ thành công.',
     }).send(res);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles([
-    EUserRole[EUserRole.ACADEMIC_MANAGER],
-    EUserRole[EUserRole.ADMINISTRATOR],
-  ])
   @Patch(':id')
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @ApiOperation({ summary: 'Cập nhật thông tin học kỳ' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID của học kỳ cần cập nhật',
+    type: Number,
+  })
+  @ApiBody({ type: UpdateSemesterDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description:
+      'Cập nhật học kỳ thành công. Dữ liệu trả về chứa thông tin học kỳ sau khi cập nhật.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy học kỳ.',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dữ liệu không hợp lệ.',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Mã học kỳ đã được sử dụng.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực hoặc token không hợp lệ.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền truy cập.',
+  })
   async update(
-    @Param('id') id: number,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateSemesterDto: UpdateSemesterDto,
     @Res() res: Response,
   ) {
     const semester = await this.semesterService.update(id, updateSemesterDto);
     return new SuccessResponse({
       data: semester,
-      message: 'Update semester successfully',
+      message: 'Cập nhật học kỳ thành công.',
     }).send(res);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles([
-    EUserRole[EUserRole.ACADEMIC_MANAGER],
-    EUserRole[EUserRole.ADMINISTRATOR],
-  ])
   @Delete(':id')
-  async remove(@Param('id') id: number, @Res() res: Response) {
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @ApiOperation({ summary: 'Xóa học kỳ' })
+  @ApiParam({ name: 'id', description: 'ID của học kỳ cần xóa', type: Number })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Xóa học kỳ thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy học kỳ.',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Không thể xóa học kỳ do có dữ liệu liên quan.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực hoặc token không hợp lệ.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền truy cập.',
+  })
+  async remove(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
     await this.semesterService.remove(id);
     return new SuccessResponse({
-      message: 'Delete semester successfully',
+      message: 'Xóa học kỳ thành công.',
     }).send(res);
   }
 }

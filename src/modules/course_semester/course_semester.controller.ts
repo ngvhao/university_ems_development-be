@@ -27,7 +27,7 @@ export class CourseSemesterController {
     private readonly studentService: StudentService,
   ) {}
 
-  @Roles([EUserRole[EUserRole.STUDENT]])
+  @Roles([EUserRole.STUDENT])
   @Get(':semesterCode')
   async getCourseBySemesterCode(
     @Param('semesterCode') semesterCode: string,

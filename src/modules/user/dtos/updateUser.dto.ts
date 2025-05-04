@@ -1,78 +1,14 @@
-import {
-  IsEmail,
-  IsEnum,
-  IsOptional,
-  IsString,
-  MinLength,
-} from 'class-validator';
-import { EUserRole, EUserStatus } from 'src/utils/enums/user.enum';
+import { IsNotEmpty, IsOptional, Matches } from 'class-validator';
+import { CreateUserDto } from './createUser.dto';
+import { PartialType } from '@nestjs/swagger';
+import { PASSWORD_VALID_REGEX } from 'src/utils/constants';
 
-export class UpdateUserDto {
+export class UpdateUserDto extends PartialType(CreateUserDto) {
   @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  @IsString()
-  @MinLength(6)
+  @IsNotEmpty()
+  @Matches(PASSWORD_VALID_REGEX, {
+    message:
+      'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt',
+  })
   password?: string;
-
-  @IsOptional()
-  @IsString()
-  firstName?: string;
-
-  @IsOptional()
-  @IsString()
-  lastName?: string;
-
-  @IsOptional()
-  @IsString()
-  avatarUrl?: string;
-
-  @IsOptional()
-  @IsEnum(EUserRole)
-  role?: EUserRole;
-
-  @IsOptional()
-  @IsEnum(EUserStatus)
-  status?: EUserStatus;
-
-  @IsOptional()
-  @IsString()
-  phoneNumber?: string;
-
-  @IsOptional()
-  @IsString()
-  refreshToken?: string;
-
-  @IsOptional()
-  @IsString()
-  identityCardNumber?: string;
-
-  @IsOptional()
-  dateOfBirth?: Date;
-
-  @IsOptional()
-  @IsString()
-  gender?: string;
-
-  @IsOptional()
-  @IsString()
-  hometown?: string;
-
-  @IsOptional()
-  @IsString()
-  permanentAddress?: string;
-
-  @IsOptional()
-  @IsString()
-  temporaryAddress?: string;
-
-  @IsOptional()
-  @IsString()
-  nationality?: string;
-
-  @IsOptional()
-  @IsString()
-  ethnicity?: string;
 }

@@ -36,7 +36,7 @@ export class AuthController {
     @Res() res: Response,
   ) {
     const user = req.user;
-    const payload = { id: user.id, sub: user.userCode };
+    const payload = { id: user.id, sub: user.universityEmail };
 
     // Create accessToken
     const accessToken = AuthHelpers.generateToken(

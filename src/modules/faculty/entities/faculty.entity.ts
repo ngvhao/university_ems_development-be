@@ -1,22 +1,43 @@
 import { DepartmentEntity } from 'src/modules/department/entities/department.entity';
 import { FacultyRegistrationScheduleEntity } from 'src/modules/faculty_registration_schedule/entities/faculty_registration_schedule.entity';
 import { IEntity } from 'src/utils/interfaces/IEntity';
-import { Entity, Column, OneToMany } from 'typeorm';
+import { Entity, Column, OneToMany, Index } from 'typeorm';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity('faculties')
 export class FacultyEntity extends IEntity {
-  @Column()
+  @ApiProperty({
+    description: 'Mã duy nhất của Khoa',
+    example: 'CNTT',
+    maxLength: 20,
+  })
+  @Index({ unique: true })
+  @Column({ unique: true, length: 20, nullable: false })
   facultyCode: string;
 
-  @Column()
+  @ApiProperty({
+    description: 'Tên đầy đủ của Khoa',
+    example: 'Công nghệ Thông tin',
+    maxLength: 255,
+  })
+  @Column({ length: 255, nullable: false })
   name: string;
 
-  @Column({ nullable: true })
-  description: string;
+  @ApiPropertyOptional({ description: 'Mô tả thêm về Khoa' })
+  @Column({ type: 'text', nullable: true })
+  description: string | null;
 
-  @OneToMany(() => DepartmentEntity, (department) => department.faculty)
+  @ApiPropertyOptional({
+    type: () => [DepartmentEntity],
+    description: 'Danh sách Khoa/Bộ môn trực thuộc',
+  })
+  @OneToMany(() => DepartmentEntity, (department) => department.faculty, {})
   departments: DepartmentEntity[];
 
+  @ApiPropertyOptional({
+    type: () => [FacultyRegistrationScheduleEntity],
+    description: 'Lịch đăng ký của Khoa',
+  })
   @OneToMany(
     () => FacultyRegistrationScheduleEntity,
     (schedule) => schedule.faculty,

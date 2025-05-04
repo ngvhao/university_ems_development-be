@@ -27,10 +27,10 @@ export class Helpers {
   static async generateUserCode(
     facultyCode: string,
     academicYear: number,
-    studentCount: number,
+    lastIdx: number,
   ): Promise<string> {
     const enrollmentYear = academicYear.toString().slice(-2);
-    return `${EFacultyCode[facultyCode]}${enrollmentYear}${(studentCount + 1)
+    return `${EFacultyCode[facultyCode]}${enrollmentYear}${(lastIdx + 1)
       .toString()
       .padStart(5, '0')}`;
   }

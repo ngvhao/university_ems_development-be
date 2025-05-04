@@ -3,32 +3,54 @@ import { IEntity } from 'src/utils/interfaces/IEntity';
 import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.entity';
 import { RoomEntity } from 'src/modules/room/entities/room.entity';
 import { EDayOfWeek } from 'src/utils/enums/schedule.enum';
-import { TimeSlotsEntity } from 'src/modules/time_slots/entities/time_slots.entity';
+import { ApiProperty } from '@nestjs/swagger';
+import { TimeSlotEntity } from 'src/modules/time_slot/entities/time_slot.entity';
 
 @Entity('class_weekly_schedules')
 @Index(['classGroupId', 'dayOfWeek', 'timeSlotId'], { unique: true })
+@Index(['roomId', 'dayOfWeek', 'timeSlotId'], { unique: false })
 export class ClassWeeklyScheduleEntity extends IEntity {
-  @Column({ type: 'enum', enum: EDayOfWeek })
+  @ApiProperty({
+    description: 'Thứ trong tuần',
+    enum: EDayOfWeek,
+    example: EDayOfWeek.MONDAY,
+  })
+  @Column({ type: 'enum', enum: EDayOfWeek, nullable: false })
   dayOfWeek: EDayOfWeek;
 
+  @ApiProperty({
+    type: () => ClassGroupEntity,
+    description: 'Nhóm lớp học có lịch này',
+  })
   @ManyToOne(() => ClassGroupEntity, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'classGroupId' })
   classGroup: ClassGroupEntity;
 
-  @Column()
+  @ApiProperty({ example: 10, description: 'ID Nhóm lớp học' })
+  @Column({ nullable: false })
   classGroupId: number;
 
-  @ManyToOne(() => RoomEntity, { nullable: false })
+  @ApiProperty({
+    type: () => RoomEntity,
+    description: 'Phòng học diễn ra tiết học',
+  })
+  @ManyToOne(() => RoomEntity, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'roomId' })
   room: RoomEntity;
 
-  @Column()
+  @ApiProperty({ example: 5, description: 'ID Phòng học' })
+  @Column({ nullable: false })
   roomId: number;
 
-  @ManyToOne(() => TimeSlotsEntity, { nullable: false })
+  @ApiProperty({
+    type: () => TimeSlotEntity,
+    description: 'Khung giờ diễn ra tiết học',
+  })
+  @ManyToOne(() => TimeSlotEntity, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'timeSlotId' })
-  timeSlot: TimeSlotsEntity;
+  timeSlot: TimeSlotEntity;
 
-  @Column()
+  @ApiProperty({ example: 3, description: 'ID Khung giờ học' })
+  @Column({ nullable: false })
   timeSlotId: number;
 }
