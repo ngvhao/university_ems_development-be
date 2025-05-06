@@ -19,6 +19,15 @@ provider:
 functions:
   api:
     handler: dist/src/serverless.handler
+    timeout: 30
+    memorySize: 2048
+    vpc:
+      securityGroupIds:
+        - sg-0ff6dbb2dd994cf57
+      subnetIds:
+        - subnet-05c842a1dba68ac30
+        - subnet-0ef8213a93a9143a0
+        - subnet-0158f1b34ea0912b6
     events:
       - http:
           method: ANY
@@ -29,6 +38,13 @@ functions:
 
   student-creation-consumer:
     handler: dist/src/handlers/createStudentHandler.handler
+    vpc:
+      securityGroupIds:
+        - sg-0ff6dbb2dd994cf57
+      subnetIds:
+        - subnet-05c842a1dba68ac30
+        - subnet-0ef8213a93a9143a0
+        - subnet-0158f1b34ea0912b6
     events:
       - sqs:
           arn:
@@ -49,8 +65,29 @@ custom:
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
       - AWS_SESSION_TOKEN
+  webpack:
+    webpackConfig: './webpack.config.js'
+    includeModules:
+      forceExclude:
+        - aws-sdk
+        - pg-native
+        - mysql
+        - mysql2
+        - sqlite3
+        - oracledb
+    packager: 'npm'
+  commonExcludes:
+    additionalExcludes:
+      - 'aws-sdk'
+      - 'pg-native'
+      - 'mysql'
+      - 'mysql2'
+      - 'sqlite3'
+      - 'oracledb'
   includeDependencies:
     enableCaching: true
+    additionalIncludes:
+      - 'class-transformer'
 
 package:
   excludeDevDependencies: true
