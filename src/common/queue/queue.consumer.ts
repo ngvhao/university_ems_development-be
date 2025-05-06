@@ -21,7 +21,7 @@ export class QueueConsumer implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit() {
-    this.startConsuming();
+    // this.startConsuming();
   }
 
   onModuleDestroy() {

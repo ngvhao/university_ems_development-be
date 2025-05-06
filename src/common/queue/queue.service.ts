@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Injectable } from '@nestjs/common';
 import * as AWS from 'aws-sdk';
 import { QueueConfigService } from './queue.config';

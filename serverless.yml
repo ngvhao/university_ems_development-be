@@ -27,7 +27,7 @@ functions:
           method: ANY
           path: '{proxy+}'
 
-  studentCreationnQueueHandler:
+  student-creation-consumer:
     handler: dist/src/handlers/createStudentHandler.handler
     events:
       - sqs:
@@ -49,7 +49,14 @@ custom:
       - AWS_ACCESS_KEY_ID
       - AWS_SECRET_ACCESS_KEY
       - AWS_SESSION_TOKEN
+  includeDependencies:
+    enableCaching: true
+
+package:
+  excludeDevDependencies: true
 
 plugins:
   - serverless-offline
   - serverless-dotenv-plugin
+  - serverless-plugin-common-excludes
+  - serverless-plugin-include-dependencies

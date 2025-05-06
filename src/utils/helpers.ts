@@ -1,4 +1,4 @@
-import * as bcrypt from 'bcrypt';
+import { hashSync, genSaltSync, compare } from 'bcryptjs';
 import { emailTailConstants, SALT_ROUNDS } from './constants';
 import { EFacultyCode } from './enums/faculty.enum';
 import { EUserRole } from './enums/user.enum';
@@ -11,17 +11,17 @@ export class Helpers {
     password: string;
     saltRounds?: number;
   }): Promise<string> {
-    const salt = bcrypt.genSaltSync(saltRounds);
+    const salt = genSaltSync(saltRounds);
     console.log(salt);
     console.log(password);
-    return bcrypt.hashSync(password, salt);
+    return hashSync(password, salt);
   }
 
   static async comparePassword(
     password: string,
     hashedPassword: string,
   ): Promise<boolean> {
-    return bcrypt.compare(password, hashedPassword);
+    return compare(password, hashedPassword);
   }
 
   static async generateUserCode(
