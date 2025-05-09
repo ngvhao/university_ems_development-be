@@ -22,10 +22,9 @@ export class StudentHelper {
     await this.ensureSequenceExists(dataSource, academicYear, majorId);
 
     try {
-      const result = await dataSource.query(
-        `SELECT nextval(${this.quoteIdentifier(seqName)}) as seq`,
-      );
-
+      const result = await dataSource.query(`SELECT nextval($1) as seq`, [
+        seqName,
+      ]);
       const seqNumber = result[0]?.seq;
       if (!seqNumber) {
         throw new InternalServerErrorException(

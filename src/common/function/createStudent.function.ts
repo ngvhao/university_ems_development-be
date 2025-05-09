@@ -103,7 +103,9 @@ export async function createStudent(
     }
 
     const uniEmail = Helpers.generateStudentEmail(studentCode);
-    const existingUniEmail = await this.userService.getUserByUniEmail(uniEmail);
+    const existingUniEmail = await queryRunner.manager.findOne(UserEntity, {
+      where: { universityEmail: uniEmail },
+    });
     if (existingUniEmail) {
       throw new ConflictException(
         `Email trường cấp '${uniEmail}' được tạo tự động đã tồn tại.`,

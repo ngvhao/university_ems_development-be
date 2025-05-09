@@ -7,6 +7,7 @@ export class QueueProducer {
   constructor(private readonly queueService: QueueService) {}
 
   async produce(queueUrl: string, messageBody: QueueMessage): Promise<void> {
+    console.log('produce@@@sendQueue: ', messageBody);
     await this.queueService.sendMessage(queueUrl, messageBody);
   }
 }

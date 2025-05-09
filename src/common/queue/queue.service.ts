@@ -10,7 +10,6 @@ export class QueueService {
   constructor(private readonly queueConfigService: QueueConfigService) {
     this.sqs = this.queueConfigService.createSQSClient();
   }
-
   async sendMessage(
     queueUrl: string,
     messageBody: QueueMessage,
@@ -20,6 +19,7 @@ export class QueueService {
         QueueUrl: queueUrl,
         MessageBody: JSON.stringify(messageBody),
       };
+      console.log('sendMessage@@@params: ', params);
       const result = await this.sqs.sendMessage(params).promise();
       console.log(`Sent message to ${queueUrl}: ${result.MessageId}`);
       return result;

@@ -19,15 +19,13 @@ provider:
 functions:
   api:
     handler: dist/src/serverless.handler
-    timeout: 30
-    memorySize: 2048
     vpc:
       securityGroupIds:
-        - sg-0ff6dbb2dd994cf57
+        - sg-021c0672641daa5eb
       subnetIds:
-        - subnet-05c842a1dba68ac30
-        - subnet-0ef8213a93a9143a0
-        - subnet-0158f1b34ea0912b6
+        - subnet-081117d9dd0cf6bbb
+        - subnet-064b2e3d2bdccdf5b
+        - subnet-0e78358b4cddb77c2
     events:
       - http:
           method: ANY
@@ -40,11 +38,11 @@ functions:
     handler: dist/src/handlers/createStudentHandler.handler
     vpc:
       securityGroupIds:
-        - sg-0ff6dbb2dd994cf57
+        - sg-021c0672641daa5eb
       subnetIds:
-        - subnet-05c842a1dba68ac30
-        - subnet-0ef8213a93a9143a0
-        - subnet-0158f1b34ea0912b6
+        - subnet-081117d9dd0cf6bbb
+        - subnet-064b2e3d2bdccdf5b
+        - subnet-0e78358b4cddb77c2
     events:
       - sqs:
           arn:

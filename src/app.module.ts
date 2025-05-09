@@ -26,6 +26,7 @@ import { FacultyRegistrationScheduleModule } from './modules/faculty_registratio
 import { ClassAdjustmentScheduleModule } from './modules/class_adjustment_schedule/class_adjustment_schedule.module';
 import { TimeSlotModule } from './modules/time_slot/time_slot.module';
 import { ClassWeeklyScheduleModule } from './modules/class_weekly_schedule/class_weekly_schedule.module';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -52,6 +53,7 @@ import { ClassWeeklyScheduleModule } from './modules/class_weekly_schedule/class
     ClassWeeklyScheduleModule,
     ClassAdjustmentScheduleModule,
     TimeSlotModule,
+    HttpModule,
   ],
   controllers: [AppController],
   providers: [AppService],

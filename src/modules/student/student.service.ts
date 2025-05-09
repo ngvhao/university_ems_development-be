@@ -45,7 +45,7 @@ export class StudentService {
   ) {}
 
   async testQueue(studentDTO: CreateStudentDto): Promise<void> {
-    console.log('Queue sent');
+    console.log('testQueue@@@@studentDTO: ', studentDTO);
     await this.queueProducer.produce(process.env.QUEUE_STUDENT_CREATION_URL, {
       type: 'student',
       data: studentDTO,

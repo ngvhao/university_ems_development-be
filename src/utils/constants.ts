@@ -66,3 +66,12 @@ export const emailTailConstants = {
   academic: '@academic.university.edu.vn',
   lecturer: '@lecturer.university.edu.vn',
 };
+
+export const AWSConstants = {
+  REGION: 'ap-southeast-1',
+};
+
+export const QueueConfig = {
+  LOCALSTACK_ENDPOINT: 'http://localhost:4566',
+  isLocalstack: false,
+};
