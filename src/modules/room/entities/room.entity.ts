@@ -29,4 +29,11 @@ export class RoomEntity extends IEntity {
     default: RoomType.CLASSROOM,
   })
   roomType: RoomType;
+
+  @ApiProperty({
+    description: 'Sức chứa của phòng',
+    example: 60,
+  })
+  @Column()
+  capacity: number;
 }
