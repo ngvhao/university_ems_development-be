@@ -1,9 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from './pipes/validation.pipe';
 import { HttpExceptionFilter } from './exceptions/global.exception';
 import * as dotenv from 'dotenv';
-import { INestApplication } from '@nestjs/common';
+import {
+  BadRequestException,
+  INestApplication,
+  ValidationError,
+  ValidationPipe,
+} from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import * as bodyParser from 'body-parser';
@@ -58,7 +62,29 @@ export function setupMiddlewares(app: INestApplication) {
   });
 
   app.use(bodyParser.json());
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      exceptionFactory: (errors: ValidationError[]) => {
+        const validationErrors = errors.map((error) => {
+          return {
+            property: error.property,
+            value: error.value ?? null,
+            constraints: error.constraints,
+          };
+        });
+        return new BadRequestException({
+          message: 'Validation failed!',
+          errors: validationErrors,
+        });
+      },
+    }),
+  );
   app.useGlobalFilters(new HttpExceptionFilter());
   return expressApp;
 }

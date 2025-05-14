@@ -18,17 +18,20 @@ export class ClassWeeklyScheduleEntity extends IEntity {
   @Column({ type: 'enum', enum: EDayOfWeek, nullable: false })
   dayOfWeek: EDayOfWeek;
 
+  @ApiProperty({ example: 10, description: 'ID Nhóm lớp học' })
+  @Column({ nullable: false })
+  classGroupId: number;
+
   @ApiProperty({
     type: () => ClassGroupEntity,
     description: 'Nhóm lớp học có lịch này',
   })
-  @ManyToOne(() => ClassGroupEntity, { nullable: false, onDelete: 'CASCADE' })
+  @ManyToOne(() => ClassGroupEntity, (classGroup) => classGroup.schedules, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'classGroupId' })
   classGroup: ClassGroupEntity;
-
-  @ApiProperty({ example: 10, description: 'ID Nhóm lớp học' })
-  @Column({ nullable: false })
-  classGroupId: number;
 
   @ApiProperty({
     type: () => RoomEntity,
@@ -53,4 +56,26 @@ export class ClassWeeklyScheduleEntity extends IEntity {
   @ApiProperty({ example: 3, description: 'ID Khung giờ học' })
   @Column({ nullable: false })
   timeSlotId: number;
+
+  @ApiProperty({
+    description: 'Ngày bắt đầu',
+    example: '2025-09-01',
+    type: String,
+    format: 'date',
+  })
+  @Column({ nullable: false, type: 'date' })
+  startDate: Date;
+
+  @ApiProperty({
+    description: 'Ngày kết thúc',
+    example: '2026-01-05',
+    type: String,
+    format: 'date',
+  })
+  @Column({ nullable: false, type: 'date' })
+  endDate: Date;
+
+  @ApiProperty({ example: 25, description: 'ID Giảng viên dạy buổi này' })
+  @Column({ nullable: false })
+  lecturerId: number;
 }

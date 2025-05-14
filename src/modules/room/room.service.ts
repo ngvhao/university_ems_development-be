@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindManyOptions, FindOptionsWhere, Repository } from 'typeorm';
 import { RoomEntity } from './entities/room.entity';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { CreateRoomDto } from './dtos/createRoom.dto';
 import { UpdateRoomDto } from './dtos/updateRoom.dto';
+import { PAGINATION } from 'src/utils/constants';
 
 @Injectable()
 export class RoomService {
@@ -35,20 +36,22 @@ export class RoomService {
 
   /**
    * Lấy danh sách các phòng học có phân trang.
+   * @param condition - Điều kiện truy vấn (FindOptionsWhere<RoomEntity>)
    * @param paginationDto - DTO chứa thông tin phân trang (page, limit).
    * @returns Promise<{ data: RoomEntity[]; meta: MetaDataInterface }> - Danh sách phòng và thông tin metadata phân trang.
    */
   async findAll(
-    paginationDto: PaginationDto,
+    condition?: FindOptionsWhere<RoomEntity> | FindOptionsWhere<RoomEntity>[],
+    paginationDto: PaginationDto = PAGINATION,
   ): Promise<{ data: RoomEntity[]; meta: MetaDataInterface }> {
-    const { page = 1, limit = 10 } = paginationDto;
+    const { page, limit } = paginationDto;
 
-    const queryBuilder = this.roomRepository.createQueryBuilder('room');
-
-    queryBuilder.skip((page - 1) * limit).take(limit);
-
-    const [data, total] = await queryBuilder.getManyAndCount();
-
+    const findOptions: FindManyOptions<RoomEntity> = {
+      where: condition,
+      skip: (page - 1) * limit,
+      take: limit,
+    };
+    const [data, total] = await this.roomRepository.findAndCount(findOptions);
     const meta = generatePaginationMeta(total, page, limit);
 
     return { data, meta };

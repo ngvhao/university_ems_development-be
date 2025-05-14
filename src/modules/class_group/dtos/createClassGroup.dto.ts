@@ -19,7 +19,7 @@ export class CreateClassGroupDto {
   })
   @IsPositive({ message: 'ID Học phần-Học kỳ phải là số dương' })
   @IsNotEmpty({ message: 'ID Học phần-Học kỳ không được để trống' })
-  courseSemesterId: number;
+  semesterId: number;
 
   @ApiProperty({
     description:

@@ -1,4 +1,3 @@
-// src/modules/curriculum/entities/curriculum.entity.ts
 import {
   Entity,
   Column,
@@ -13,7 +12,6 @@ import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 @Entity('curriculums')
-// Index để tăng tốc tìm kiếm theo ngành và năm học
 @Index(['majorId', 'startAcademicYear', 'endAcademicYear'])
 export class CurriculumEntity extends IEntity {
   @ApiProperty({ description: 'Tổng tín chỉ yêu cầu', example: 120 })
@@ -26,7 +24,7 @@ export class CurriculumEntity extends IEntity {
 
   @ApiProperty({ description: 'Ngày bắt đầu hiệu lực', example: '2024-09-01' })
   @Column({ name: 'effectiveDate', type: 'date', nullable: false })
-  effectiveDate: Date; // TypeORM sẽ xử lý chuyển đổi Date <-> date string (tùy driver)
+  effectiveDate: Date;
 
   @ApiPropertyOptional({
     description: 'Ngày hết hiệu lực (nếu có)',

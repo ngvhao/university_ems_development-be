@@ -6,6 +6,7 @@ import { StudyPlanService } from './study_plan.service';
 import { SemesterModule } from '../semester/semester.module';
 import { StudentModule } from '../student/student.module';
 import { CourseModule } from '../course/course.module';
+import { LecturerCourseModule } from '../lecturer_course/lecturer_course.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { CourseModule } from '../course/course.module';
     SemesterModule,
     StudentModule,
     CourseModule,
+    LecturerCourseModule,
   ],
   controllers: [StudyPlanController],
   providers: [StudyPlanService],

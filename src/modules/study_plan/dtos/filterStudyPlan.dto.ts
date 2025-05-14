@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsEnum, IsPositive } from 'class-validator';
+import { IsOptional, IsEnum, IsPositive, IsNotEmpty } from 'class-validator';
 import { Type } from 'class-transformer';
 import { EStudyPlanStatus } from 'src/utils/enums/study-plan.enum';
 
@@ -15,14 +15,14 @@ export class FilterStudyPlanDto {
   studentId?: number;
 
   @ApiPropertyOptional({
-    description: 'Lọc theo ID Học kỳ',
+    description: 'Lọc theo mã học kỳ',
     example: 5,
     type: Number,
   })
-  @IsOptional()
-  @IsPositive({ message: 'ID Học kỳ phải là số dương' })
+  @IsNotEmpty({ message: 'ID học kỳ không được để trống' })
+  @IsPositive({ message: 'ID Học kỳ' })
   @Type(() => Number)
-  semesterId?: number;
+  semesterId: number;
 
   @ApiPropertyOptional({
     description: 'Lọc theo ID Môn học',

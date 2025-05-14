@@ -6,7 +6,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { StudentModule } from '../student/student.module';
 import { ClassModule } from '../class/class.module';
 import { CurriculumCourseModule } from '../curriculum_course/curriculum_course.module';
-import { CourseMajorModule } from '../course_major/course_major.module';
 import { DepartmentModule } from '../department/department.module';
 import { CurriculumModule } from '../curriculum/curriculum.module';
 
@@ -16,7 +15,6 @@ import { CurriculumModule } from '../curriculum/curriculum.module';
     forwardRef(() => StudentModule),
     forwardRef(() => ClassModule),
     CurriculumCourseModule,
-    CourseMajorModule,
     DepartmentModule,
     CurriculumModule,
   ],

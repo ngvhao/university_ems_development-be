@@ -4,7 +4,6 @@ import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
 
 export class CreateStudentDto extends OmitType(CreateUserDto, [
   'universityEmail',
-  'role',
 ] as const) {
   @ApiProperty({
     description: 'Khóa học (Năm nhập học)',

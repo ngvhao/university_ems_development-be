@@ -36,13 +36,29 @@ import {
 import { UpdateClassGroupStatusDto } from './dtos/updateClassGroupStatus.dto';
 import { ClassGroupEntity } from './entities/class_group.entity';
 import { EClassGroupStatus } from 'src/utils/enums/class.enum';
+import { StudyPlanService } from '../study_plan/study_plan.service';
+import { SemesterService } from '../semester/semester.service';
+import { TimeSlotService } from '../time_slot/time_slot.service';
+import { dateOfWeeks } from 'src/utils/constants';
+import { ClassGroupScheduleInputDto } from './dtos/classGroupScheduleInput.dto';
+import { LecturerService } from '../lecturer/lecturer.service';
+import { RoomService } from '../room/room.service';
+import { ERoomType } from 'src/utils/enums/room.enum';
+import axios from 'axios';
 
 @ApiTags('Quản lý Nhóm lớp học (Class Groups)')
 @ApiBearerAuth('token')
 @UseGuards(JwtAuthGuard)
 @Controller('class-groups')
 export class ClassGroupController {
-  constructor(private readonly classGroupService: ClassGroupService) {}
+  constructor(
+    private readonly classGroupService: ClassGroupService,
+    private readonly studyPlanService: StudyPlanService,
+    private readonly semesterService: SemesterService,
+    private readonly timeSlotService: TimeSlotService,
+    private readonly lecturerService: LecturerService,
+    private readonly roomService: RoomService,
+  ) {}
 
   @Post()
   @UseGuards(RolesGuard)
@@ -80,6 +96,69 @@ export class ClassGroupController {
       statusCode: HttpStatus.CREATED,
       data: data,
       message: 'Tạo nhóm lớp thành công.',
+    }).send(res);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @Post('/calculating')
+  async getClassGroupSchedule(
+    @Body() classGroupInputDto: ClassGroupScheduleInputDto,
+    @Res() res: Response,
+  ) {
+    const {
+      semesterId,
+      courseIds,
+      exceptionDates,
+      occupiedSlots,
+      groupSizeTarget,
+      maxSessionsPerWeekAllowed,
+    } = classGroupInputDto;
+    const classGroupsNeedScheduling =
+      await this.studyPlanService.findCourseRegistrations(
+        semesterId,
+        courseIds,
+      );
+    const semester = await this.semesterService.findOne(semesterId);
+    const { data: timeSlots } = await this.timeSlotService.findAll();
+    const lecturers = await this.lecturerService.findAllLecturersId();
+    const { data: rooms } = await this.roomService.findAll({
+      roomType: ERoomType.CLASSROOM,
+    });
+    console.log({
+      coursesToSchedule: classGroupsNeedScheduling,
+      semesterId: semester.id,
+      semesterStartDate: semester.startDate,
+      semesterEndDate: semester.endDate,
+      daysOfWeek: dateOfWeeks,
+      timeSlots: timeSlots,
+      lecturers: lecturers,
+      rooms: rooms,
+      exceptionDates: exceptionDates,
+      occupiedSlots: occupiedSlots,
+      groupSizeTarget: groupSizeTarget,
+      maxSessionsPerWeekAllowed: maxSessionsPerWeekAllowed,
+    });
+    const classGroups = await axios.post(
+      'http://localhost:8000/schedules/calculating',
+      {
+        coursesToSchedule: classGroupsNeedScheduling,
+        semesterId: semester.id,
+        semesterStartDate: semester.startDate,
+        semesterEndDate: semester.endDate,
+        daysOfWeek: dateOfWeeks,
+        timeSlots: timeSlots,
+        lecturers: lecturers,
+        rooms: rooms,
+        exceptionDates: exceptionDates,
+        occupiedSlots: occupiedSlots,
+        groupSizeTarget: groupSizeTarget,
+        maxSessionsPerWeekAllowed: maxSessionsPerWeekAllowed,
+      },
+    );
+    return new SuccessResponse({
+      message: 'Lấy nhóm lớp thành công',
+      data: classGroups.data,
     }).send(res);
   }
 
@@ -129,8 +208,8 @@ export class ClassGroupController {
     @Res() res: Response,
   ) {
     const { data, meta } = await this.classGroupService.findAll(
-      paginationDto,
       filterDto,
+      paginationDto,
     );
     return new SuccessResponse({
       data: data,

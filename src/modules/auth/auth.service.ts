@@ -28,7 +28,9 @@ export class AuthService {
       false,
     );
     if (!student) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException(
+        'Invalid credentials (Student should login with student code)',
+      );
     }
     if (await Helpers.comparePassword(password, student.user.password)) {
       return _.omit(student.user, ['password']);
@@ -48,7 +50,9 @@ export class AuthService {
   ): Promise<Partial<UserEntity>> {
     const user = await this.userService.getUserByUniEmail(uniEmail);
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException(
+        'Invalid credentials (Should login with university email)',
+      );
     }
     if (user.role === EUserRole.STUDENT) {
       throw new UnauthorizedException('Invalid credentials');

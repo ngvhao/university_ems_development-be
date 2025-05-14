@@ -11,6 +11,8 @@ import {
   UseGuards,
   ParseIntPipe,
   HttpStatus,
+  Req,
+  UseInterceptors,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -32,6 +34,9 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { CurriculumEntity } from './entities/curriculum.entity';
+import { RequestHasStudentDto } from 'src/utils/request-has-student-dto';
+import { GetMyCurriculumsQueryDto } from './dtos/getMyCurriculum.dto';
+import { StudentInterceptor } from 'src/interceptors/get-student.interceptor';
 
 @ApiTags('Quản lý Chương trình Đào tạo (Curriculums)')
 @ApiBearerAuth('token')
@@ -112,6 +117,55 @@ export class CurriculumController {
     return new SuccessResponse({
       ...result,
       message: 'Lấy danh sách chương trình đào tạo thành công',
+    }).send(res);
+  }
+
+  @Get('me')
+  @ApiOperation({
+    summary: 'Lấy thông tin chương trình đào tạo của sinh viên đang theo học',
+  })
+  @ApiQuery({
+    name: 'majorId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID ngành học (tùy chọn)',
+  })
+  @ApiQuery({
+    name: 'yearAdministration',
+    required: false,
+    type: Number,
+    description: 'Lọc theo năm quản lý/nhập học (tùy chọn)',
+  })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'ID của chương trình đào tạo',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy thông tin thành công.',
+    type: CurriculumEntity,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy chương trình đào tạo.',
+  })
+  @UseInterceptors(StudentInterceptor)
+  async getMyCurriculums(
+    @Req() req: RequestHasStudentDto & Request,
+    @Query()
+    query: GetMyCurriculumsQueryDto,
+    @Res() res: Response,
+  ) {
+    const { student } = req;
+    const curriculum = await this.curriculumService.findCurriculum(student);
+    return new SuccessResponse({
+      data: curriculum,
+      message: 'Lấy thông tin chương trình đào tạo thành công',
     }).send(res);
   }
 

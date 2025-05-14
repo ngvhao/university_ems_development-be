@@ -27,10 +27,12 @@
     "prepare": "husky install",
     "typeorm": "npm run build && npx typeorm -d dist/db/data-source.js",
     "migration:generate": "npm run typeorm -- migration:generate",
+    "migration:create": "npm run typeorm -- migration:create",
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert"
   },
   "dependencies": {
+    "@aws-sdk/client-lambda": "^3.806.0",
     "@codegenie/serverless-express": "^4.16.0",
     "@nestjs/axios": "^4.0.0",
     "@nestjs/common": "^10.0.0",
@@ -41,7 +43,6 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/swagger": "^7.4.2",
     "@nestjs/typeorm": "^11.0.0",
-    "aws-lambda": "^1.0.7",
     "bcryptjs": "^3.0.2",
     "body-parser": "^1.20.3",
     "class-transformer": "^0.5.0",
@@ -74,6 +75,7 @@
     "@types/passport-local": "^1.0.38",
     "@types/pg": "^8.11.11",
     "@types/supertest": "^6.0.0",
+    "@types/webpack-node-externals": "^3.0.4",
     "@typescript-eslint/eslint-plugin": "^8.24.0",
     "@typescript-eslint/parser": "^8.24.0",
     "eslint": "^8.57.1",

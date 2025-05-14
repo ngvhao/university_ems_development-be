@@ -16,6 +16,7 @@ import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { TimeSlotEntity } from './entities/time_slot.entity';
 import { ClassWeeklyScheduleService } from '../class_weekly_schedule/class_weekly_schedule.service';
 import { ClassAdjustmentScheduleService } from '../class_adjustment_schedule/class_adjustment_schedule.service';
+import { PAGINATION } from 'src/utils/constants';
 
 @Injectable()
 export class TimeSlotService {
@@ -115,11 +116,9 @@ export class TimeSlotService {
   async create(createTimeSlotDto: CreateTimeSlotDto): Promise<TimeSlotEntity> {
     const { startTime, endTime, shift } = createTimeSlotDto;
 
-    // Check conflict thời gian và ca/tiết
     await this.checkTimeConflict(startTime, endTime);
     await this.checkShiftConflict(shift);
 
-    // Tạo và lưu
     try {
       const timeSlot = this.timeSlotRepository.create(createTimeSlotDto);
       return await this.timeSlotRepository.save(timeSlot);
@@ -147,10 +146,9 @@ export class TimeSlotService {
    * @returns Promise<{ data: TimeSlotEntity[]; meta: MetaDataInterface }> - Danh sách và metadata.
    */
   async findAll(
-    paginationDto: PaginationDto,
+    paginationDto: PaginationDto = PAGINATION,
   ): Promise<{ data: TimeSlotEntity[]; meta: MetaDataInterface }> {
-    const { page = 1, limit = 10 } = paginationDto;
-    // Thêm bộ lọc nếu cần (theo shift?)
+    const { page, limit } = paginationDto;
     // const where: FindOptionsWhere<TimeSlotEntity> = {};
 
     const [data, total] = await this.timeSlotRepository.findAndCount({

@@ -1,7 +1,7 @@
-// src/modules/time-slot/dtos/createTimeSlot.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsInt, Min, Matches } from 'class-validator';
 import { IsTimeBefore } from 'src/decorators/is-time-before.decorator';
+import { TIME_REGEX } from 'src/utils/constants';
 
 export class CreateTimeSlotDto {
   @ApiProperty({
@@ -12,7 +12,7 @@ export class CreateTimeSlotDto {
   })
   @IsNotEmpty({ message: 'Thời gian bắt đầu không được để trống' })
   @IsString({ message: 'Thời gian bắt đầu phải là chuỗi' })
-  @Matches(/^([01]\d|2[0-3]):([0-5]\\d)$/, {
+  @Matches(TIME_REGEX, {
     message: 'Thời gian bắt đầu phải đúng định dạng HH:MM',
   })
   startTime: string;
@@ -25,7 +25,7 @@ export class CreateTimeSlotDto {
   })
   @IsNotEmpty({ message: 'Thời gian kết thúc không được để trống' })
   @IsString({ message: 'Thời gian kết thúc phải là chuỗi' })
-  @Matches(/^([01]\\d|2[0-3]):([0-5]\\d)$/, {
+  @Matches(TIME_REGEX, {
     message: 'Thời gian kết thúc phải đúng định dạng HH:MM',
   })
   @IsTimeBefore('startTime', {

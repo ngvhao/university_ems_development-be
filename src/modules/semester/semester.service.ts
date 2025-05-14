@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsRelations, Repository } from 'typeorm';
 import { SemesterEntity } from './entities/semester.entity';
 import { CreateSemesterDto } from './dtos/createSemester.dto';
 import { UpdateSemesterDto } from './dtos/updateSemester.dto';
@@ -78,15 +78,13 @@ export class SemesterService {
    * @returns Promise<SemesterEntity> - Thông tin chi tiết của học kỳ.
    * @throws NotFoundException - Nếu không tìm thấy học kỳ với ID cung cấp.
    */
-  async findOne(id: number): Promise<SemesterEntity> {
+  async findOne(
+    id: number,
+    relations?: FindOptionsRelations<SemesterEntity>,
+  ): Promise<SemesterEntity> {
     const semester = await this.semesterRepository.findOne({
       where: { id },
-      relations: [
-        'courseSemesters',
-        'registrationSchedules',
-        'studyPlans',
-        'curriculumCourses',
-      ],
+      relations: relations,
     });
 
     if (!semester) {
@@ -144,11 +142,6 @@ export class SemesterService {
   async remove(id: number): Promise<void> {
     const semester = await this.findOne(id);
 
-    if (semester.courseSemesters && semester.courseSemesters.length > 0) {
-      throw new ConflictException(
-        `Không thể xóa học kỳ ID ${id} vì vẫn còn Khóa học trong học kỳ liên kết.`,
-      );
-    }
     if (
       semester.registrationSchedules &&
       semester.registrationSchedules.length > 0
