@@ -10,11 +10,9 @@ import {
   OneToOne,
   OneToMany,
   Index,
-  ManyToMany,
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EAcademicRank } from 'src/utils/enums/user.enum';
-import { CourseEntity } from 'src/modules/course/entities/course.entity';
 import { LecturerCourseEntity } from 'src/modules/lecturer_course/entities/lecturer_course.entity';
 
 @Entity('lecturers')
@@ -77,8 +75,6 @@ export class LecturerEntity extends IEntity {
   @OneToMany(() => ClassEntity, (classEntity) => classEntity.lecturer, {})
   classes: ClassEntity[];
 
-  @ManyToMany(() => CourseEntity)
-  teachingCourses: CourseEntity[];
   @ApiPropertyOptional({
     type: () => [LecturerCourseEntity],
     description: 'Các môn Giảng viên này có thể dạy',
