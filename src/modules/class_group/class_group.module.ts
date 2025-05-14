@@ -1,14 +1,22 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClassGroupService } from './class_group.service';
 import { ClassGroupController } from './class_group.controller';
 import { ClassGroupEntity } from './entities/class_group.entity';
-import { CourseSemesterModule } from 'src/modules/course_semester/course_semester.module';
+import { StudyPlanModule } from '../study_plan/study_plan.module';
+import { SemesterModule } from '../semester/semester.module';
+import { TimeSlotModule } from '../time_slot/time_slot.module';
+import { LecturerModule } from '../lecturer/lecturer.module';
+import { RoomModule } from '../room/room.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ClassGroupEntity]),
-    forwardRef(() => CourseSemesterModule),
+    StudyPlanModule,
+    SemesterModule,
+    TimeSlotModule,
+    LecturerModule,
+    RoomModule,
   ],
   controllers: [ClassGroupController],
   providers: [ClassGroupService],

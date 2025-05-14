@@ -1,6 +1,9 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { CourseSemesterEntity } from 'src/modules/course_semester/entities/course_semester.entity';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ClassWeeklyScheduleEntity } from 'src/modules/class_weekly_schedule/entities/class_weekly_schedule.entity';
+import { CourseEntity } from 'src/modules/course/entities/course.entity';
 import { EnrollmentCourseEntity } from 'src/modules/enrollment_course/entities/enrollment_course.entity';
+import { LecturerEntity } from 'src/modules/lecturer/entities/lecturer.entity';
+import { SemesterEntity } from 'src/modules/semester/entities/semester.entity';
 import { EClassGroupStatus } from 'src/utils/enums/class.enum';
 import { IEntity } from 'src/utils/interfaces/entity.interface';
 import {
@@ -13,7 +16,7 @@ import {
 } from 'typeorm';
 
 @Entity('class_groups')
-@Index(['courseSemesterId', 'groupNumber'], { unique: true })
+@Index(['courseId', 'groupNumber', 'semesterId'], { unique: true })
 export class ClassGroupEntity extends IEntity {
   @ApiProperty({ example: 1, description: 'Số thứ tự của nhóm lớp' })
   @Column({ type: 'int', nullable: false })
@@ -53,22 +56,6 @@ export class ClassGroupEntity extends IEntity {
   status: EClassGroupStatus;
 
   @ApiProperty({
-    type: () => CourseSemesterEntity,
-    description: 'Học phần - học kỳ mà nhóm lớp thuộc về',
-  })
-  @ManyToOne(
-    () => CourseSemesterEntity,
-    (courseSemester) => courseSemester.classGroups,
-    { nullable: false, onDelete: 'CASCADE' },
-  )
-  @JoinColumn({ name: 'courseSemesterId' })
-  courseSemester: CourseSemesterEntity;
-
-  @ApiProperty({ example: 15, description: 'ID của học phần - học kỳ' })
-  @Column({ nullable: false })
-  courseSemesterId: number;
-
-  @ApiProperty({
     type: () => [EnrollmentCourseEntity],
     description: 'Danh sách các lượt đăng ký vào nhóm lớp này',
   })
@@ -77,4 +64,55 @@ export class ClassGroupEntity extends IEntity {
     (enrollment) => enrollment.classGroup,
   )
   enrollments: EnrollmentCourseEntity[];
+
+  @ApiPropertyOptional({
+    example: 25,
+    description: 'ID Giảng viên phụ trách (nếu có)',
+  })
+  @Column({ nullable: true })
+  lecturerId?: number;
+
+  @ApiPropertyOptional({
+    type: () => LecturerEntity,
+    description: 'Giảng viên phụ trách nhóm lớp (nếu có)',
+  })
+  @ManyToOne(() => LecturerEntity, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'lecturerId' })
+  lecturer?: LecturerEntity;
+
+  @ApiProperty({ description: 'ID của học kỳ gợi ý', example: 5 })
+  @Column({ nullable: false })
+  semesterId: number;
+
+  @ApiProperty({
+    type: () => SemesterEntity,
+    description: 'Học kỳ gợi ý để học môn này',
+  })
+  @ManyToOne(() => SemesterEntity, (semester) => semester.classGroups, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({ name: 'semesterId' })
+  semester: SemesterEntity;
+
+  @ManyToOne(() => CourseEntity, (course) => course.classGroups, {
+    nullable: false,
+    onDelete: 'RESTRICT',
+  })
+  @JoinColumn({ name: 'courseId' })
+  course: CourseEntity;
+
+  @ApiProperty({ description: 'ID của môn học', example: 15 })
+  @Column({ nullable: false })
+  courseId: number;
+
+  @ApiProperty({
+    type: () => [ClassWeeklyScheduleEntity],
+    description: 'Danh sách các lịch học của nhóm lớp',
+  })
+  @OneToMany(
+    () => ClassWeeklyScheduleEntity,
+    (classWeeklySchedule) => classWeeklySchedule.classGroup,
+  )
+  schedules: ClassWeeklyScheduleEntity[];
 }

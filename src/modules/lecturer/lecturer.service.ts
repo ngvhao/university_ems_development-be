@@ -1,28 +1,168 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsRelations, FindOptionsWhere, Repository } from 'typeorm';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import {
+  DataSource,
+  FindOptionsRelations,
+  FindOptionsWhere,
+  Repository,
+} from 'typeorm';
 import { LecturerEntity } from './entities/lecturer.entity';
 import { CreateLecturerDto } from './dtos/createLecturer.dto';
 import { UpdateLecturerDto } from './dtos/updateLecturer.dto';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
+import { DepartmentEntity } from '../department/entities/department.entity';
+import { UserService } from '../user/user.service';
+import { Helpers } from 'src/utils/helpers';
+import { UserEntity } from '../user/entities/user.entity';
+import { EAccountStatus, EUserRole } from 'src/utils/enums/user.enum';
+import _ from 'lodash';
+import { PAGINATION } from 'src/utils/constants';
 
 @Injectable()
 export class LecturerService {
   constructor(
+    @InjectDataSource() private readonly dataSource: DataSource,
     @InjectRepository(LecturerEntity)
     private readonly lecturerRepository: Repository<LecturerEntity>,
+    private readonly userService: UserService,
   ) {}
 
-  async create(createLecturerDto: CreateLecturerDto): Promise<LecturerEntity> {
-    // const { userDto, ...lecturerData } = createLecturerDto;
-    const lecturer = this.lecturerRepository.create(createLecturerDto);
-    return this.lecturerRepository.save(lecturer);
+  async create(
+    createLecturerDto: CreateLecturerDto,
+  ): Promise<Partial<LecturerEntity>> {
+    const {
+      personalEmail,
+      firstName,
+      lastName,
+      avatarUrl,
+      phoneNumber,
+      identityCardNumber,
+      dateOfBirth,
+      gender,
+      hometown,
+      permanentAddress,
+      temporaryAddress,
+      nationality,
+      ethnicity,
+      universityEmail,
+      departmentId,
+      specialization,
+      academicRank,
+      isHeadDepartment,
+    } = createLecturerDto;
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      // const existingPersonal =
+      //   await this.userService.getUserByPersonalEmail(personalEmail);
+      // if (existingPersonal.length > 0) {
+      //   throw new ConflictException(
+      //     `Email cá nhân '${personalEmail}' đã được sử dụng.`,
+      //   );
+      // }
+
+      const department = await queryRunner.manager.findOne(DepartmentEntity, {
+        where: { id: departmentId },
+      });
+      if (!department) {
+        throw new NotFoundException(
+          `Không tìm thấy bộ môn với ID ${departmentId}`,
+        );
+      }
+
+      const existingUniEmail =
+        await this.userService.getUserByUniEmail(universityEmail);
+      if (existingUniEmail) {
+        throw new ConflictException(
+          `Email trường cấp '${universityEmail}' được đã được liên kết trước đó.`,
+        );
+      }
+
+      const hashedPassword = await Helpers.hashPassword({
+        password: identityCardNumber,
+      });
+
+      const userToCreate: Partial<UserEntity> = {
+        personalEmail,
+        universityEmail: universityEmail,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        role: EUserRole.LECTURER,
+        avatarUrl,
+        phoneNumber,
+        identityCardNumber,
+        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+        gender,
+        hometown,
+        permanentAddress,
+        temporaryAddress,
+        nationality,
+        ethnicity,
+        isActive: EAccountStatus.ACTIVE,
+      };
+      const savedUser = await queryRunner.manager.save(
+        UserEntity,
+        userToCreate,
+      );
+
+      console.log(savedUser);
+
+      const lecturerToCreate: Partial<LecturerEntity> = {
+        userId: savedUser.id,
+        academicRank,
+        departmentId,
+        isHeadDepartment,
+        specialization,
+      };
+      await queryRunner.manager.save(LecturerEntity, lecturerToCreate);
+
+      await queryRunner.commitTransaction();
+
+      return _.omit(lecturerToCreate);
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      console.error('Lỗi khi tạo giảng viên:', error);
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException ||
+        error instanceof ConflictException ||
+        error instanceof InternalServerErrorException
+      ) {
+        throw error;
+      }
+      throw new InternalServerErrorException(
+        'Đã xảy ra lỗi không mong muốn khi tạo giảng viên.',
+      );
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  async findAllLecturersId(): Promise<{ lecturerId: number }[]> {
+    const data = await this.lecturerRepository.find({
+      select: {
+        id: true,
+      },
+    });
+    return data.map((lecturer) => {
+      return { lecturerId: lecturer.id };
+    });
   }
 
   async findAll(
-    paginationDto: PaginationDto,
+    paginationDto: PaginationDto = PAGINATION,
   ): Promise<{ data: LecturerEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
 

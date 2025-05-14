@@ -16,7 +16,7 @@ export class StudyPlanEntity extends IEntity {
     default: EStudyPlanStatus.PLANNED,
   })
   @Column({
-    type: 'smallint',
+    type: 'enum',
     enum: EStudyPlanStatus,
     default: EStudyPlanStatus.PLANNED,
     nullable: false,

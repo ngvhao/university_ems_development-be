@@ -9,7 +9,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, Not } from 'typeorm';
+import { Repository, FindOptionsWhere, Not, In } from 'typeorm';
 import { CreateStudyPlanDto } from './dtos/createStudyPlan.dto';
 import { UpdateStudyPlanDto } from './dtos/updateStudyPlan.dto';
 import { StudyPlanEntity } from './entities/study_plan.entity';
@@ -23,6 +23,11 @@ import { UserEntity } from '../user/entities/user.entity';
 import { EUserRole } from 'src/utils/enums/user.enum';
 import { FilterStudyPlanDto } from './dtos/filterStudyPlan.dto';
 import { EStudyPlanStatus } from 'src/utils/enums/study-plan.enum';
+import { StudentEntity } from '../student/entities/student.entity';
+import { CourseEntity } from '../course/entities/course.entity';
+import { LecturerCourseService } from '../lecturer_course/lecturer_course.service';
+import { CourseSchedulingInfoDTO } from './dtos/courseScheduling.dto';
+import { CourseHelper } from 'src/utils/helpers/course.helper';
 
 @Injectable()
 export class StudyPlanService {
@@ -35,6 +40,7 @@ export class StudyPlanService {
     private readonly semesterService: SemesterService,
     @Inject(forwardRef(() => CourseService))
     private readonly courseService: CourseService,
+    private readonly lecturerCourseService: LecturerCourseService,
   ) {}
 
   /**
@@ -184,7 +190,7 @@ export class StudyPlanService {
         );
       }
       await this.studentService.getOne({
-        userId: studentId,
+        id: studentId,
       });
     }
 
@@ -216,6 +222,56 @@ export class StudyPlanService {
   }
 
   /**
+   * Tìm (các) kế hoạch học tập của một sinh viên.
+   *
+   * - Quản trị viên, Quản lý đào tạo, Giảng viên có thể xem kế hoạch học tập của bất kỳ sinh viên nào qua `studentId`.
+   * - Sinh viên chỉ có thể xem kế hoạch học tập của chính mình (khi `studentId` truyền vào khớp với `student.id` của họ).
+   *
+   * @param targetStudentId ID của sinh viên mà kế hoạch học tập cần được tìm.
+   * @param currentUser Thông tin người dùng đang thực hiện yêu cầu (để kiểm tra quyền).
+   * @param currentStudent Thông tin sinh viên của người dùng đang thực hiện yêu cầu (nếu người dùng là sinh viên).
+   *                       Có thể là `null` hoặc `undefined` nếu `currentUser` không phải là sinh viên.
+   * @returns Một mảng các `StudyPlanEntity` của sinh viên, hoặc một mảng rỗng nếu không tìm thấy.
+   * @throws `ForbiddenException` nếu người dùng không có quyền xem.
+   */
+  async findStudyPlansByStudentId(
+    targetStudentId: number,
+    currentUser: UserEntity,
+    currentStudent?: StudentEntity | null,
+  ): Promise<StudyPlanEntity[]> {
+    const isAdminOrManagerOrLecturer = [
+      EUserRole.ADMINISTRATOR,
+      EUserRole.ACADEMIC_MANAGER,
+      EUserRole.LECTURER,
+    ].includes(currentUser.role);
+
+    if (!isAdminOrManagerOrLecturer) {
+      if (!currentStudent || targetStudentId !== currentStudent.id) {
+        throw new ForbiddenException(
+          'Bạn không có quyền xem kế hoạch học tập của sinh viên này.',
+        );
+      }
+    }
+
+    const studyPlans = await this.studyPlanRepository.find({
+      where: {
+        studentId: targetStudentId,
+      },
+      relations: {
+        course: true,
+        semester: true,
+      },
+      order: {
+        semester: {
+          id: 'ASC',
+        },
+      },
+    });
+
+    return studyPlans;
+  }
+
+  /**
    * Lấy danh sách kế hoạch học tập (có phân trang và lọc).
    * @param paginationDto - Thông tin phân trang.
    * @param filterDto - Thông tin lọc.
@@ -223,9 +279,9 @@ export class StudyPlanService {
    * @returns Promise<{ data: StudyPlanEntity[]; meta: MetaDataInterface }> - Danh sách và metadata.
    */
   async findAll(
-    paginationDto: PaginationDto,
-    filterDto: FilterStudyPlanDto,
     currentUser: UserEntity,
+    filterDto: FilterStudyPlanDto,
+    paginationDto: PaginationDto,
   ): Promise<{ data: StudyPlanEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
     const { semesterId, courseId, status } = filterDto;
@@ -250,13 +306,15 @@ export class StudyPlanService {
       return { data: [], meta: generatePaginationMeta(0, page, limit) };
     }
 
-    if (semesterId !== undefined) where.semesterId = semesterId;
+    if (semesterId !== undefined) {
+      where.semester = { id: semesterId };
+    }
     if (courseId !== undefined) where.courseId = courseId;
     if (status !== undefined) where.status = status;
 
     const [data, total] = await this.studyPlanRepository.findAndCount({
       where,
-      relations: ['student', 'semester', 'course'],
+      relations: ['course'],
       skip: (page - 1) * limit,
       take: limit,
       order: { studentId: 'ASC', semesterId: 'ASC', course: { name: 'ASC' } },
@@ -264,6 +322,60 @@ export class StudyPlanService {
 
     const meta = generatePaginationMeta(total, page, limit);
     return { data, meta };
+  }
+
+  async findCourseRegistrations(
+    semesterId: number,
+    courseIds: number[],
+  ): Promise<CourseSchedulingInfoDTO[]> {
+    const studyPlans = await this.studyPlanRepository.find({
+      where: {
+        courseId: In(courseIds),
+        semesterId,
+      },
+      relations: ['course'],
+    });
+
+    const courseMap = new Map<
+      number,
+      { course: CourseEntity; registeredStudents: number }
+    >();
+
+    for (const plan of studyPlans) {
+      const entry = courseMap.get(plan.courseId);
+      if (entry) {
+        entry.registeredStudents += 1;
+      } else {
+        courseMap.set(plan.courseId, {
+          course: plan.course,
+          registeredStudents: 1,
+        });
+      }
+    }
+
+    const result: CourseSchedulingInfoDTO[] = [];
+
+    for (const [
+      courseId,
+      { course, registeredStudents },
+    ] of courseMap.entries()) {
+      const totalSemesterSessions = CourseHelper.getTotalSessionPerSemester(
+        course.credit,
+      );
+
+      const lecturerIds =
+        await this.lecturerCourseService.findLecturersByCourseId(courseId);
+
+      result.push({
+        courseId: course.id,
+        credits: course.credit,
+        totalSemesterSessions,
+        registeredStudents,
+        potentialLecturerIds: lecturerIds,
+      });
+    }
+
+    return result;
   }
 
   /**

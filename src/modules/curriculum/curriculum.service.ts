@@ -22,6 +22,7 @@ import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { MajorService } from '../major/major.service';
+import { StudentEntity } from '../student/entities/student.entity';
 
 @Injectable()
 export class CurriculumService {
@@ -52,6 +53,46 @@ export class CurriculumService {
         `Không tìm thấy Chương trình đào tạo với ID ${id}`,
       );
     }
+    return curriculum;
+  }
+
+  async findCurriculum(
+    student?: StudentEntity,
+    majorId?: number,
+    academicYear?: number,
+  ): Promise<CurriculumEntity | null> {
+    const condicionesWhere: FindOptionsWhere<CurriculumEntity> = {};
+
+    if (student && student.majorId) {
+      condicionesWhere.majorId = student.majorId;
+    } else if (student && student.majorId) {
+      condicionesWhere.majorId = student.majorId;
+    } else {
+      throw new NotFoundException(
+        'Không thể xác định ngành học để tìm chương trình đào tạo.',
+      );
+    }
+
+    if (academicYear) {
+      condicionesWhere.startAcademicYear = academicYear;
+    } else if (student && student.academicYear) {
+      condicionesWhere.startAcademicYear = student.academicYear;
+    }
+
+    const curriculum = await this.curriculumRepository.findOne({
+      where: condicionesWhere,
+      relations: [
+        'major',
+        'curriculumCourses',
+        'curriculumCourses.course',
+        'curriculumCourses.semester',
+      ],
+    });
+
+    if (!curriculum) {
+      return null;
+    }
+
     return curriculum;
   }
 

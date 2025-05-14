@@ -1,11 +1,11 @@
-import { CourseSemesterEntity } from 'src/modules/course_semester/entities/course_semester.entity';
 import { Entity, Column, OneToMany } from 'typeorm';
 import { CurriculumCourseEntity } from 'src/modules/curriculum_course/entities/curriculum_course.entity';
 import { StudyPlanEntity } from 'src/modules/study_plan/entities/study_plan.entity';
 import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { ECourseType } from 'src/utils/enums/course-type.enum';
-import { CourseMajorEntity } from 'src/modules/course_major/entities/course_major.entity';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { LecturerCourseEntity } from 'src/modules/lecturer_course/entities/lecturer_course.entity';
+import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.entity';
 
 @Entity('courses')
 export class CourseEntity extends IEntity {
@@ -49,15 +49,22 @@ export class CourseEntity extends IEntity {
   })
   courseType: ECourseType;
 
-  @OneToMany(() => CourseSemesterEntity, (cs) => cs.course)
-  courseSemesters: CourseSemesterEntity[];
-
   @OneToMany(() => CurriculumCourseEntity, (cc) => cc.course)
   curriculumCourses: CurriculumCourseEntity[];
 
   @OneToMany(() => StudyPlanEntity, (sp) => sp.course)
   studyPlans: StudyPlanEntity[];
 
-  @OneToMany(() => CourseMajorEntity, (cm) => cm.course)
-  courseMajors: CourseMajorEntity[];
+  @ApiPropertyOptional({
+    type: () => [LecturerCourseEntity],
+    description: 'Các giảng viên có thể dạy môn này',
+  })
+  @OneToMany(
+    () => LecturerCourseEntity,
+    (lecturerCourse) => lecturerCourse.course,
+  )
+  lecturerCourses: LecturerCourseEntity[];
+
+  @OneToMany(() => ClassGroupEntity, (classGroup) => classGroup.course)
+  classGroups: ClassGroupEntity[];
 }

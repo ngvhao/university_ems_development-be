@@ -1,4 +1,3 @@
-// src/modules/lecturer/entities/lecturer.entity.ts
 import { ClassEntity } from 'src/modules/class/entities/class.entity';
 import { DepartmentEntity } from 'src/modules/department/entities/department.entity';
 import { UserEntity } from 'src/modules/user/entities/user.entity';
@@ -14,6 +13,7 @@ import {
 } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EAcademicRank } from 'src/utils/enums/user.enum';
+import { LecturerCourseEntity } from 'src/modules/lecturer_course/entities/lecturer_course.entity';
 
 @Entity('lecturers')
 export class LecturerEntity extends IEntity {
@@ -28,11 +28,11 @@ export class LecturerEntity extends IEntity {
 
   @ApiPropertyOptional({
     description: 'Học hàm/Học vị',
-    example: 'ThS',
-    maxLength: 50,
+    example: EAcademicRank.MASTER,
+    enum: EAcademicRank,
   })
   @Column({ nullable: true, enum: EAcademicRank })
-  academicRank: EAcademicRank | null;
+  academicRank: EAcademicRank;
 
   @ApiPropertyOptional({
     description: 'Chuyên ngành chính',
@@ -40,7 +40,7 @@ export class LecturerEntity extends IEntity {
     maxLength: 255,
   })
   @Column({ length: 255, nullable: true })
-  specialization: string | null;
+  specialization: string;
 
   @ApiProperty({ description: 'Là trưởng bộ môn?', default: false })
   @Column({ default: false, nullable: false })
@@ -74,4 +74,14 @@ export class LecturerEntity extends IEntity {
   })
   @OneToMany(() => ClassEntity, (classEntity) => classEntity.lecturer, {})
   classes: ClassEntity[];
+
+  @ApiPropertyOptional({
+    type: () => [LecturerCourseEntity],
+    description: 'Các môn Giảng viên này có thể dạy',
+  })
+  @OneToMany(
+    () => LecturerCourseEntity,
+    (lecturerCourse) => lecturerCourse.lecturer,
+  )
+  lecturerCourses: LecturerCourseEntity[];
 }

@@ -17,9 +17,17 @@ export const THROTTLE_TTL = 60;
 export const THROTTLE_LIMIT = 30;
 
 export const PAGINATION = {
-  LIMIT: 100,
-  PAGE_DEFAULT: 1,
+  limit: 100,
+  page: 1,
 };
+
+export const dateOfWeeks = [
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRIDAY',
+];
 
 export const SORT_DESC = 'DESC';
 export const SORT_ASC = 'ASC';

@@ -54,7 +54,6 @@ export class LecturerController {
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Tạo hồ sơ Giảng viên thành công.',
-    type: LecturerEntity,
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,

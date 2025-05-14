@@ -13,7 +13,7 @@ export class FilterClassGroupDto {
   @IsOptional()
   @IsPositive({ message: 'ID Học phần-Học kỳ phải là số dương' })
   @Type(() => Number)
-  courseSemesterId?: number;
+  semesterId?: number;
 
   @ApiPropertyOptional({
     description: 'Lọc theo trạng thái nhóm lớp',
