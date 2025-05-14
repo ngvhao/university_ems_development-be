@@ -20,17 +20,15 @@ export class InsertFacultyDepartmentMajorClass1700000000000
 
     // Insert Majors
     await queryRunner.query(`
-      INSERT INTO majors (name, "departmentId") VALUES
-      ('Kỹ thuật phần mềm', (SELECT id FROM departments WHERE "departmentCode" = 'SE')),
-      ('Trí tuệ nhân tạo', (SELECT id FROM departments WHERE "departmentCode" = 'CS'))
+      INSERT INTO majors (name, "majorCode", "departmentId") VALUES
+      ('Trí tuệ nhân tạo', 'TTNT', (SELECT id FROM departments WHERE "departmentCode" = 'CS'))
     `);
 
     // Insert Classes
     await queryRunner.query(`
-      INSERT INTO classes ("classCode", "className", "majorId", "yearOfAdmission", "homeroomLecturerId") VALUES
-      ('25050201', 'Kỹ thuật phần mềm', (SELECT id FROM majors WHERE name = 'Kỹ thuật phần mềm'), 2025, null),
-      ('25050202', 'Kỹ thuật phần mềm', (SELECT id FROM majors WHERE name = 'Kỹ thuật phần mềm'), 2025, null),
-      ('25050203', 'Trí tuệ nhân tạo', (SELECT id FROM majors WHERE name = 'Trí tuệ nhân tạo'), 2025, null)
+      INSERT INTO classes ("classCode", "majorId", "yearOfAdmission", "homeroomLecturerId") VALUES
+      ('25050202', (SELECT id FROM majors WHERE name = 'Kỹ thuật phần mềm'), 2025, null),
+      ('25050203', (SELECT id FROM majors WHERE name = 'Trí tuệ nhân tạo'), 2025, null)
     `);
   }
 
@@ -49,4 +47,3 @@ export class InsertFacultyDepartmentMajorClass1700000000000
     );
   }
 }
-

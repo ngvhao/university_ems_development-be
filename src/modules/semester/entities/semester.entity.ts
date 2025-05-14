@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CourseSemesterEntity } from 'src/modules/course_semester/entities/course_semester.entity';
+import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.entity';
 import { CurriculumCourseEntity } from 'src/modules/curriculum_course/entities/curriculum_course.entity';
 import { FacultyRegistrationScheduleEntity } from 'src/modules/faculty_registration_schedule/entities/faculty_registration_schedule.entity';
 import { StudyPlanEntity } from 'src/modules/study_plan/entities/study_plan.entity';
@@ -24,27 +24,16 @@ export class SemesterEntity extends IEntity {
   @Column({ type: 'smallint' })
   term: number;
 
-  @ApiProperty({ description: 'Ngày bắt đầu', example: '2024-03-01T00:00:00Z' })
-  @Column({ type: 'timestamp with time zone' })
+  @ApiProperty({ description: 'Ngày bắt đầu', example: '2024-03-01' })
+  @Column({ type: 'date', nullable: true })
   startDate: Date;
 
   @ApiProperty({
     description: 'Ngày kết thúc',
-    example: '2024-06-30T23:59:59Z',
+    example: '2024-06-30',
   })
-  @Column({ type: 'timestamp with time zone' })
+  @Column({ type: 'date', nullable: true })
   endDate: Date;
-
-  @ApiProperty({
-    type: () => [CourseSemesterEntity],
-    required: false,
-    description: 'Các khóa học được mở trong học kỳ này',
-  })
-  @OneToMany(
-    () => CourseSemesterEntity,
-    (courseSemester) => courseSemester.semester,
-  )
-  courseSemesters: CourseSemesterEntity[];
 
   @ApiProperty({
     type: () => [FacultyRegistrationScheduleEntity],
@@ -75,4 +64,12 @@ export class SemesterEntity extends IEntity {
     (curriculumCourse) => curriculumCourse.semester,
   )
   curriculumCourses: CurriculumCourseEntity[];
+
+  @ApiProperty({
+    type: () => [ClassGroupEntity],
+    required: false,
+    description: 'Các nhóm học thuộc học kỳ này',
+  })
+  @OneToMany(() => ClassGroupEntity, (classGroup) => classGroup.semester)
+  classGroups: ClassGroupEntity[];
 }

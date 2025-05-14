@@ -12,7 +12,6 @@ import { StudentModule } from './modules/student/student.module';
 import { UserModule } from './modules/user/user.module';
 import { SemesterModule } from './modules/semester/semester.module';
 import { CourseModule } from './modules/course/course.module';
-import { CourseSemesterModule } from './modules/course_semester/course_semester.module';
 import { DepartmentModule } from './modules/department/department.module';
 import { FacultyModule } from './modules/faculty/faculty.module';
 import { EnrollmentCourseModule } from './modules/enrollment_course/enrollment_course.module';
@@ -20,13 +19,13 @@ import { CurriculumModule } from './modules/curriculum/curriculum.module';
 import { StudyPlanModule } from './modules/study_plan/study_plan.module';
 import { CurriculumCourseModule } from './modules/curriculum_course/curriculum_course.module';
 import { RoomModule } from './modules/room/room.module';
-import { CourseMajorModule } from './modules/course_major/course_major.module';
 import { ClassGroupModule } from './modules/class_group/class_group.module';
 import { FacultyRegistrationScheduleModule } from './modules/faculty_registration_schedule/faculty_registration_schedule.module';
 import { ClassAdjustmentScheduleModule } from './modules/class_adjustment_schedule/class_adjustment_schedule.module';
 import { TimeSlotModule } from './modules/time_slot/time_slot.module';
 import { ClassWeeklyScheduleModule } from './modules/class_weekly_schedule/class_weekly_schedule.module';
 import { HttpModule } from '@nestjs/axios';
+import { LecturerCourseModule } from './modules/lecturer_course/lecturer_course.module';
 
 @Module({
   imports: [
@@ -41,19 +40,18 @@ import { HttpModule } from '@nestjs/axios';
     SemesterModule,
     CourseModule,
     EnrollmentCourseModule,
-    CourseSemesterModule,
     DepartmentModule,
     CurriculumModule,
     StudyPlanModule,
     CurriculumCourseModule,
     RoomModule,
-    CourseMajorModule,
     ClassGroupModule,
     FacultyRegistrationScheduleModule,
     ClassWeeklyScheduleModule,
     ClassAdjustmentScheduleModule,
     TimeSlotModule,
     HttpModule,
+    LecturerCourseModule,
   ],
   controllers: [AppController],
   providers: [AppService],

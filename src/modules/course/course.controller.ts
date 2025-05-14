@@ -1,4 +1,3 @@
-// src/modules/course/course.controller.ts
 import {
   Body,
   Controller,
@@ -10,7 +9,7 @@ import {
   Query,
   Res,
   UseGuards,
-  ParseIntPipe, // Import ParseIntPipe
+  ParseIntPipe,
   HttpStatus,
 } from '@nestjs/common';
 import { CourseService } from './course.service';
@@ -35,15 +34,15 @@ import {
 import { CourseEntity } from './entities/course.entity';
 
 @ApiTags('Quản lý Môn học (Courses)')
-@ApiBearerAuth('token') // Yêu cầu xác thực cho tất cả endpoint
-@UseGuards(JwtAuthGuard) // Áp dụng Guard xác thực JWT
+@ApiBearerAuth('token')
+@UseGuards(JwtAuthGuard)
 @Controller('courses')
 export class CourseController {
   constructor(private readonly courseService: CourseService) {}
 
   @Post()
-  @UseGuards(RolesGuard) // Áp dụng Guard phân quyền
-  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR]) // Chỉ định Role được phép
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
   @ApiOperation({ summary: 'Tạo một môn học mới' })
   @ApiBody({ type: CreateCourseDto })
   @ApiResponse({
@@ -94,11 +93,10 @@ export class CourseController {
     type: Number,
     description: 'Số lượng kết quả mỗi trang',
   })
-  // Thêm các ApiQuery cho bộ lọc nếu Service hỗ trợ
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Lấy danh sách môn học thành công.',
-  }) // Cần DTO response cho danh sách nếu muốn chi tiết
+  })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     description: 'Chưa xác thực.',
@@ -129,7 +127,6 @@ export class CourseController {
     description: 'Không tìm thấy môn học.',
   })
   async findOne(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
-    // Sử dụng ParseIntPipe
     const course = await this.courseService.findOne(id);
     return new SuccessResponse({
       data: course,
@@ -138,8 +135,8 @@ export class CourseController {
   }
 
   @Patch(':id')
-  @UseGuards(RolesGuard) // Thêm Guard phân quyền
-  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR]) // Chỉ định Role
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
   @ApiOperation({ summary: 'Cập nhật thông tin một môn học' })
   @ApiParam({
     name: 'id',
@@ -173,7 +170,7 @@ export class CourseController {
     description: 'Mã môn học mới đã tồn tại.',
   })
   async update(
-    @Param('id', ParseIntPipe) id: number, // Sử dụng ParseIntPipe
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateCourseDto: UpdateCourseDto,
     @Res() res: Response,
   ) {
@@ -185,8 +182,8 @@ export class CourseController {
   }
 
   @Delete(':id')
-  @UseGuards(RolesGuard) // Thêm Guard phân quyền
-  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR]) // Chỉ định Role
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
   @ApiOperation({ summary: 'Xóa một môn học' })
   @ApiParam({ name: 'id', type: Number, description: 'ID của môn học cần xóa' })
   @ApiResponse({
@@ -211,7 +208,6 @@ export class CourseController {
     description: 'Không tìm thấy môn học.',
   })
   async remove(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
-    // Sử dụng ParseIntPipe
     await this.courseService.remove(id);
     return new SuccessResponse({
       message: 'Xóa môn học thành công',

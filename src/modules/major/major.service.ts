@@ -18,7 +18,6 @@ import { DepartmentService } from '../department/department.service';
 import { StudentService } from '../student/student.service';
 import { ClassService } from '../class/class.service';
 import { CurriculumService } from '../curriculum/curriculum.service';
-import { CourseMajorService } from '../course_major/course_major.service';
 
 @Injectable()
 export class MajorService {
@@ -31,7 +30,6 @@ export class MajorService {
     @Inject(forwardRef(() => ClassService))
     private readonly classService: ClassService,
     private readonly curriculumService: CurriculumService,
-    private readonly courseMajorService: CourseMajorService,
   ) {}
 
   /**
@@ -212,16 +210,6 @@ export class MajorService {
     if (curriculum) {
       throw new BadRequestException(
         `Không thể xóa Ngành học ID ${id} vì còn chương trình đào tạo.`,
-      );
-    }
-
-    const courseMajor = await this.courseMajorService.getOne({
-      majorId: id,
-    });
-
-    if (courseMajor) {
-      throw new BadRequestException(
-        `Không thể xóa Ngành học ID ${id} vì còn môn học được liên kết.`,
       );
     }
 

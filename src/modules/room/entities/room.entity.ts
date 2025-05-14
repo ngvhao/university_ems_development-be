@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { RoomType } from 'src/utils/enums/room.enum';
+import { ERoomType } from 'src/utils/enums/room.enum';
 import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { Entity, Column } from 'typeorm';
 
@@ -19,20 +19,21 @@ export class RoomEntity extends IEntity {
 
   @ApiProperty({
     description: 'Loại phòng',
-    enum: RoomType,
-    example: RoomType.CLASSROOM,
-    default: RoomType.CLASSROOM,
+    enum: ERoomType,
+    example: ERoomType.CLASSROOM,
+    default: ERoomType.CLASSROOM,
   })
   @Column({
     type: 'enum',
-    enum: RoomType,
-    default: RoomType.CLASSROOM,
+    enum: ERoomType,
+    default: ERoomType.CLASSROOM,
   })
-  roomType: RoomType;
+  roomType: ERoomType;
 
   @ApiProperty({
-    description: 'Sức chứa của phòng',
+    description: 'Sức chứa',
     example: 60,
+    default: 60,
   })
   @Column()
   capacity: number;

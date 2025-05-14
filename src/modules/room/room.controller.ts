@@ -91,7 +91,7 @@ export class RoomController {
     description: 'Chưa xác thực hoặc token không hợp lệ.',
   })
   async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
-    const { data, meta } = await this.roomService.findAll(paginationDto);
+    const { data, meta } = await this.roomService.findAll({}, paginationDto);
     new SuccessResponse({
       data,
       metadata: meta,

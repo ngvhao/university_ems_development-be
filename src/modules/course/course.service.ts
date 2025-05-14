@@ -186,11 +186,6 @@ export class CourseService {
       'courseMajors',
     ]);
 
-    if (course.courseSemesters?.length > 0) {
-      throw new BadRequestException(
-        `Không thể xóa môn học ID ${id} vì đang được mở trong ${course.courseSemesters.length} học kỳ.`,
-      );
-    }
     if (course.curriculumCourses?.length > 0) {
       throw new BadRequestException(
         `Không thể xóa môn học ID ${id} vì đang có trong ${course.curriculumCourses.length} chương trình đào tạo.`,
@@ -199,11 +194,6 @@ export class CourseService {
     if (course.studyPlans?.length > 0) {
       throw new BadRequestException(
         `Không thể xóa môn học ID ${id} vì đang có trong ${course.studyPlans.length} kế hoạch học tập.`,
-      );
-    }
-    if (course.courseMajors?.length > 0) {
-      throw new BadRequestException(
-        `Không thể xóa môn học ID ${id} vì đang thuộc ${course.courseMajors.length} ngành học.`,
       );
     }
 

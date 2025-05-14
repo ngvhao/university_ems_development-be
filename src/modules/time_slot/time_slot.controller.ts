@@ -1,4 +1,3 @@
-// src/modules/time-slot/time-slot.controller.ts // Đổi tên file
 import {
   Body,
   Controller,
@@ -10,8 +9,8 @@ import {
   UseGuards,
   Res,
   Query,
-  ParseIntPipe, // Import
-  HttpStatus, // Import
+  ParseIntPipe,
+  HttpStatus,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';

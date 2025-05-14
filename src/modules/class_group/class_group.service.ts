@@ -4,13 +4,10 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
-  Inject,
-  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere, Not } from 'typeorm';
 import { ClassGroupEntity } from './entities/class_group.entity';
-import { CourseSemesterService } from 'src/modules/course_semester/course_semester.service';
 import { CreateClassGroupDto } from './dtos/createClassGroup.dto';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
@@ -24,8 +21,6 @@ export class ClassGroupService {
   constructor(
     @InjectRepository(ClassGroupEntity)
     private readonly classGroupRepository: Repository<ClassGroupEntity>,
-    @Inject(forwardRef(() => CourseSemesterService))
-    private readonly courseSemesterService: CourseSemesterService,
   ) {}
 
   /**
@@ -54,22 +49,20 @@ export class ClassGroupService {
    * Kiểm tra sự tồn tại của CourseSemester và kiểm tra trùng lặp groupNumber trong cùng CourseSemester.
    * @param createDto - Dữ liệu để tạo nhóm lớp mới.
    * @returns Promise<ClassGroupEntity> - Nhóm lớp vừa được tạo.
-   * @throws NotFoundException nếu courseSemesterId không tồn tại.
-   * @throws ConflictException nếu groupNumber đã tồn tại trong courseSemesterId đó.
+   * @throws NotFoundException nếu semesterId không tồn tại.
+   * @throws ConflictException nếu groupNumber đã tồn tại trong semesterId đó.
    */
   async create(createDto: CreateClassGroupDto): Promise<ClassGroupEntity> {
-    const { courseSemesterId, groupNumber } = createDto;
-
-    await this.courseSemesterService.getOne({ id: courseSemesterId });
+    const { semesterId, groupNumber } = createDto;
 
     // Kiểm tra trùng lặp groupNumber trong cùng CourseSemester
     const existingGroup = await this.classGroupRepository.findOne({
-      where: { courseSemesterId, groupNumber },
+      where: { semesterId, groupNumber },
       select: ['id'],
     });
     if (existingGroup) {
       throw new ConflictException(
-        `Nhóm lớp số ${groupNumber} đã tồn tại cho Học phần-Học kỳ ID ${courseSemesterId}.`,
+        `Nhóm lớp số ${groupNumber} đã tồn tại cho Học phần-Học kỳ ID ${semesterId}.`,
       );
     }
 
@@ -78,7 +71,6 @@ export class ClassGroupService {
       const newGroup = this.classGroupRepository.create(createDto);
       return await this.classGroupRepository.save(newGroup);
     } catch (error) {
-      // Xử lý các lỗi tiềm ẩn khác từ DB nếu cần
       console.error('Lỗi khi tạo nhóm lớp:', error);
       throw new BadRequestException(
         'Không thể tạo nhóm lớp, vui lòng kiểm tra lại dữ liệu.',
@@ -89,20 +81,19 @@ export class ClassGroupService {
   /**
    * Lấy danh sách các nhóm lớp có phân trang và lọc.
    * @param paginationDto - Thông tin phân trang (page, limit).
-   * @param filterDto - Thông tin lọc (courseSemesterId, status, groupNumber).
+   * @param filterDto - Thông tin lọc (semesterId, status, groupNumber).
    * @returns Promise<{ data: ClassGroupEntity[]; meta: MetaDataInterface }> - Danh sách nhóm lớp và metadata phân trang.
    */
   async findAll(
-    paginationDto: PaginationDto,
     filterDto: FilterClassGroupDto,
+    paginationDto: PaginationDto,
   ): Promise<{ data: ClassGroupEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
-    const { courseSemesterId, status, groupNumber } = filterDto;
+    const { semesterId, status, groupNumber } = filterDto;
 
-    // Xây dựng điều kiện lọc
     const where: FindOptionsWhere<ClassGroupEntity> = {};
-    if (courseSemesterId !== undefined) {
-      where.courseSemesterId = courseSemesterId;
+    if (semesterId !== undefined) {
+      where.semesterId = semesterId;
     }
     if (status !== undefined) {
       where.status = status;
@@ -111,17 +102,12 @@ export class ClassGroupService {
       where.groupNumber = groupNumber;
     }
 
-    // Query dữ liệu và count tổng số record
     const [data, total] = await this.classGroupRepository.findAndCount({
       where,
-      relations: [
-        'courseSemester',
-        'courseSemester.course',
-        'courseSemester.semester',
-      ],
+      relations: ['course', 'semester'],
       skip: (page - 1) * limit,
       take: limit,
-      order: { courseSemesterId: 'ASC', groupNumber: 'ASC' },
+      order: { semesterId: 'ASC', groupNumber: 'ASC' },
     });
 
     const meta = generatePaginationMeta(total, page, limit);
@@ -145,14 +131,14 @@ export class ClassGroupService {
 
   /**
    * Cập nhật thông tin của một nhóm lớp.
-   * Không cho phép thay đổi courseSemesterId.
+   * Không cho phép thay đổi semesterId.
    * Kiểm tra trùng lặp nếu groupNumber thay đổi.
    * Kiểm tra logic về maxStudents và registeredStudents.
    * @param id - ID của nhóm lớp cần cập nhật.
    * @param updateDto - Dữ liệu cập nhật.
    * @returns Promise<ClassGroupEntity> - Nhóm lớp sau khi đã cập nhật.
    * @throws NotFoundException nếu không tìm thấy nhóm lớp.
-   * @throws BadRequestException nếu cố gắng thay đổi courseSemesterId hoặc nếu maxStudents/registeredStudents không hợp lệ.
+   * @throws BadRequestException nếu cố gắng thay đổi semesterId hoặc nếu maxStudents/registeredStudents không hợp lệ.
    * @throws ConflictException nếu groupNumber mới bị trùng.
    */
   async update(
@@ -171,8 +157,8 @@ export class ClassGroupService {
     const originalGroup = await this.findGroupByIdOrThrow(id);
 
     if (
-      updateDto.courseSemesterId &&
-      updateDto.courseSemesterId !== originalGroup.courseSemesterId
+      updateDto.semesterId &&
+      updateDto.semesterId !== originalGroup.semesterId
     ) {
       throw new BadRequestException(
         'Không thể thay đổi Học phần-Học kỳ của một Nhóm lớp đã tồn tại.',
@@ -185,7 +171,7 @@ export class ClassGroupService {
     ) {
       const conflict = await this.classGroupRepository.findOne({
         where: {
-          courseSemesterId: originalGroup.courseSemesterId,
+          semesterId: originalGroup.semesterId,
           groupNumber: updateDto.groupNumber,
           id: Not(id),
         },
@@ -193,7 +179,7 @@ export class ClassGroupService {
       });
       if (conflict) {
         throw new ConflictException(
-          `Nhóm lớp số ${updateDto.groupNumber} đã tồn tại cho Học phần-Học kỳ ID ${originalGroup.courseSemesterId}.`,
+          `Nhóm lớp số ${updateDto.groupNumber} đã tồn tại cho Học phần-Học kỳ ID ${originalGroup.semesterId}.`,
         );
       }
     }
@@ -225,7 +211,7 @@ export class ClassGroupService {
     } catch (error) {
       if (error.code === '23505') {
         throw new ConflictException(
-          `Nhóm lớp số ${existingGroup.groupNumber} có thể đã tồn tại cho Học phần-Học kỳ ID ${existingGroup.courseSemesterId}.`,
+          `Nhóm lớp số ${existingGroup.groupNumber} có thể đã tồn tại cho Học phần-Học kỳ ID ${existingGroup.semesterId}.`,
         );
       }
       console.error('Lỗi khi cập nhật nhóm lớp:', error);

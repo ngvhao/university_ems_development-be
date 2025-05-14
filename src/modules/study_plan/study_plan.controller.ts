@@ -134,9 +134,9 @@ export class StudyPlanController {
   ) {
     const currentUser = req.user;
     const result = await this.studyPlanService.findAll(
-      paginationDto,
-      filterDto,
       currentUser,
+      filterDto,
+      paginationDto,
     );
     return new SuccessResponse({
       ...result,
@@ -144,7 +144,7 @@ export class StudyPlanController {
     }).send(res);
   }
 
-  @Get('/my')
+  @Get('/me')
   @UseGuards(RolesGuard)
   @Roles([EUserRole.STUDENT])
   @ApiOperation({ summary: '[Student] Lấy kế hoạch học tập của bản thân' })
@@ -180,16 +180,16 @@ export class StudyPlanController {
     type: 'number',
   })
   async findMyStudyPlan(
+    @Query() filterDto: FilterStudyPlanDto,
     @Query() paginationDto: PaginationDto,
-    @Query() filterDto: Omit<FilterStudyPlanDto, 'studentId'>,
     @Req() req: RequestHasUserDto & Request,
     @Res() res: Response,
   ) {
     const currentUser = req.user;
     const result = await this.studyPlanService.findAll(
-      paginationDto,
-      filterDto,
       currentUser,
+      filterDto,
+      paginationDto,
     );
     return new SuccessResponse({
       ...result,

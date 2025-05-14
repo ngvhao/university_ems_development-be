@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsNumber, IsString } from 'class-validator';
-import { RoomType } from 'src/utils/enums/room.enum';
+import { ERoomType } from 'src/utils/enums/room.enum';
 
 export class CreateRoomDto {
   @ApiProperty({
@@ -32,16 +32,17 @@ export class CreateRoomDto {
 
   @ApiProperty({
     description: 'Loại phòng',
-    enum: RoomType,
-    example: RoomType.CLASSROOM,
-    default: RoomType.CLASSROOM,
+    enum: ERoomType,
+    example: ERoomType.CLASSROOM,
+    default: ERoomType.CLASSROOM,
   })
-  @IsEnum(RoomType)
-  roomType: RoomType;
+  @IsEnum(ERoomType)
+  roomType: ERoomType;
 
   @ApiProperty({
-    description: 'Sức chứa của phòng',
+    description: 'Sức chứa',
     example: 60,
+    default: 60,
   })
   @IsNumber()
   capacity: number;
