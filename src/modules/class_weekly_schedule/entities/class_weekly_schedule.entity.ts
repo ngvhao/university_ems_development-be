@@ -15,7 +15,13 @@ export class ClassWeeklyScheduleEntity extends IEntity {
     enum: EDayOfWeek,
     example: EDayOfWeek.MONDAY,
   })
-  @Column({ type: 'enum', enum: EDayOfWeek, nullable: false })
+  @Column({
+    type: 'enum',
+    enum: EDayOfWeek,
+    nullable: false,
+    comment:
+      'MONDAY = 1, TUESDAY = 2, WEDNESDAY = 3, THURSDAY = 4, FRIDAY = 5, SATURDAY = 6, SUNDAY = 7',
+  })
   dayOfWeek: EDayOfWeek;
 
   @ApiProperty({ example: 10, description: 'ID Nhóm lớp học' })

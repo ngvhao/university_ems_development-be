@@ -30,7 +30,6 @@ import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { Helpers } from 'src/utils/helpers';
 import { UserService } from '../user/user.service';
-import { QueueProducer } from 'src/common/queue/queue.producer';
 import { StudentHelper } from 'src/utils/helpers/student.helper';
 
 @Injectable()
@@ -41,16 +40,16 @@ export class StudentService {
     private studentRepository: Repository<StudentEntity>,
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
-    private readonly queueProducer: QueueProducer,
+    // private readonly queueProducer: QueueProducer,
   ) {}
 
-  async testQueue(studentDTO: CreateStudentDto): Promise<void> {
-    console.log('testQueue@@@@studentDTO: ', studentDTO);
-    await this.queueProducer.produce(process.env.QUEUE_STUDENT_CREATION_URL, {
-      type: 'student',
-      data: studentDTO,
-    });
-  }
+  // async testQueue(studentDTO: CreateStudentDto): Promise<void> {
+  //   console.log('testQueue@@@@studentDTO: ', studentDTO);
+  //   await this.queueProducer.produce(process.env.QUEUE_STUDENT_CREATION_URL, {
+  //     type: 'student',
+  //     data: studentDTO,
+  //   });
+  // }
 
   /**
    * Tạo mới một sinh viên bao gồm cả việc tạo tài khoản người dùng liên kết.
@@ -291,58 +290,22 @@ export class StudentService {
    * @returns Promise<StudentEntity> - Thông tin chi tiết sinh viên.
    * @throws NotFoundException - Nếu không tìm thấy sinh viên.
    */
-  async findOneById(id: number): Promise<StudentEntity> {
-    const student = await this.studentRepository
-      .createQueryBuilder('student')
-      .innerJoin('student.user', 'user')
-      .innerJoin('student.class', 'class')
-      .innerJoin('student.major', 'major')
-      .leftJoin('major.department', 'department')
-      .leftJoin('department.faculty', 'faculty')
-      .select([
-        'student.id',
-        'student.studentCode',
-        'student.academicYear',
-        'student.gpa',
-        'student.enrollmentDate',
-        'student.expectedGraduationDate',
-        'student.userId',
-        'student.classId',
-        'student.majorId',
-        'user.id',
-        'user.firstName',
-        'user.lastName',
-        'user.userCode',
-        'user.universityEmail',
-        'user.personalEmail',
-        'user.avatarUrl',
-        'user.status',
-        'user.phoneNumber',
-        'user.identityCardNumber',
-        'user.dateOfBirth',
-        'user.gender',
-        'user.hometown',
-        'user.permanentAddress',
-        'user.temporaryAddress',
-        'user.nationality',
-        'user.ethnicity',
-        'class.id',
-        'class.name',
-        'major.id',
-        'major.name',
-        'department.id',
-        'department.name',
-        'faculty.id',
-        'faculty.name',
-        'faculty.facultyCode',
-      ])
-      .where('student.id = :id', { id })
-      .getOne();
+  async findOneById(id: number): Promise<Partial<StudentEntity>> {
+    const student = await this.studentRepository.findOne({
+      where: {
+        id: id,
+      },
+      relations: {
+        major: true,
+        user: true,
+        class: true,
+      },
+    });
 
     if (!student) {
       throw new NotFoundException(`Không tìm thấy sinh viên với ID ${id}`);
     }
-    return student;
+    return _.omit(student, ['user.password']);
   }
 
   /**
@@ -359,7 +322,7 @@ export class StudentService {
   async update(
     id: number,
     updateDto: UpdateStudentDto,
-  ): Promise<StudentEntity> {
+  ): Promise<Partial<StudentEntity>> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();

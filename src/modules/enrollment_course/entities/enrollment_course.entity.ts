@@ -29,6 +29,8 @@ export class EnrollmentCourseEntity extends IEntity {
     enum: EEnrollmentStatus,
     default: EEnrollmentStatus.ENROLLED,
     nullable: false,
+    comment:
+      'Trạng thái: ENROLLED = 0, PASSED = 1, FAILED = 2, WITHDRAWN = 3, CANCELLED = 4,',
   })
   status: EEnrollmentStatus;
 

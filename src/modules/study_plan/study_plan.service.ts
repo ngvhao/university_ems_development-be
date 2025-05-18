@@ -272,7 +272,7 @@ export class StudyPlanService {
   }
 
   /**
-   * Lấy danh sách kế hoạch học tập (có phân trang và lọc).
+   * Lấy danh sách kế hoạch học tập .
    * @param paginationDto - Thông tin phân trang.
    * @param filterDto - Thông tin lọc.
    * @param currentUser - Thông tin người dùng hiện tại.

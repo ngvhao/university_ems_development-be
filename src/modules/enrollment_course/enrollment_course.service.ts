@@ -22,6 +22,8 @@ import { CreateEnrollmentCourseDto } from './dtos/createEnrollmentCourse.dto';
 import { FilterEnrollmentCourseDto } from './dtos/filterEnrollmentCourse.dto';
 import { UserEntity } from '../user/entities/user.entity';
 import { ClassGroupEntity } from '../class_group/entities/class_group.entity';
+import { SendMessageOptions } from 'src/utils/interfaces/queue.interface';
+import { QueueProducer } from 'src/common/queue/queue.producer';
 
 @Injectable()
 export class EnrollmentCourseService {
@@ -31,6 +33,7 @@ export class EnrollmentCourseService {
     private readonly dataSource: DataSource,
     @Inject(forwardRef(() => StudentService))
     private readonly studentService: StudentService,
+    private readonly queueProducer: QueueProducer,
   ) {}
 
   /**
@@ -89,6 +92,31 @@ export class EnrollmentCourseService {
     throw new ForbiddenException('Bạn không có quyền thực hiện hành động này.');
   }
 
+  async enrollClassGroup(
+    enrollDTO: CreateEnrollmentCourseDto,
+    currentUser: UserEntity,
+  ): Promise<void> {
+    console.log('enrollClassGroup@@@@enrollDTO: ', enrollDTO);
+    const options: SendMessageOptions = {
+      isFifo: true,
+      groupId: `student-${enrollDTO.studentId}`,
+    };
+    const messageBody = {
+      role: currentUser.role,
+      id: currentUser.id,
+      studentId: enrollDTO.studentId,
+      classGroupId: enrollDTO.classGroupId,
+    };
+    await this.queueProducer.produce(
+      process.env.QUEUE_STUDENT_ENROLLMENT_CLASSGROUP_URL,
+      {
+        type: 'student-enrollment',
+        data: messageBody,
+      },
+      options,
+    );
+  }
+
   /**
    * Tạo một lượt đăng ký môn học mới.
    * @param createDto - Dữ liệu đăng ký.
@@ -105,6 +133,8 @@ export class EnrollmentCourseService {
   ): Promise<EnrollmentCourseEntity> {
     const { classGroupId } = createDto;
     let studentId = createDto.studentId;
+    let majorId = null;
+    let startAcademicYear = null;
 
     if (!studentId) {
       // Trường hợp student tự đăng ký
@@ -119,6 +149,8 @@ export class EnrollmentCourseService {
           'Tài khoản của bạn chưa được liên kết với hồ sơ sinh viên.',
         );
       }
+      majorId = studentProfile.majorId;
+      startAcademicYear = studentProfile.academicYear;
       studentId = studentProfile.id;
     } else {
       // Trường hợp admin/manager đăng ký cho sinh viên
@@ -132,7 +164,10 @@ export class EnrollmentCourseService {
         );
       }
       // Kiểm tra studentId được cung cấp có tồn tại không
-      await this.studentService.findOneById(studentId);
+      const studentProfile = await this.studentService.findOneById(studentId);
+      console.log('studentProfile@create: ', studentProfile);
+      majorId = studentProfile.majorId;
+      startAcademicYear = studentProfile.academicYear;
     }
 
     // --- Bắt đầu Transaction ---
@@ -143,7 +178,17 @@ export class EnrollmentCourseService {
     try {
       // Lock ClassGroup để tránh race condition khi kiểm tra và cập nhật số lượng
       const classGroup = await queryRunner.manager.findOne(ClassGroupEntity, {
-        where: { id: classGroupId },
+        where: {
+          id: classGroupId,
+          course: {
+            curriculumCourses: {
+              curriculum: {
+                majorId: majorId,
+                startAcademicYear: startAcademicYear,
+              },
+            },
+          },
+        },
         lock: { mode: 'pessimistic_write' },
       });
 
@@ -230,7 +275,7 @@ export class EnrollmentCourseService {
   }
 
   /**
-   * Lấy danh sách các lượt đăng ký (có phân trang và lọc).
+   * Lấy danh sách các lượt đăng ký .
    * Áp dụng tự động lọc theo sinh viên nếu người dùng là STUDENT.
    * @param paginationDto - Thông tin phân trang.
    * @param filterDto - Thông tin lọc.

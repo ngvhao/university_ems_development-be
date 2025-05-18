@@ -6,7 +6,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, Not } from 'typeorm';
+import {
+  Repository,
+  FindOptionsWhere,
+  Not,
+  DataSource,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+} from 'typeorm';
 import { ClassGroupEntity } from './entities/class_group.entity';
 import { CreateClassGroupDto } from './dtos/createClassGroup.dto';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
@@ -15,12 +22,17 @@ import { EClassGroupStatus } from 'src/utils/enums/class.enum';
 import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { FilterClassGroupDto } from './dtos/filterClassGroup.dto';
 import { UpdateClassGroupDto } from './dtos/updateClassGroup.dto';
+import { GenerateScheduleResponseDto } from './dtos/generatecClassGroupSchedule.dto';
+import { ClassWeeklyScheduleEntity } from '../class_weekly_schedule/entities/class_weekly_schedule.entity';
+import { SemesterEntity } from '../semester/entities/semester.entity';
+import { EDayOfWeek } from 'src/utils/enums/schedule.enum';
 
 @Injectable()
 export class ClassGroupService {
   constructor(
     @InjectRepository(ClassGroupEntity)
     private readonly classGroupRepository: Repository<ClassGroupEntity>,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -53,11 +65,11 @@ export class ClassGroupService {
    * @throws ConflictException nếu groupNumber đã tồn tại trong semesterId đó.
    */
   async create(createDto: CreateClassGroupDto): Promise<ClassGroupEntity> {
-    const { semesterId, groupNumber } = createDto;
+    const { semesterId, groupNumber, courseId } = createDto;
 
     // Kiểm tra trùng lặp groupNumber trong cùng CourseSemester
     const existingGroup = await this.classGroupRepository.findOne({
-      where: { semesterId, groupNumber },
+      where: { semesterId, groupNumber, courseId },
       select: ['id'],
     });
     if (existingGroup) {
@@ -79,6 +91,131 @@ export class ClassGroupService {
   }
 
   /**
+   * Tạo một nhóm lớp mới.
+   * Kiểm tra sự tồn tại của CourseSemester và kiểm tra trùng lặp groupNumber trong cùng CourseSemester.
+   * @param createDto - Dữ liệu để tạo nhóm lớp mới.
+   * @returns Promise<ClassGroupEntity> - Nhóm lớp vừa được tạo.
+   * @throws NotFoundException nếu semesterId không tồn tại.
+   * @throws ConflictException nếu groupNumber đã tồn tại trong semesterId đó.
+   */
+  async createWithWeeklySchedule(
+    createDto: GenerateScheduleResponseDto,
+  ): Promise<ClassGroupEntity[]> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const { scheduledCourses, semesterId } = createDto;
+
+      const semesterExists = await queryRunner.manager.findOne(SemesterEntity, {
+        where: { id: semesterId },
+      });
+      if (!semesterExists) {
+        throw new NotFoundException(`Semester ID ${semesterId} không tồn tại.`);
+      }
+
+      const createdGroups: ClassGroupEntity[] = [];
+
+      for (const courseSchedule of scheduledCourses) {
+        for (const scheduleClassGroup of courseSchedule.scheduledClassGroups) {
+          const existingGroup = await queryRunner.manager.findOne(
+            ClassGroupEntity,
+            {
+              where: {
+                semesterId,
+                groupNumber: scheduleClassGroup.groupNumber,
+                courseId: courseSchedule.courseId,
+              },
+              select: ['id'],
+              relations: {
+                course: true,
+              },
+            },
+          );
+          if (existingGroup) {
+            console.log(existingGroup);
+            throw new ConflictException(
+              `Nhóm lớp số ${scheduleClassGroup.groupNumber} đã tồn tại cho Học phần-Học kỳ ID ${semesterId} của môn ${existingGroup.course.name}.`,
+            );
+          }
+
+          const newClassGroup = queryRunner.manager.create(ClassGroupEntity, {
+            groupNumber: scheduleClassGroup.groupNumber,
+            courseId: courseSchedule.courseId,
+            lecturerId: scheduleClassGroup.lecturerId,
+            maxStudents: scheduleClassGroup.maxStudents,
+            semesterId: semesterId,
+          });
+          const savedClassGroup = await queryRunner.manager.save(newClassGroup);
+          const schedules = [];
+          for (const weeklySchedule of scheduleClassGroup.weeklyScheduleDetails) {
+            console.log(
+              'weeklySchedule.dayOfWeek@createWithWeeklySchedule: ',
+              weeklySchedule.dayOfWeek,
+            );
+            const conflictSchedule = await queryRunner.manager.findOne(
+              ClassWeeklyScheduleEntity,
+              {
+                where: {
+                  dayOfWeek: EDayOfWeek[weeklySchedule.dayOfWeek],
+                  timeSlotId: weeklySchedule.timeSlotId,
+                  roomId: weeklySchedule.roomId,
+                  startDate: LessThanOrEqual(
+                    new Date(scheduleClassGroup.groupEndDate),
+                  ),
+                  endDate: MoreThanOrEqual(
+                    new Date(scheduleClassGroup.groupStartDate),
+                  ),
+                },
+                relations: ['classGroup', 'classGroup.course'],
+              },
+            );
+            if (conflictSchedule) {
+              throw new ConflictException(
+                `Nhóm lớp số ${scheduleClassGroup.groupNumber} bị trùng lịch với nhóm lớp ${conflictSchedule.classGroupId} của môn ${conflictSchedule.classGroup.course.name}.`,
+              );
+            }
+
+            const newWeeklySchedule = queryRunner.manager.create(
+              ClassWeeklyScheduleEntity,
+              {
+                classGroupId: savedClassGroup.id,
+                dayOfWeek: EDayOfWeek[weeklySchedule.dayOfWeek],
+                timeSlotId: weeklySchedule.timeSlotId,
+                roomId: weeklySchedule.roomId,
+                lecturerId: scheduleClassGroup.lecturerId,
+                startDate: scheduleClassGroup.groupStartDate,
+                endDate: scheduleClassGroup.groupEndDate,
+              },
+            );
+            const savedWeeklySchedule =
+              await queryRunner.manager.save(newWeeklySchedule);
+            schedules.push(savedWeeklySchedule);
+          }
+          savedClassGroup.schedules = schedules;
+          createdGroups.push(savedClassGroup);
+        }
+      }
+
+      await queryRunner.commitTransaction();
+
+      return createdGroups;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      if (error.code === '23505') {
+        throw new ConflictException(
+          'Dữ liệu bị trùng lặp trong database: ',
+          error,
+        );
+      }
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /**
    * Lấy danh sách các nhóm lớp có phân trang và lọc.
    * @param paginationDto - Thông tin phân trang (page, limit).
    * @param filterDto - Thông tin lọc (semesterId, status, groupNumber).
@@ -89,7 +226,7 @@ export class ClassGroupService {
     paginationDto: PaginationDto,
   ): Promise<{ data: ClassGroupEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
-    const { semesterId, status, groupNumber } = filterDto;
+    const { semesterId, status, majorId, yearAdmission } = filterDto;
 
     const where: FindOptionsWhere<ClassGroupEntity> = {};
     if (semesterId !== undefined) {
@@ -98,8 +235,16 @@ export class ClassGroupService {
     if (status !== undefined) {
       where.status = status;
     }
-    if (groupNumber !== undefined) {
-      where.groupNumber = groupNumber;
+
+    if (majorId !== undefined && yearAdmission !== undefined) {
+      where.course = {
+        curriculumCourses: {
+          curriculum: {
+            majorId: majorId,
+            startAcademicYear: yearAdmission,
+          },
+        },
+      };
     }
 
     const [data, total] = await this.classGroupRepository.findAndCount({

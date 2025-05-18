@@ -34,8 +34,8 @@ functions:
           method: ANY
           path: '{proxy+}'
 
-  student-creation-consumer:
-    handler: dist/src/handlers/createStudentHandler.handler
+  student-enrollment-class-group:
+    handler: dist/src/handlers/enrollClassGroup.handler
     vpc:
       securityGroupIds:
         - sg-021c0672641daa5eb
@@ -47,15 +47,17 @@ functions:
       - sqs:
           arn:
             Fn::GetAtt:
-              - StudentCreationQueue
+              - StudentEnrollClassGroupQueue
               - Arn
 
 resources:
   Resources:
-    StudentCreationQueue:
+    StudentEnrollClassGroupQueue:
       Type: AWS::SQS::Queue
       Properties:
-        QueueName: student-creation-queue
+        QueueName: student-enrollment-class-group.fifo
+        FifoQueue: true
+        ContentBasedDeduplication: true
 
 custom:
   dotenv:

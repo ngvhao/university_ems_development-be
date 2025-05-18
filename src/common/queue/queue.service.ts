@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import * as AWS from 'aws-sdk';
 import { QueueConfigService } from './queue.config';
-import { QueueMessage } from 'src/utils/interfaces/queue.interface';
+import {
+  QueueMessage,
+  SendMessageOptions,
+} from 'src/utils/interfaces/queue.interface';
 
 @Injectable()
 export class QueueService {
@@ -13,12 +16,20 @@ export class QueueService {
   async sendMessage(
     queueUrl: string,
     messageBody: QueueMessage,
+    options: SendMessageOptions = {},
   ): Promise<AWS.SQS.SendMessageResult> {
     try {
-      const params = {
+      const { isFifo = false, groupId } = options;
+      const params: AWS.SQS.SendMessageRequest = {
         QueueUrl: queueUrl,
         MessageBody: JSON.stringify(messageBody),
       };
+      if (isFifo) {
+        if (!groupId) {
+          throw new Error('MessageGroupId is required for FIFO queues');
+        }
+        params.MessageGroupId = groupId;
+      }
       console.log('sendMessage@@@params: ', params);
       const result = await this.sqs.sendMessage(params).promise();
       console.log(`Sent message to ${queueUrl}: ${result.MessageId}`);

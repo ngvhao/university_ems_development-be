@@ -6,6 +6,7 @@ import {
   Max,
   Min,
   IsPositive,
+  IsDate,
 } from 'class-validator';
 import { EDayOfWeek } from 'src/utils/enums/schedule.enum';
 
@@ -60,4 +61,22 @@ export class CreateClassWeeklyScheduleDto {
   @IsInt({ message: 'Thứ trong tuần phải là số nguyên' })
   @IsNotEmpty({ message: 'Thứ trong tuần không được để trống' })
   dayOfWeek: EDayOfWeek;
+
+  @ApiProperty({
+    description: 'Ngày bắt đầu',
+    example: '2025-09-01',
+    type: String,
+    format: 'date',
+  })
+  @IsDate()
+  startDate: Date;
+
+  @ApiProperty({
+    description: 'Ngày kết thúc',
+    example: '2026-01-05',
+    type: String,
+    format: 'date',
+  })
+  @IsDate()
+  endDate: Date;
 }
