@@ -3,6 +3,7 @@ import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.e
 import { CurriculumCourseEntity } from 'src/modules/curriculum_course/entities/curriculum_course.entity';
 import { FacultyRegistrationScheduleEntity } from 'src/modules/faculty_registration_schedule/entities/faculty_registration_schedule.entity';
 import { StudyPlanEntity } from 'src/modules/study_plan/entities/study_plan.entity';
+import { TuitionEntity } from 'src/modules/tuition/entities/tuition.entity';
 import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { Entity, Column, OneToMany } from 'typeorm';
 
@@ -72,4 +73,11 @@ export class SemesterEntity extends IEntity {
   })
   @OneToMany(() => ClassGroupEntity, (classGroup) => classGroup.semester)
   classGroups: ClassGroupEntity[];
+
+  @ApiProperty({
+    type: () => [TuitionEntity],
+    required: false,
+  })
+  @OneToMany(() => TuitionEntity, (tuition) => tuition.semester)
+  tuitions: TuitionEntity[];
 }
