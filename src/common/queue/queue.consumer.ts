@@ -5,7 +5,6 @@ import {
   OnModuleDestroy,
 } from '@nestjs/common';
 import { QueueService } from './queue.service';
-import { StudentService } from 'src/modules/student/student.service';
 import { QueueMessage } from 'src/utils/interfaces/queue.interface';
 import { ConfigService } from '@nestjs/config';
 
@@ -17,7 +16,6 @@ export class QueueConsumer implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly queueService: QueueService,
     private readonly configService: ConfigService,
-    private readonly studentService: StudentService,
   ) {}
 
   onModuleInit() {
@@ -77,8 +75,8 @@ export class QueueConsumer implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`Processing message: ${JSON.stringify(messageBody)}`);
 
     try {
-      if (messageBody.type === 'student') {
-        await this.studentService.createStudent(messageBody.data);
+      if (messageBody.type === 'student-enrollment') {
+        // await this.enrollmentCourseService.create(messageBody.data);
         this.logger.log(`Created student: ${messageBody.type}`);
       } else if (messageBody.type === 'course-registration') {
         console.log('Registration course');
@@ -88,7 +86,7 @@ export class QueueConsumer implements OnModuleInit, OnModuleDestroy {
         throw new Error(`Unknown message type: ${messageBody.type}`);
       }
 
-      //   // Gửi thông báo đến hàng đợi khác (nếu cần)
+      //   // Gửi thông báo đến hàng đợi khác
       //   const notificationQueueUrl = this.configService.get<string>(
       //     'AWS_SQS_NOTIFICATION_QUEUE_URL',
       //   );

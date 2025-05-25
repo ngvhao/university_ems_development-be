@@ -1,4 +1,4 @@
-import { IsOptional, IsEnum, IsPositive } from 'class-validator';
+import { IsOptional, IsEnum, IsPositive, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 import { EClassGroupStatus } from 'src/utils/enums/class.enum';
 import { ApiPropertyOptional } from '@nestjs/swagger';
@@ -25,13 +25,21 @@ export class FilterClassGroupDto {
   status?: EClassGroupStatus;
 
   @ApiPropertyOptional({
-    description: 'Lọc theo số thứ tự nhóm lớp',
+    description: 'Lọc theo ngành',
     example: 1,
     type: Number,
     minimum: 1,
   })
   @IsOptional()
-  @IsPositive({ message: 'Số thứ tự nhóm phải là số dương' })
   @Type(() => Number)
-  groupNumber?: number;
+  majorId: number;
+
+  @ApiPropertyOptional({
+    name: 'yearAdmission',
+    required: false,
+    type: Number,
+    description: 'Năm nhập học hoặc năm của chương trình',
+  })
+  @IsNumber()
+  yearAdmission: number;
 }

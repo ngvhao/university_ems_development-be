@@ -30,12 +30,11 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiBody,
-  ApiQuery,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { UpdateClassGroupStatusDto } from './dtos/updateClassGroupStatus.dto';
 import { ClassGroupEntity } from './entities/class_group.entity';
-import { EClassGroupStatus } from 'src/utils/enums/class.enum';
 import { StudyPlanService } from '../study_plan/study_plan.service';
 import { SemesterService } from '../semester/semester.service';
 import { TimeSlotService } from '../time_slot/time_slot.service';
@@ -156,14 +155,16 @@ export class ClassGroupController {
         maxSessionsPerWeekAllowed: maxSessionsPerWeekAllowed,
       },
     );
+    const savedClassGroups =
+      await this.classGroupService.createWithWeeklySchedule(classGroups.data);
     return new SuccessResponse({
       message: 'Lấy nhóm lớp thành công',
-      data: classGroups.data,
+      data: savedClassGroups,
     }).send(res);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách nhóm lớp (có phân trang và lọc)' })
+  @ApiOperation({ summary: 'Lấy danh sách nhóm lớp' })
   @ApiQuery({
     name: 'page',
     required: false,
@@ -175,24 +176,6 @@ export class ClassGroupController {
     required: false,
     type: Number,
     description: 'Số lượng kết quả mỗi trang',
-  })
-  @ApiQuery({
-    name: 'courseSemesterId',
-    required: false,
-    type: Number,
-    description: 'Lọc theo ID Học phần-Học kỳ',
-  })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    enum: EClassGroupStatus,
-    description: 'Lọc theo trạng thái nhóm',
-  })
-  @ApiQuery({
-    name: 'groupNumber',
-    required: false,
-    type: Number,
-    description: 'Lọc theo số thứ tự nhóm',
   })
   @ApiResponse({
     status: HttpStatus.OK,

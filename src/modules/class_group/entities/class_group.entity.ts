@@ -27,14 +27,6 @@ export class ClassGroupEntity extends IEntity {
   maxStudents: number;
 
   @ApiProperty({
-    example: 5,
-    description: 'Số lượng sinh viên đăng ký tạm/ưu tiên (nếu có)',
-    default: 0,
-  })
-  @Column({ type: 'int', default: 0 })
-  preRegisteredStudents: number;
-
-  @ApiProperty({
     example: 45,
     description: 'Số lượng sinh viên đã đăng ký chính thức',
     default: 0,
@@ -52,6 +44,7 @@ export class ClassGroupEntity extends IEntity {
     type: 'enum',
     enum: EClassGroupStatus,
     default: EClassGroupStatus.OPEN,
+    comment: 'Trạng thái: CLOSED = 0,OPEN = 1, LOCKED = 2, CANCELLED = 3',
   })
   status: EClassGroupStatus;
 

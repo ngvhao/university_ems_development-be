@@ -22,6 +22,17 @@ export class CreateClassGroupDto {
   semesterId: number;
 
   @ApiProperty({
+    description: 'ID của môn học trong học kỳ',
+    example: 15,
+    required: true,
+    type: Number,
+    minimum: 1,
+  })
+  @IsPositive({ message: 'ID môn học phải là số dương' })
+  @IsNotEmpty({ message: 'ID môn học không được để trống' })
+  courseId: number;
+
+  @ApiProperty({
     description:
       'Số thứ tự của nhóm lớp trong học phần-học kỳ (phải là duy nhất)',
     example: 1,

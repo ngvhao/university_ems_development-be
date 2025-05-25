@@ -34,29 +34,6 @@ functions:
           method: ANY
           path: '{proxy+}'
 
-  student-creation-consumer:
-    handler: dist/src/handlers/createStudentHandler.handler
-    vpc:
-      securityGroupIds:
-        - sg-021c0672641daa5eb
-      subnetIds:
-        - subnet-081117d9dd0cf6bbb
-        - subnet-064b2e3d2bdccdf5b
-        - subnet-0e78358b4cddb77c2
-    events:
-      - sqs:
-          arn:
-            Fn::GetAtt:
-              - StudentCreationQueue
-              - Arn
-
-resources:
-  Resources:
-    StudentCreationQueue:
-      Type: AWS::SQS::Queue
-      Properties:
-        QueueName: student-creation-queue
-
 custom:
   dotenv:
     exclude:

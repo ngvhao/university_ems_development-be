@@ -42,7 +42,12 @@ export class UserEntity extends IEntity {
   avatarUrl: string;
 
   @ApiProperty({ description: 'Vai trò người dùng', enum: EUserRole })
-  @Column({ type: 'enum', enum: EUserRole })
+  @Column({
+    type: 'enum',
+    enum: EUserRole,
+    comment:
+      'GUEST = 0, STUDENT = 1, LECTURER = 2, ACADEMIC_MANAGER = 3, HEAD_OF_DEPARTMENT = 4, ADMINISTRATOR = 5',
+  })
   role: EUserRole;
 
   @ApiPropertyOptional({ description: 'Số điện thoại', example: '0987654321' })
