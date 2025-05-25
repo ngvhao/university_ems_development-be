@@ -4,6 +4,8 @@ export enum EEnrollmentStatus {
   FAILED = 2,
   WITHDRAWN = 3,
   CANCELLED = 4,
+  PENDING = 5,
+  ENROLLED_DYNAMODB_UPDATE_FAILED = 6,
 }
 
 export enum ERegistrationStatus {

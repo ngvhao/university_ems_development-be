@@ -82,17 +82,17 @@ export class EnrollmentCourseController {
     status: HttpStatus.CONFLICT,
     description: 'Sinh viên đã đăng ký nhóm lớp này rồi.',
   })
-  async create(
+  async enrollClassGroup(
     @Body() createDto: CreateEnrollmentCourseDto,
     @Req() req: RequestHasUserDto & Request,
     @Res() res: Response,
   ) {
     const currentUser = req.user;
-    const data = await this.enrollmentService.create(createDto, currentUser);
+    const result = await this.enrollmentService.create(createDto, currentUser);
     return new SuccessResponse({
       statusCode: HttpStatus.CREATED,
-      data: data,
-      message: 'Đăng ký môn học thành công.',
+      data: result,
+      message: 'Đăng ký nhóm lớp của môn học thành công',
     }).send(res);
   }
 

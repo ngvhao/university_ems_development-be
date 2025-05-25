@@ -30,7 +30,7 @@ export class EnrollmentCourseEntity extends IEntity {
     default: EEnrollmentStatus.ENROLLED,
     nullable: false,
     comment:
-      'Trạng thái: ENROLLED = 0, PASSED = 1, FAILED = 2, WITHDRAWN = 3, CANCELLED = 4,',
+      'Trạng thái: ENROLLED = 0, PASSED = 1, FAILED = 2, WITHDRAWN = 3, CANCELLED = 4, PENDING = 5, ENROLLED_DYNAMODB_UPDATE_FAILED = 6',
   })
   status: EEnrollmentStatus;
 

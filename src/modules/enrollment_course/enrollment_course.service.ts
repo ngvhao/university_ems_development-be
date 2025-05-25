@@ -22,8 +22,6 @@ import { CreateEnrollmentCourseDto } from './dtos/createEnrollmentCourse.dto';
 import { FilterEnrollmentCourseDto } from './dtos/filterEnrollmentCourse.dto';
 import { UserEntity } from '../user/entities/user.entity';
 import { ClassGroupEntity } from '../class_group/entities/class_group.entity';
-import { SendMessageOptions } from 'src/utils/interfaces/queue.interface';
-import { QueueProducer } from 'src/common/queue/queue.producer';
 
 @Injectable()
 export class EnrollmentCourseService {
@@ -33,7 +31,6 @@ export class EnrollmentCourseService {
     private readonly dataSource: DataSource,
     @Inject(forwardRef(() => StudentService))
     private readonly studentService: StudentService,
-    private readonly queueProducer: QueueProducer,
   ) {}
 
   /**
@@ -92,31 +89,6 @@ export class EnrollmentCourseService {
     throw new ForbiddenException('Bạn không có quyền thực hiện hành động này.');
   }
 
-  async enrollClassGroup(
-    enrollDTO: CreateEnrollmentCourseDto,
-    currentUser: UserEntity,
-  ): Promise<void> {
-    console.log('enrollClassGroup@@@@enrollDTO: ', enrollDTO);
-    const options: SendMessageOptions = {
-      isFifo: true,
-      groupId: `student-${enrollDTO.studentId}`,
-    };
-    const messageBody = {
-      role: currentUser.role,
-      id: currentUser.id,
-      studentId: enrollDTO.studentId,
-      classGroupId: enrollDTO.classGroupId,
-    };
-    await this.queueProducer.produce(
-      process.env.QUEUE_STUDENT_ENROLLMENT_CLASSGROUP_URL,
-      {
-        type: 'student-enrollment',
-        data: messageBody,
-      },
-      options,
-    );
-  }
-
   /**
    * Tạo một lượt đăng ký môn học mới.
    * @param createDto - Dữ liệu đăng ký.
@@ -131,7 +103,7 @@ export class EnrollmentCourseService {
     createDto: CreateEnrollmentCourseDto,
     currentUser: UserEntity,
   ): Promise<EnrollmentCourseEntity> {
-    const { classGroupId } = createDto;
+    const { classGroupIds } = createDto;
     let studentId = createDto.studentId;
     let majorId = null;
     let startAcademicYear = null;
@@ -169,108 +141,109 @@ export class EnrollmentCourseService {
       majorId = studentProfile.majorId;
       startAcademicYear = studentProfile.academicYear;
     }
+    for (const classGroupId of classGroupIds) {
+      // --- Bắt đầu Transaction ---
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
 
-    // --- Bắt đầu Transaction ---
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      // Lock ClassGroup để tránh race condition khi kiểm tra và cập nhật số lượng
-      const classGroup = await queryRunner.manager.findOne(ClassGroupEntity, {
-        where: {
-          id: classGroupId,
-          course: {
-            curriculumCourses: {
-              curriculum: {
-                majorId: majorId,
-                startAcademicYear: startAcademicYear,
+      try {
+        // Lock ClassGroup để tránh race condition khi kiểm tra và cập nhật số lượng
+        const classGroup = await queryRunner.manager.findOne(ClassGroupEntity, {
+          where: {
+            id: classGroupId,
+            course: {
+              curriculumCourses: {
+                curriculum: {
+                  majorId: majorId,
+                  startAcademicYear: startAcademicYear,
+                },
               },
             },
           },
-        },
-        lock: { mode: 'pessimistic_write' },
-      });
-
-      if (!classGroup) {
-        throw new NotFoundException(
-          `Không tìm thấy Nhóm lớp học với ID ${classGroupId}`,
-        );
-      }
-
-      // Kiểm tra trạng thái và số lượng chỗ trống của ClassGroup
-      if (classGroup.status !== EClassGroupStatus.OPEN) {
-        throw new BadRequestException(
-          `Nhóm lớp học ID ${classGroupId} không mở để đăng ký (trạng thái: ${classGroup.status}).`,
-        );
-      }
-      if (classGroup.registeredStudents >= classGroup.maxStudents) {
-        throw new BadRequestException(
-          `Nhóm lớp học ID ${classGroupId} đã đầy (${classGroup.registeredStudents}/${classGroup.maxStudents}).`,
-        );
-      }
-
-      // Kiểm tra sinh viên đã đăng ký nhóm này chưa
-      const existingEnrollment = await queryRunner.manager.findOne(
-        EnrollmentCourseEntity,
-        {
-          where: {
-            studentId,
-            classGroupId,
-            status: EEnrollmentStatus.ENROLLED,
-          },
-          select: ['id'],
-        },
-      );
-      if (existingEnrollment) {
-        throw new ConflictException(
-          `Sinh viên ID ${studentId} đã đăng ký Nhóm lớp học ID ${classGroupId}.`,
-        );
-      }
-
-      // Tạo bản ghi Enrollment mới
-      const newEnrollmentData = {
-        studentId,
-        classGroupId,
-        status: EEnrollmentStatus.ENROLLED,
-      };
-      const newEnrollment = queryRunner.manager.create(
-        EnrollmentCourseEntity,
-        newEnrollmentData,
-      );
-      const savedEnrollment = await queryRunner.manager.save(newEnrollment);
-
-      // Tăng số lượng sinh viên đã đăng ký trong ClassGroup
-      await queryRunner.manager.update(ClassGroupEntity, classGroupId, {
-        registeredStudents: () => `"registeredStudents" + 1`,
-      });
-      // Cập nhật trạng thái lớp
-      if (classGroup.registeredStudents + 1 === classGroup.maxStudents) {
-        await queryRunner.manager.update(ClassGroupEntity, classGroupId, {
-          status: EClassGroupStatus.CLOSED,
+          lock: { mode: 'pessimistic_write' },
         });
-      }
 
-      await queryRunner.commitTransaction();
+        if (!classGroup) {
+          throw new NotFoundException(
+            `Không tìm thấy Nhóm lớp học với ID ${classGroupId}`,
+          );
+        }
 
-      return this.findEnrollmentByIdOrThrow(savedEnrollment.id, [
-        'student',
-        'classGroup',
-      ]);
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      if (
-        error instanceof ConflictException ||
-        (error.code === '23505' &&
-          error.detail?.includes('(studentId, classGroupId)'))
-      ) {
-        throw new ConflictException(
-          `Sinh viên ID ${studentId} có thể đã đăng ký Nhóm lớp học ID ${classGroupId}.`,
+        // Kiểm tra trạng thái và số lượng chỗ trống của ClassGroup
+        if (classGroup.status !== EClassGroupStatus.OPEN) {
+          throw new BadRequestException(
+            `Nhóm lớp học ID ${classGroupId} không mở để đăng ký (trạng thái: ${classGroup.status}).`,
+          );
+        }
+        if (classGroup.registeredStudents >= classGroup.maxStudents) {
+          throw new BadRequestException(
+            `Nhóm lớp học ID ${classGroupId} đã đầy (${classGroup.registeredStudents}/${classGroup.maxStudents}).`,
+          );
+        }
+
+        // Kiểm tra sinh viên đã đăng ký nhóm này chưa
+        const existingEnrollment = await queryRunner.manager.findOne(
+          EnrollmentCourseEntity,
+          {
+            where: {
+              studentId,
+              classGroupId,
+              status: EEnrollmentStatus.ENROLLED,
+            },
+            select: ['id'],
+          },
         );
+        if (existingEnrollment) {
+          throw new ConflictException(
+            `Sinh viên ID ${studentId} đã đăng ký Nhóm lớp học ID ${classGroupId}.`,
+          );
+        }
+
+        // Tạo bản ghi Enrollment mới
+        const newEnrollmentData = {
+          studentId,
+          classGroupId,
+          status: EEnrollmentStatus.ENROLLED,
+        };
+        const newEnrollment = queryRunner.manager.create(
+          EnrollmentCourseEntity,
+          newEnrollmentData,
+        );
+        const savedEnrollment = await queryRunner.manager.save(newEnrollment);
+
+        // Tăng số lượng sinh viên đã đăng ký trong ClassGroup
+        await queryRunner.manager.update(ClassGroupEntity, classGroupId, {
+          registeredStudents: () => `"registeredStudents" + 1`,
+        });
+        // Cập nhật trạng thái lớp
+        if (classGroup.registeredStudents + 1 === classGroup.maxStudents) {
+          await queryRunner.manager.update(ClassGroupEntity, classGroupId, {
+            status: EClassGroupStatus.CLOSED,
+          });
+        }
+
+        await queryRunner.commitTransaction();
+
+        return this.findEnrollmentByIdOrThrow(savedEnrollment.id, [
+          'student',
+          'classGroup',
+        ]);
+      } catch (error) {
+        await queryRunner.rollbackTransaction();
+        if (
+          error instanceof ConflictException ||
+          (error.code === '23505' &&
+            error.detail?.includes('(studentId, classGroupId)'))
+        ) {
+          throw new ConflictException(
+            `Sinh viên ID ${studentId} có thể đã đăng ký Nhóm lớp học ID ${classGroupId}.`,
+          );
+        }
+        throw error;
+      } finally {
+        await queryRunner.release();
       }
-      throw error;
-    } finally {
-      await queryRunner.release();
     }
   }
 

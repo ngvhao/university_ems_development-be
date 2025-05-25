@@ -34,31 +34,6 @@ functions:
           method: ANY
           path: '{proxy+}'
 
-  student-enrollment-class-group:
-    handler: dist/src/handlers/enrollClassGroup.handler
-    vpc:
-      securityGroupIds:
-        - sg-021c0672641daa5eb
-      subnetIds:
-        - subnet-081117d9dd0cf6bbb
-        - subnet-064b2e3d2bdccdf5b
-        - subnet-0e78358b4cddb77c2
-    events:
-      - sqs:
-          arn:
-            Fn::GetAtt:
-              - StudentEnrollClassGroupQueue
-              - Arn
-
-resources:
-  Resources:
-    StudentEnrollClassGroupQueue:
-      Type: AWS::SQS::Queue
-      Properties:
-        QueueName: student-enrollment-class-group.fifo
-        FifoQueue: true
-        ContentBasedDeduplication: true
-
 custom:
   dotenv:
     exclude:

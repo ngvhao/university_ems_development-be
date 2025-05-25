@@ -1,62 +1,63 @@
 import { Injectable } from '@nestjs/common';
-import * as AWS from 'aws-sdk';
-import { QueueConfigService } from './queue.config';
+import {
+  SendMessageCommand,
+  ReceiveMessageCommand,
+  DeleteMessageCommand,
+  SQSClient,
+} from '@aws-sdk/client-sqs';
 import {
   QueueMessage,
   SendMessageOptions,
 } from 'src/utils/interfaces/queue.interface';
+import { QueueConfigService } from './queue.config';
 
 @Injectable()
 export class QueueService {
-  private sqs: AWS.SQS;
+  private readonly sqs: SQSClient;
 
   constructor(private readonly queueConfigService: QueueConfigService) {
     this.sqs = this.queueConfigService.createSQSClient();
   }
+
   async sendMessage(
     queueUrl: string,
     messageBody: QueueMessage,
     options: SendMessageOptions = {},
-  ): Promise<AWS.SQS.SendMessageResult> {
-    try {
-      const { isFifo = false, groupId } = options;
-      const params: AWS.SQS.SendMessageRequest = {
-        QueueUrl: queueUrl,
-        MessageBody: JSON.stringify(messageBody),
-      };
-      if (isFifo) {
-        if (!groupId) {
-          throw new Error('MessageGroupId is required for FIFO queues');
-        }
-        params.MessageGroupId = groupId;
-      }
-      console.log('sendMessage@@@params: ', params);
-      const result = await this.sqs.sendMessage(params).promise();
-      console.log(`Sent message to ${queueUrl}: ${result.MessageId}`);
-      return result;
-    } catch (error) {
-      console.error(`Error sending message to ${queueUrl}: ${error.message}`);
-      throw new Error(`Failed to send message: ${error.message}`);
+  ): Promise<string> {
+    const { isFifo = false, groupId } = options;
+
+    if (isFifo && !groupId) {
+      throw new Error('MessageGroupId is required for FIFO queues');
     }
+
+    const command = new SendMessageCommand({
+      QueueUrl: queueUrl,
+      MessageBody: JSON.stringify(messageBody),
+      ...(isFifo && groupId ? { MessageGroupId: groupId } : {}),
+    });
+
+    const result = await this.sqs.send(command);
+    console.log(`Sent message to ${queueUrl}: ${result.MessageId}`);
+    return result.MessageId!;
   }
 
-  async receiveMessages(queueUrl: string): Promise<AWS.SQS.Message[]> {
-    const params = {
+  async receiveMessages(queueUrl: string) {
+    const command = new ReceiveMessageCommand({
       QueueUrl: queueUrl,
       MaxNumberOfMessages: 10,
       WaitTimeSeconds: 20,
-    };
+    });
 
-    const result = await this.sqs.receiveMessage(params).promise();
+    const result = await this.sqs.send(command);
     return result.Messages || [];
   }
 
-  async deleteMessage(queueUrl: string, receiptHandle: string): Promise<void> {
-    const params = {
+  async deleteMessage(queueUrl: string, receiptHandle: string) {
+    const command = new DeleteMessageCommand({
       QueueUrl: queueUrl,
       ReceiptHandle: receiptHandle,
-    };
+    });
 
-    await this.sqs.deleteMessage(params).promise();
+    await this.sqs.send(command);
   }
 }
