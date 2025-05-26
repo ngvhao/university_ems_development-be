@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsRelations, Repository } from 'typeorm';
+import { FindOptionsRelations, FindOptionsWhere, Repository } from 'typeorm';
 import { SemesterEntity } from './entities/semester.entity';
 import { CreateSemesterDto } from './dtos/createSemester.dto';
 import { UpdateSemesterDto } from './dtos/updateSemester.dto';
@@ -89,6 +89,32 @@ export class SemesterService {
 
     if (!semester) {
       throw new NotFoundException(`Không tìm thấy học kỳ với ID ${id}`);
+    }
+    return semester;
+  }
+
+  /**
+   * Tìm một học kỳ cụ thể bằng ID.
+   * Bao gồm thông tin liên quan: courseSemesters, registrationSchedules, studyPlans, curriculumCourses.
+   * @param id - ID của học kỳ cần tìm.
+   * @returns Promise<SemesterEntity> - Thông tin chi tiết của học kỳ.
+   * @throws NotFoundException - Nếu không tìm thấy học kỳ với ID cung cấp.
+   */
+  async getOne(
+    condition:
+      | FindOptionsWhere<SemesterEntity>
+      | FindOptionsWhere<SemesterEntity>[],
+    relations?: FindOptionsRelations<SemesterEntity>,
+  ): Promise<SemesterEntity> {
+    const semester = await this.semesterRepository.findOne({
+      where: condition,
+      relations: relations,
+    });
+
+    if (!semester) {
+      throw new NotFoundException(
+        `Không tìm thấy học kỳ với điều kiện cung cấp`,
+      );
     }
     return semester;
   }

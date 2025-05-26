@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { UserEntity } from '../../user/entities/user.entity';
 import {
   EPaymentMethod,
@@ -50,14 +50,6 @@ export class PaymentTransactionEntity extends IEntity {
       'BANK_TRANSFER = 0, CASH = 1, CREDIT_CARD = 2, ONLINE_GATEWAY = 3, POS = 4',
   })
   paymentMethod: EPaymentMethod;
-
-  @ApiPropertyOptional({
-    example: 'FT24071512345',
-    description: 'Mã tham chiếu giao dịch (từ ngân hàng, cổng thanh toán)',
-  })
-  @Index({ unique: true, where: 'transactionReference IS NOT NULL' })
-  @Column({ type: 'varchar', length: 100, nullable: true, unique: true })
-  transactionReference?: string;
 
   @ApiProperty({
     enum: EPaymentTransactionStatus,
