@@ -32,6 +32,7 @@ import {
 import { TuitionEntity } from './entities/tuition.entity';
 import { CreateTuitionDto } from './dto/createTuition.dto';
 import { UpdateTuitionDto } from './dto/updateTuition.dto';
+import { PaymentProcessDto } from './dto/processPayment.dto';
 
 @ApiTags('Quản lý Học phí (Tuitions)')
 @ApiBearerAuth('token')
@@ -79,6 +80,20 @@ export class TuitionController {
       statusCode: HttpStatus.CREATED,
       data: tuition,
       message: 'Tạo học phí thành công',
+    }).send(res);
+  }
+
+  @Post('/:id')
+  @UseGuards(RolesGuard)
+  async processPayment(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() processPaymentDto: PaymentProcessDto,
+    @Res() res: Response,
+  ) {
+    const result = await this.tuitionService.processPayment(processPaymentDto);
+    return new SuccessResponse({
+      data: result,
+      message: `Xử lý thanh toán cho học phí ID ${id} thành công`,
     }).send(res);
   }
 

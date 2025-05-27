@@ -5,7 +5,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOneOptions } from 'typeorm';
+import { Repository, FindOneOptions, In, Not } from 'typeorm';
 import { TuitionEntity } from './entities/tuition.entity';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { ETuitionStatus } from 'src/utils/enums/tuition.enum';
@@ -13,6 +13,9 @@ import { StudentService } from '../student/student.service';
 import { SemesterService } from '../semester/semester.service';
 import { CreateTuitionDto } from './dto/createTuition.dto';
 import { UpdateTuitionDto } from './dto/updateTuition.dto';
+import { PaymentProcessDto } from './dto/processPayment.dto';
+import { SimplePaymentFactory } from 'src/payment/payment.factory';
+import { PaymentContext } from 'src/payment/payment.context';
 
 @Injectable()
 export class TuitionService {
@@ -21,6 +24,7 @@ export class TuitionService {
     private readonly tuitionRepository: Repository<TuitionEntity>,
     private readonly studentService: StudentService,
     private readonly semesterService: SemesterService,
+    private paymentContext: PaymentContext,
   ) {}
 
   private async _checkStudentAndSemester(
@@ -67,6 +71,46 @@ export class TuitionService {
     }
     // Logic cho OVERDUE cần xem xét thêm dueDate
     return { balance, status };
+  }
+
+  async processPayment(processPaymentDto: PaymentProcessDto): Promise<string> {
+    const { tuitionId, paymentMethod } = processPaymentDto;
+
+    const tuition = await this.tuitionRepository.findOne({
+      where: {
+        id: tuitionId,
+        status: Not(
+          In([
+            ETuitionStatus.OVERDUE,
+            ETuitionStatus.CANCELLED,
+            ETuitionStatus.PAID,
+          ]),
+        ),
+      },
+      relations: ['paymentTransactions'],
+    });
+    if (!tuition) {
+      throw new NotFoundException(
+        `Không tìm thấy học phí với ID ${tuitionId} để xử lý thanh toán.`,
+      );
+    }
+    const payment = SimplePaymentFactory.createPaymentStrategy(paymentMethod);
+    this.paymentContext.setStrategy(payment);
+    const result = await this.paymentContext.processPayment(
+      tuition.totalAmountDue,
+      tuition.id,
+    );
+
+    console.log(result);
+    return 'callBackUrl';
+
+    // // Cập nhật số tiền đã thanh toán
+    // const updatedTuition = await this.updateTuitionAfterPayment(
+    //   tuitionId,
+    //   amount,
+    // );
+
+    // // Thêm giao dịch thanh toán mới
   }
 
   async create(createTuitionDto: CreateTuitionDto): Promise<TuitionEntity> {
