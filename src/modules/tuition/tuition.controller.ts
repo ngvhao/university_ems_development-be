@@ -36,13 +36,25 @@ import { PaymentProcessDto } from './dto/processPayment.dto';
 
 @ApiTags('Quản lý Học phí (Tuitions)')
 @ApiBearerAuth('token')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('tuitions')
 export class TuitionController {
   constructor(private readonly tuitionService: TuitionService) {}
 
+  @Post('/processPayment')
+  @Roles([EUserRole.ADMINISTRATOR, EUserRole.STUDENT])
+  async processPayment(
+    @Body() processPaymentDto: PaymentProcessDto,
+    @Res() res: Response,
+  ) {
+    const result = await this.tuitionService.processPayment(processPaymentDto);
+    return new SuccessResponse({
+      data: result,
+      message: `Url callback payment gateway`,
+    }).send(res);
+  }
+
   @Post()
-  @UseGuards(RolesGuard)
   @Roles([EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER])
   @ApiOperation({ summary: 'Tạo một bản ghi học phí mới' })
   @ApiBody({ type: CreateTuitionDto })
@@ -80,20 +92,6 @@ export class TuitionController {
       statusCode: HttpStatus.CREATED,
       data: tuition,
       message: 'Tạo học phí thành công',
-    }).send(res);
-  }
-
-  @Post('/:id')
-  @UseGuards(RolesGuard)
-  async processPayment(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() processPaymentDto: PaymentProcessDto,
-    @Res() res: Response,
-  ) {
-    const result = await this.tuitionService.processPayment(processPaymentDto);
-    return new SuccessResponse({
-      data: result,
-      message: `Xử lý thanh toán cho học phí ID ${id} thành công`,
     }).send(res);
   }
 

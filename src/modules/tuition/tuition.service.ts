@@ -14,8 +14,8 @@ import { SemesterService } from '../semester/semester.service';
 import { CreateTuitionDto } from './dto/createTuition.dto';
 import { UpdateTuitionDto } from './dto/updateTuition.dto';
 import { PaymentProcessDto } from './dto/processPayment.dto';
-import { SimplePaymentFactory } from 'src/payment/payment.factory';
-import { PaymentContext } from 'src/payment/payment.context';
+import { PaymentStrategyFactory } from 'src/modules/payment/payment.factory';
+import { PaymentContext } from 'src/modules/payment/payment.context';
 
 @Injectable()
 export class TuitionService {
@@ -25,6 +25,7 @@ export class TuitionService {
     private readonly studentService: StudentService,
     private readonly semesterService: SemesterService,
     private paymentContext: PaymentContext,
+    private readonly paymentFactoryInstance: PaymentStrategyFactory,
   ) {}
 
   private async _checkStudentAndSemester(
@@ -74,7 +75,7 @@ export class TuitionService {
   }
 
   async processPayment(processPaymentDto: PaymentProcessDto): Promise<string> {
-    const { tuitionId, paymentMethod } = processPaymentDto;
+    const { tuitionId, paymentGateway } = processPaymentDto;
 
     const tuition = await this.tuitionRepository.findOne({
       where: {
@@ -89,20 +90,23 @@ export class TuitionService {
       },
       relations: ['paymentTransactions'],
     });
-    if (!tuition) {
-      throw new NotFoundException(
-        `Không tìm thấy học phí với ID ${tuitionId} để xử lý thanh toán.`,
-      );
-    }
-    const payment = SimplePaymentFactory.createPaymentStrategy(paymentMethod);
+    console.log('processPayment@@tuition:', tuition);
+    // if (!tuition) {
+    //   throw new NotFoundException(
+    //     `Không tìm thấy học phí với ID ${tuitionId} để xử lý thanh toán.`,
+    //   );
+    // }
+    const payment =
+      this.paymentFactoryInstance.createPaymentStrategy(paymentGateway);
     this.paymentContext.setStrategy(payment);
-    const result = await this.paymentContext.processPayment(
-      tuition.totalAmountDue,
-      tuition.id,
-    );
+    // const result = await this.paymentContext.processPayment(
+    //   tuition.totalAmountDue,
+    //   tuition.id,
+    // );
+    const result = await this.paymentContext.processPayment(5000000, 1);
 
     console.log(result);
-    return 'callBackUrl';
+    return result;
 
     // // Cập nhật số tiền đã thanh toán
     // const updatedTuition = await this.updateTuitionAfterPayment(

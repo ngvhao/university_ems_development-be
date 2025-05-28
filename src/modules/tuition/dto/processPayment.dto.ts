@@ -9,5 +9,4 @@ export class PaymentProcessDto {
   @IsNotEmpty()
   @IsNumber()
   tuitionId: number;
-  paymentMethod: EPaymentGateway;
 }

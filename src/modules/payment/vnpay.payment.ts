@@ -1,5 +1,7 @@
+import { Injectable } from '@nestjs/common';
 import { IPaymentStrategy } from './IPaymentStrategy.interface';
 
+@Injectable()
 export class VnpayPayment implements IPaymentStrategy {
   async processPayment(amount: number, tuitionId: number): Promise<string> {
     console.log(

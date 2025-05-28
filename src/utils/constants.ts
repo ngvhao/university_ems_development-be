@@ -83,3 +83,18 @@ export const QueueConfig = {
   LOCALSTACK_ENDPOINT: 'http://localhost:4566',
   isLocalstack: false,
 };
+
+export const PAYMENT_STRATEGY_TOKEN = 'helloooooworlddd';
+
+export const MomoConfig = {
+  partnerCode: 'UNIEMS',
+  accessKey: process.env.MOMO_ACCESSKEY,
+  secretkey: process.env.MOMO_SECRETKEY,
+  redirectUrl: process.env.MOMO_REDIRECT_URL,
+  ipnUrl: process.env.MOMO_IPNURL,
+  lang: 'vi',
+  requestType: 'captureWallet',
+  hostname: 'https://test-payment.momo.vn',
+  path: '/v2/gateway/api/create',
+  port: 443,
+};

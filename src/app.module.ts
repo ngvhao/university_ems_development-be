@@ -29,6 +29,7 @@ import { LecturerCourseModule } from './modules/lecturer_course/lecturer_course.
 import { TuitionModule } from './modules/tuition/tuition.module';
 import { TuitionDetailModule } from './modules/tuition_detail/tuition_detail.module';
 import { PaymentTransactionModule } from './modules/payment_transaction/payment_transaction.module';
+import { PaymentModule } from './modules/payment/payment.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { PaymentTransactionModule } from './modules/payment_transaction/payment_
     TuitionModule,
     TuitionDetailModule,
     PaymentTransactionModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [AppService],

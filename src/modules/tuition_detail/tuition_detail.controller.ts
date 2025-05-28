@@ -40,7 +40,7 @@ import { TuitionDetailService } from './tuition_detail.service';
 export class TuitionDetailController {
   constructor(private readonly tuitionDetailService: TuitionDetailService) {}
 
-  @Post('tuition-details')
+  @Post()
   @UseGuards(RolesGuard)
   @Roles([EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER])
   @ApiOperation({ summary: 'Tạo một chi tiết học phí mới' })
@@ -133,7 +133,7 @@ export class TuitionDetailController {
     }).send(res);
   }
 
-  @Get('tuition-details/:id')
+  @Get(':id')
   @ApiOperation({
     summary: 'Lấy thông tin chi tiết một mục học phí bằng ID của nó',
   })
@@ -163,7 +163,7 @@ export class TuitionDetailController {
     }).send(res);
   }
 
-  @Patch('tuition-details/:id')
+  @Patch(':id')
   @UseGuards(RolesGuard)
   @Roles([EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER])
   @ApiOperation({ summary: 'Cập nhật thông tin một chi tiết học phí' })
@@ -210,7 +210,7 @@ export class TuitionDetailController {
     }).send(res);
   }
 
-  @Delete('tuition-details/:id')
+  @Delete(':id')
   @UseGuards(RolesGuard)
   @Roles([EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER])
   @ApiOperation({ summary: 'Xóa một chi tiết học phí' })
