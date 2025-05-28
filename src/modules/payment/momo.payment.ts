@@ -10,17 +10,18 @@ import {
 
 @Injectable()
 export class MomoPayment implements IPaymentStrategy {
-  async processPayment(amount: number, tuitionId: number): Promise<string> {
-    const partnerCode = 'MOMO';
+  async processPayment(amount: number, transactionId: number): Promise<string> {
+    amount = amount | 0;
+    const partnerCode = MomoConfig.partnerCode;
     const accessKey = MomoConfig.accessKey;
     const secretkey = MomoConfig.secretkey;
-    const requestId = partnerCode + new Date().getTime();
+    const requestId = partnerCode + new Date().getTime() + transactionId;
     const orderId = requestId;
-    const orderInfo = 'Thanh toan hoc phi cho sinh vien';
+    const orderInfo = 'Thanh toan hoc phi sinh vien';
     const redirectUrl = MomoConfig.redirectUrl;
     const ipnUrl = MomoConfig.ipnUrl;
     const requestType = MomoConfig.requestType;
-    const extraData = tuitionId;
+    const extraData = transactionId;
 
     const rawSignature =
       'accessKey=' +
@@ -100,7 +101,6 @@ export class MomoPayment implements IPaymentStrategy {
         console.log('Pay URL: ', responseJson.payUrl);
         return responseJson.payUrl;
       } else {
-        // This case handles scenarios where HTTP status is 200, but MoMo indicates an error via resultCode
         console.error(
           'MoMo request successful (HTTP 200) but returned a business error.',
         );
@@ -113,8 +113,6 @@ export class MomoPayment implements IPaymentStrategy {
     } catch (error) {
       console.error('Problem with MoMo request (Axios):');
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx (or as defined by validateStatus)
         console.error(`MoMo Error Status: ${error.response.status}`);
         console.error(
           `MoMo Error Data: ${JSON.stringify(error.response.data)}`,

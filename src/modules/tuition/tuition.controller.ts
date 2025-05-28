@@ -11,6 +11,7 @@ import {
   UseGuards,
   ParseIntPipe,
   HttpStatus,
+  Req,
 } from '@nestjs/common';
 import { TuitionService } from './tuition.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -33,6 +34,8 @@ import { TuitionEntity } from './entities/tuition.entity';
 import { CreateTuitionDto } from './dto/createTuition.dto';
 import { UpdateTuitionDto } from './dto/updateTuition.dto';
 import { PaymentProcessDto } from './dto/processPayment.dto';
+import { CreateTuitionBatchDto } from './dto/createTuitionBatch.dto';
+import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
 
 @ApiTags('Quản lý Học phí (Tuitions)')
 @ApiBearerAuth('token')
@@ -45,11 +48,15 @@ export class TuitionController {
   @Roles([EUserRole.ADMINISTRATOR, EUserRole.STUDENT])
   async processPayment(
     @Body() processPaymentDto: PaymentProcessDto,
+    @Req() req: RequestHasUserDto & Request,
     @Res() res: Response,
   ) {
-    const result = await this.tuitionService.processPayment(processPaymentDto);
+    const paymentGatewayUrl = await this.tuitionService.processPayment(
+      processPaymentDto,
+      req.user.id,
+    );
     return new SuccessResponse({
-      data: result,
+      data: paymentGatewayUrl,
       message: `Url callback payment gateway`,
     }).send(res);
   }
@@ -88,6 +95,48 @@ export class TuitionController {
     @Res() res: Response,
   ) {
     const tuition = await this.tuitionService.create(createTuitionDto);
+    return new SuccessResponse({
+      statusCode: HttpStatus.CREATED,
+      data: tuition,
+      message: 'Tạo học phí thành công',
+    }).send(res);
+  }
+
+  @Post('createTuitions')
+  @Roles([EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER])
+  @ApiOperation({ summary: 'Tạo hàng loạt học phí của sinh viên trong học kỳ' })
+  @ApiBody({ type: CreateTuitionBatchDto })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Tạo học phí thành công.',
+    type: TuitionEntity,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Dữ liệu không hợp lệ.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền thực hiện.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy Sinh viên hoặc Học kỳ.',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Học phí cho sinh viên và học kỳ này đã tồn tại.',
+  })
+  async createTuitionsForAllStudents(
+    @Body() createTuitions: CreateTuitionBatchDto,
+    @Res() res: Response,
+  ) {
+    const tuition =
+      await this.tuitionService.createTuitionsForStudentBatch(createTuitions);
     return new SuccessResponse({
       statusCode: HttpStatus.CREATED,
       data: tuition,

@@ -12,8 +12,8 @@ export class PaymentContext {
     this.strategy = strategy;
   }
 
-  async processPayment(amount: number, tuitionId: number): Promise<string> {
-    return this.strategy.processPayment(amount, tuitionId);
+  async processPayment(amount: number, transactionId: number): Promise<string> {
+    return this.strategy.processPayment(amount, transactionId);
   }
 
   async refundPayment(transactionId: string): Promise<string> {

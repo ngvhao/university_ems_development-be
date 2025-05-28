@@ -6,3 +6,8 @@ export enum EPaymentGateway {
   BankTransfer = 'bank_transfer',
   CashOnDelivery = 'cash_on_delivery',
 }
+
+export enum EPaymentSuccessStatusCode {
+  Momo = '0',
+  Vnpay = '00',
+}

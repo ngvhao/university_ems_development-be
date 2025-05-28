@@ -22,6 +22,14 @@ export class PaymentTransactionEntity extends IEntity {
   @JoinColumn({ name: 'tuitionId' })
   tuition: TuitionEntity;
 
+  @ApiPropertyOptional({
+    example: 'MOMO1678886400000XYZ',
+    description:
+      'Mã giao dịch (ví dụ: từ cổng thanh toán MoMo, VNPAY hoặc mã giao dịch nội bộ)',
+  })
+  @Column({ type: 'varchar', length: 255, nullable: true, unique: true })
+  transId?: string;
+
   @ApiProperty({
     example: 2000000,
     description: 'Số tiền đã thanh toán trong giao dịch này',
@@ -35,8 +43,8 @@ export class PaymentTransactionEntity extends IEntity {
     example: '2024-07-15T10:30:00Z',
     description: 'Ngày giờ thực hiện giao dịch',
   })
-  @Column({ type: 'timestamptz' })
-  paymentDate: Date;
+  @Column({ type: 'timestamptz', nullable: true })
+  paymentDate: Date | null;
 
   @ApiProperty({
     enum: EPaymentMethod,
@@ -83,4 +91,10 @@ export class PaymentTransactionEntity extends IEntity {
   })
   @Column({ type: 'text', nullable: true })
   notes?: string;
+
+  @ApiPropertyOptional({
+    description: 'Mã trạng thái không thành công',
+  })
+  @Column({ type: 'text', nullable: true })
+  failStatus?: string;
 }

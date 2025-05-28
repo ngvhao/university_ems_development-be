@@ -3,12 +3,14 @@ import {
   NotFoundException,
   BadRequestException,
   ConflictException,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOneOptions, In, Not } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { Repository, FindOneOptions, In, Not, DataSource } from 'typeorm';
 import { TuitionEntity } from './entities/tuition.entity';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
-import { ETuitionStatus } from 'src/utils/enums/tuition.enum';
+import { EPaymentMethod, ETuitionStatus } from 'src/utils/enums/tuition.enum';
 import { StudentService } from '../student/student.service';
 import { SemesterService } from '../semester/semester.service';
 import { CreateTuitionDto } from './dto/createTuition.dto';
@@ -16,16 +18,27 @@ import { UpdateTuitionDto } from './dto/updateTuition.dto';
 import { PaymentProcessDto } from './dto/processPayment.dto';
 import { PaymentStrategyFactory } from 'src/modules/payment/payment.factory';
 import { PaymentContext } from 'src/modules/payment/payment.context';
+import { EnrollmentCourseEntity } from '../enrollment_course/entities/enrollment_course.entity';
+import { TuitionDetailEntity } from '../tuition_detail/entities/tuition_detail.entity';
+import { CreateTuitionBatchDto } from './dto/createTuitionBatch.dto';
+import { PaymentTransactionService } from '../payment_transaction/payment_transaction.service';
+
+interface GroupedEnrollments {
+  [studentId: number]: EnrollmentCourseEntity[];
+}
 
 @Injectable()
 export class TuitionService {
   constructor(
+    @InjectDataSource() private readonly dataSource: DataSource,
     @InjectRepository(TuitionEntity)
     private readonly tuitionRepository: Repository<TuitionEntity>,
     private readonly studentService: StudentService,
     private readonly semesterService: SemesterService,
     private paymentContext: PaymentContext,
     private readonly paymentFactoryInstance: PaymentStrategyFactory,
+    @Inject(forwardRef(() => PaymentTransactionService))
+    private readonly paymentTransactionService: PaymentTransactionService,
   ) {}
 
   private async _checkStudentAndSemester(
@@ -74,7 +87,10 @@ export class TuitionService {
     return { balance, status };
   }
 
-  async processPayment(processPaymentDto: PaymentProcessDto): Promise<string> {
+  async processPayment(
+    processPaymentDto: PaymentProcessDto,
+    processByUserId: number,
+  ): Promise<string> {
     const { tuitionId, paymentGateway } = processPaymentDto;
 
     const tuition = await this.tuitionRepository.findOne({
@@ -91,30 +107,29 @@ export class TuitionService {
       relations: ['paymentTransactions'],
     });
     console.log('processPayment@@tuition:', tuition);
-    // if (!tuition) {
-    //   throw new NotFoundException(
-    //     `Không tìm thấy học phí với ID ${tuitionId} để xử lý thanh toán.`,
-    //   );
-    // }
+    if (!tuition) {
+      throw new NotFoundException(
+        `Không tìm thấy học phí với ID ${tuitionId} để xử lý thanh toán.`,
+      );
+    }
+    const newPaymentTransaction = await this.paymentTransactionService.create({
+      tuitionId: tuition.id,
+      amountPaid: tuition.balance,
+      paymentMethod: EPaymentMethod.ONLINE_GATEWAY,
+      processedByUserId: processByUserId,
+      paymentDate: null,
+      notes: paymentGateway,
+    });
+
     const payment =
       this.paymentFactoryInstance.createPaymentStrategy(paymentGateway);
     this.paymentContext.setStrategy(payment);
-    // const result = await this.paymentContext.processPayment(
-    //   tuition.totalAmountDue,
-    //   tuition.id,
-    // );
-    const result = await this.paymentContext.processPayment(5000000, 1);
+    const paymentGatewayUrl = await this.paymentContext.processPayment(
+      tuition.balance,
+      newPaymentTransaction.id,
+    );
 
-    console.log(result);
-    return result;
-
-    // // Cập nhật số tiền đã thanh toán
-    // const updatedTuition = await this.updateTuitionAfterPayment(
-    //   tuitionId,
-    //   amount,
-    // );
-
-    // // Thêm giao dịch thanh toán mới
+    return paymentGatewayUrl;
   }
 
   async create(createTuitionDto: CreateTuitionDto): Promise<TuitionEntity> {
@@ -157,10 +172,172 @@ export class TuitionService {
       totalAmountDue,
       amountPaid,
       balance: calculated.balance,
-      status: DtoStatus !== undefined ? DtoStatus : calculated.status, // Ưu tiên status từ DTO nếu có
+      status: DtoStatus !== undefined ? DtoStatus : calculated.status,
     });
 
     return await this.tuitionRepository.save(newTuition);
+  }
+
+  async createTuitionsForStudentBatch(
+    createTuitionsBatchDto: CreateTuitionBatchDto,
+  ): Promise<void> {
+    const {
+      semesterId,
+      tuitionType,
+      description,
+      pricePerCreditForSemester,
+      issueDate,
+      dueDate,
+    } = createTuitionsBatchDto;
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    console.log(
+      `Transaction CREATED for batch tuition generation - Semester: ${semesterId}, Type: ${tuitionType}`,
+    );
+    try {
+      const enrollmentsList = await queryRunner.manager.find(
+        EnrollmentCourseEntity,
+        {
+          where: {
+            classGroup: {
+              semesterId: semesterId,
+            },
+          },
+          relations: ['student', 'classGroup', 'classGroup.course'],
+        },
+      );
+
+      if (enrollmentsList.length === 0) {
+        console.log(
+          'No enrollments found for this semester. Committing empty transaction.',
+        );
+        await queryRunner.commitTransaction();
+        return;
+      }
+
+      const groupedByStudent: GroupedEnrollments = enrollmentsList.reduce(
+        (acc, enrollment) => {
+          const studentId = enrollment.student?.id || enrollment.studentId;
+
+          if (!studentId) {
+            console.warn(
+              'Enrollment without valid studentId found:',
+              enrollment.id,
+            );
+            return acc;
+          }
+
+          if (!acc[studentId]) {
+            acc[studentId] = [];
+          }
+          acc[studentId].push(enrollment);
+          return acc;
+        },
+        {} as GroupedEnrollments,
+      );
+
+      for (const studentIdStr in groupedByStudent) {
+        const studentId = parseInt(studentIdStr, 10);
+        const studentEnrollments = groupedByStudent[studentIdStr];
+
+        console.log(`Processing tuition for student ID: ${studentId}`);
+
+        let tuition = await queryRunner.manager.findOne(TuitionEntity, {
+          where: {
+            studentId: studentId,
+            semesterId: semesterId,
+            tuitionType: tuitionType,
+          },
+        });
+
+        let isNewTuition = false;
+        if (!tuition) {
+          isNewTuition = true;
+          tuition = new TuitionEntity();
+          tuition.studentId = studentId;
+          tuition.semesterId = semesterId;
+          tuition.tuitionType = tuitionType;
+          tuition.description = description;
+          tuition.issueDate = new Date(issueDate);
+          tuition.dueDate = new Date(dueDate);
+          tuition.status = ETuitionStatus.PENDING;
+          tuition.totalAmountDue = 0;
+          tuition.amountPaid = 0;
+          tuition.balance = 0;
+          tuition = await queryRunner.manager.save(TuitionEntity, tuition);
+          console.log(
+            `CREATED new Tuition (ID: ${tuition.id}) for student ID: ${studentId}`,
+          );
+        } else {
+          console.log(
+            `FOUND existing Tuition (ID: ${tuition.id}) for student ID: ${studentId}`,
+          );
+        }
+
+        let currentTuitionTotalAggregated = isNewTuition
+          ? 0
+          : tuition.totalAmountDue;
+
+        for (const enrollment of studentEnrollments) {
+          const existingTuitionDetail = await queryRunner.manager.findOne(
+            TuitionDetailEntity,
+            {
+              where: {
+                tuitionId: tuition.id,
+                enrollmentId: enrollment.id,
+              },
+            },
+          );
+
+          if (existingTuitionDetail) {
+            console.log(
+              `SKIPPED: TuitionDetail for enrollment ID ${enrollment.id} already exists in Tuition ID ${tuition.id}.`,
+            );
+            continue;
+          }
+
+          const tuitionDetail = new TuitionDetailEntity();
+          tuitionDetail.tuition = tuition;
+          tuitionDetail.enrollmentId = enrollment.id;
+
+          const course = enrollment.classGroup?.course;
+          const feeForThisCourse = pricePerCreditForSemester * course?.credit;
+
+          tuitionDetail.amount = feeForThisCourse;
+          tuitionDetail.numberOfCredits = course?.credit;
+          tuitionDetail.pricePerCredit = pricePerCreditForSemester;
+
+          await queryRunner.manager.save(TuitionDetailEntity, tuitionDetail);
+          console.log(
+            `CREATED TuitionDetail for enrollment ID ${enrollment.id} (Tuition ID: ${tuition.id}), Amount: ${feeForThisCourse}`,
+          );
+          currentTuitionTotalAggregated += feeForThisCourse;
+        }
+
+        if (tuition.totalAmountDue !== currentTuitionTotalAggregated) {
+          tuition.totalAmountDue = currentTuitionTotalAggregated;
+          tuition.balance = tuition.totalAmountDue - tuition.amountPaid;
+          await queryRunner.manager.save(TuitionEntity, tuition);
+          console.log(
+            `UPDATED Tuition (ID: ${tuition.id}) for student ID: ${studentId} with new totalAmountDue: ${tuition.totalAmountDue}`,
+          );
+        }
+      }
+
+      await queryRunner.commitTransaction();
+      console.log(
+        'Transaction COMMITTED successfully for batch tuition generation.',
+      );
+    } catch (error) {
+      console.error('Transaction FAILED for batch tuition generation:', error);
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      console.log('Transaction RELEASED for batch tuition generation.');
+      await queryRunner.release();
+    }
   }
 
   async findAll(paginationDto: PaginationDto): Promise<{

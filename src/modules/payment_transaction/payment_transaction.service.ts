@@ -4,6 +4,8 @@ import {
   BadRequestException,
   ConflictException,
   InternalServerErrorException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -22,6 +24,7 @@ export class PaymentTransactionService {
     @InjectRepository(PaymentTransactionEntity)
     private readonly paymentTransactionRepository: Repository<PaymentTransactionEntity>,
     private readonly dataSource: DataSource,
+    @Inject(forwardRef(() => TuitionService))
     private readonly tuitionService: TuitionService,
     private readonly userService: UserService,
   ) {}

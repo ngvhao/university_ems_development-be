@@ -87,11 +87,11 @@ export const QueueConfig = {
 export const PAYMENT_STRATEGY_TOKEN = 'helloooooworlddd';
 
 export const MomoConfig = {
-  partnerCode: 'UNIEMS',
+  partnerCode: 'MOMO',
   accessKey: process.env.MOMO_ACCESSKEY,
   secretkey: process.env.MOMO_SECRETKEY,
   redirectUrl: process.env.MOMO_REDIRECT_URL,
-  ipnUrl: process.env.MOMO_IPNURL,
+  ipnUrl: process.env.MOMO_IPN_URL,
   lang: 'vi',
   requestType: 'captureWallet',
   hostname: 'https://test-payment.momo.vn',

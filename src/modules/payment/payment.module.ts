@@ -7,9 +7,11 @@ import { PAYMENT_STRATEGY_TOKEN } from 'src/utils/constants';
 import { EPaymentGateway } from 'src/utils/enums/payment.enum';
 import { Module } from '@nestjs/common';
 import { PaymentController } from './payment.controller';
+import { PaymentService } from './payment.service';
+import { PaymentTransactionModule } from '../payment_transaction/payment_transaction.module';
 
 @Module({
-  imports: [HttpModule],
+  imports: [HttpModule, PaymentTransactionModule],
   providers: [
     PaymentContext,
     MomoPayment,
@@ -22,6 +24,7 @@ import { PaymentController } from './payment.controller';
       },
       inject: [PaymentStrategyFactory],
     },
+    PaymentService,
   ],
   controllers: [PaymentController],
   exports: [PaymentContext, PaymentStrategyFactory],

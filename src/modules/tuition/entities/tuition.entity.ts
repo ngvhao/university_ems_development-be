@@ -2,7 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Entity, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { StudentEntity } from '../../student/entities/student.entity';
 import { SemesterEntity } from '../../semester/entities/semester.entity';
-import { ETuitionStatus } from 'src/utils/enums/tuition.enum';
+import { ETuitionStatus, ETuitionType } from 'src/utils/enums/tuition.enum';
 import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { TuitionDetailEntity } from 'src/modules/tuition_detail/entities/tuition_detail.entity';
 import { PaymentTransactionEntity } from 'src/modules/payment_transaction/entities/payment_transaction.entity';
@@ -28,6 +28,34 @@ export class TuitionEntity extends IEntity {
   })
   @JoinColumn({ name: 'semesterId' })
   semester: SemesterEntity;
+
+  @ApiProperty({
+    enum: ETuitionType,
+    example: ETuitionType.REGULAR,
+    description: 'Loại học phí/đợt thu',
+  })
+  @Column({
+    type: 'enum',
+    enum: ETuitionType,
+    default: ETuitionType.REGULAR,
+  })
+  tuitionType: ETuitionType;
+
+  @ApiProperty({
+    example: 'Học phí chính HK1 năm học 2024-2025',
+    description: 'Mô tả chi tiết cho khoản học phí/đợt thu',
+  })
+  @Column({ type: 'varchar', length: 255 })
+  description: string;
+
+  @ApiProperty({
+    example: '2024-08-01',
+    description: 'Ngày phát hành/tạo phiếu thu này',
+    type: 'string',
+    format: 'date',
+  })
+  @Column({ type: 'date' })
+  issueDate: Date;
 
   @ApiProperty({
     example: 5000000,
