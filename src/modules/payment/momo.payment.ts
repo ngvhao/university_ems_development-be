@@ -53,7 +53,7 @@ export class MomoPayment implements IPaymentStrategy {
       .update(rawSignature)
       .digest('hex');
     console.log('--------------------SIGNATURE----------------');
-    console.log(signature);
+    console.log('processPayment@@signature::', signature);
 
     const requestBody = JSON.stringify({
       partnerCode: partnerCode,

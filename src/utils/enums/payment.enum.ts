@@ -8,6 +8,6 @@ export enum EPaymentGateway {
 }
 
 export enum EPaymentSuccessStatusCode {
-  Momo = '0',
-  Vnpay = '00',
+  momo = 0,
+  vnpay = '00',
 }

@@ -104,7 +104,6 @@ export class TuitionService {
           ]),
         ),
       },
-      relations: ['paymentTransactions'],
     });
     console.log('processPayment@@tuition:', tuition);
     if (!tuition) {
@@ -112,24 +111,31 @@ export class TuitionService {
         `Không tìm thấy học phí với ID ${tuitionId} để xử lý thanh toán.`,
       );
     }
-    const newPaymentTransaction = await this.paymentTransactionService.create({
-      tuitionId: tuition.id,
-      amountPaid: tuition.balance,
-      paymentMethod: EPaymentMethod.ONLINE_GATEWAY,
-      processedByUserId: processByUserId,
-      paymentDate: null,
-      notes: paymentGateway,
-    });
+    if (tuition.balance > 0) {
+      const newPaymentTransaction = await this.paymentTransactionService.create(
+        {
+          tuitionId: tuition.id,
+          amountPaid: tuition.balance,
+          paymentMethod: EPaymentMethod.ONLINE_GATEWAY,
+          processedByUserId: processByUserId,
+          paymentDate: null,
+          notes: paymentGateway + 'payment',
+        },
+      );
 
-    const payment =
-      this.paymentFactoryInstance.createPaymentStrategy(paymentGateway);
-    this.paymentContext.setStrategy(payment);
-    const paymentGatewayUrl = await this.paymentContext.processPayment(
-      tuition.balance,
-      newPaymentTransaction.id,
+      const payment =
+        this.paymentFactoryInstance.createPaymentStrategy(paymentGateway);
+      this.paymentContext.setStrategy(payment);
+      const paymentGatewayUrl = await this.paymentContext.processPayment(
+        tuition.balance,
+        newPaymentTransaction.id,
+      );
+
+      return paymentGatewayUrl;
+    }
+    throw new BadRequestException(
+      `Học phí của sinh viên đã được thanh toán với học phí ID: ${tuitionId}`,
     );
-
-    return paymentGatewayUrl;
   }
 
   async create(createTuitionDto: CreateTuitionDto): Promise<TuitionEntity> {
