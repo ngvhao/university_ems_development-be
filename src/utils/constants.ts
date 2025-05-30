@@ -98,3 +98,12 @@ export const MomoConfig = {
   path: '/v2/gateway/api/create',
   port: 443,
 };
+
+export const VNPayConfig = {
+  tmnCode: process.env.VNP_TMNCODE,
+  hashSecret: process.env.VNP_HASHSECRET,
+  hostname: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
+  vnp_Api: 'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction',
+  redirectUrl: process.env.VNP_REDIRECT_URL,
+  ipnUrl: process.env.VNP_INP_URL,
+};

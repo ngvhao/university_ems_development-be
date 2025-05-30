@@ -7,17 +7,34 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { PaymentOptionsDto } from './dto/paymentOptions.dto';
 
 @Injectable()
 export class MomoPayment implements IPaymentStrategy {
-  async processPayment(amount: number, transactionId: number): Promise<string> {
+  async processPayment(
+    amount: number,
+    transactionId: number,
+    paymentOptions: PaymentOptionsDto,
+  ): Promise<string> {
+    const { orderInfo: orderInfoDto } = paymentOptions;
+    if (!orderInfoDto) {
+      throw new BadRequestException(
+        'Cần cung cấp thông tin chi tiết của học phí',
+      );
+    }
     amount = amount | 0;
+    if (!amount || amount <= 0) {
+      throw new BadRequestException('Số tiền phải là một số dương');
+    }
+    if (!transactionId) {
+      throw new BadRequestException('TransactionId là bắt buộc');
+    }
     const partnerCode = MomoConfig.partnerCode;
     const accessKey = MomoConfig.accessKey;
     const secretkey = MomoConfig.secretkey;
     const requestId = partnerCode + new Date().getTime() + transactionId;
     const orderId = requestId;
-    const orderInfo = 'Thanh toan hoc phi sinh vien';
+    const orderInfo = orderInfoDto;
     const redirectUrl = MomoConfig.redirectUrl;
     const ipnUrl = MomoConfig.ipnUrl;
     const requestType = MomoConfig.requestType;

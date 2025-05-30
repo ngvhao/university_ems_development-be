@@ -100,4 +100,18 @@ export class Helpers {
       calculatedSignature === signature || calculatedSignature2 === signature
     );
   }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static sortObjectByKeys(obj: any): any {
+    const ordered = {};
+    if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
+      return obj;
+    }
+    Object.keys(obj)
+      .sort()
+      .forEach(function (key) {
+        ordered[key] = obj[key];
+      });
+    return ordered;
+  }
 }

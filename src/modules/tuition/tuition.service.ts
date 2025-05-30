@@ -104,6 +104,9 @@ export class TuitionService {
           ]),
         ),
       },
+      relations: {
+        student: true,
+      },
     });
     console.log('processPayment@@tuition:', tuition);
     if (!tuition) {
@@ -119,7 +122,7 @@ export class TuitionService {
           paymentMethod: EPaymentMethod.ONLINE_GATEWAY,
           processedByUserId: processByUserId,
           paymentDate: null,
-          notes: paymentGateway + 'payment',
+          notes: paymentGateway + ' payment',
         },
       );
 
@@ -129,6 +132,9 @@ export class TuitionService {
       const paymentGatewayUrl = await this.paymentContext.processPayment(
         tuition.balance,
         newPaymentTransaction.id,
+        {
+          orderInfo: `Thanh toán học phí cho sinh viên ${tuition.student.studentCode}`,
+        },
       );
 
       return paymentGatewayUrl;
