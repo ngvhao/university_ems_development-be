@@ -9,6 +9,7 @@ import * as crypto from 'crypto';
 import { VNPayConfig } from 'src/utils/constants';
 import { Helpers } from 'src/utils/helpers';
 import qs from 'qs';
+import { format } from 'date-fns';
 
 @Injectable()
 export class VnpayPayment implements IPaymentStrategy {
@@ -17,7 +18,9 @@ export class VnpayPayment implements IPaymentStrategy {
     transactionId: number,
     paymentOptions: PaymentOptionsDto,
   ): Promise<string> {
+    process.env.TZ = 'Asia/Ho_Chi_Minh';
     const { orderInfo: orderInfoDto } = paymentOptions;
+    console.log('Received paymentOptions.orderInfo:', paymentOptions.orderInfo);
     if (!orderInfoDto) {
       throw new BadRequestException(
         'Cần cung cấp thông tin chi tiết của học phí',
@@ -34,8 +37,7 @@ export class VnpayPayment implements IPaymentStrategy {
     if (
       !VNPayConfig.tmnCode ||
       !VNPayConfig.hashSecret ||
-      !VNPayConfig.redirectUrl ||
-      !VNPayConfig.ipnUrl
+      !VNPayConfig.redirectUrl
     ) {
       console.error('Cấu hình VNPay chưa đủ');
       throw new InternalServerErrorException(
@@ -65,17 +67,18 @@ export class VnpayPayment implements IPaymentStrategy {
       vnp_TmnCode: VNPayConfig.tmnCode,
       vnp_Locale: locale,
       vnp_CurrCode: currCode,
-      vnp_TxnRef: orderId,
+      vnp_TxnRef: orderId + 'T' + transactionId,
       vnp_OrderInfo: orderInfoDto,
-      vnp_OrderType: 'tuition',
+      vnp_OrderType: 'other',
       vnp_Amount: amount * 100,
       vnp_ReturnUrl: returnUrl,
       vnp_IpAddr: ipAddr,
-      vnp_CreateDate: new Date(),
+      vnp_CreateDate: format(new Date(), 'yyyyMMddHHmmss'),
     };
 
     const sorted_vnp_Params = Helpers.sortObjectByKeys(vnp_Params);
     const signData = qs.stringify(sorted_vnp_Params, { encode: false });
+    console.log('String to be signed (signData):', signData);
     const signature = crypto
       .createHmac('sha512', VNPayConfig.hashSecret)
       .update(Buffer.from(signData, 'utf-8'))

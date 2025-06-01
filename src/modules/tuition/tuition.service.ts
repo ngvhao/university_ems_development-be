@@ -114,7 +114,10 @@ export class TuitionService {
         `Không tìm thấy học phí với ID ${tuitionId} để xử lý thanh toán.`,
       );
     }
-    if (tuition.balance > 0) {
+    if (
+      tuition.balance > 0 &&
+      Date.now() < new Date(tuition.dueDate).getTime()
+    ) {
       const newPaymentTransaction = await this.paymentTransactionService.create(
         {
           tuitionId: tuition.id,
@@ -138,6 +141,11 @@ export class TuitionService {
       );
 
       return paymentGatewayUrl;
+    }
+    if (Date.now() > new Date(tuition.dueDate).getTime()) {
+      throw new BadRequestException(
+        `Học phí của sinh viên đã quá hạn thanh toán với học phí ID: ${tuitionId}`,
+      );
     }
     throw new BadRequestException(
       `Học phí của sinh viên đã được thanh toán với học phí ID: ${tuitionId}`,

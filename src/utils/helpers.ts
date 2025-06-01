@@ -63,13 +63,7 @@ export class Helpers {
 
     const sortedKeys = Object.keys(restOfDto).sort();
 
-    const keys = Object.keys(restOfDto);
-
     const rawSignatureData = sortedKeys
-      .map((key) => `${key}=${restOfDto[key]}`)
-      .join('&');
-
-    const rawSignatureData2 = keys
       .map((key) => `${key}=${restOfDto[key]}`)
       .join('&');
 
@@ -78,40 +72,34 @@ export class Helpers {
       rawSignatureData,
     );
 
-    console.log('MoMo IPN raw2:', rawSignatureData2);
-
     const calculatedSignature = crypto
       .createHmac('sha256', MomoConfig.secretkey)
       .update(rawSignatureData)
       .digest('hex');
 
-    const calculatedSignature2 = crypto
-      .createHmac('sha256', MomoConfig.secretkey)
-      .update(rawSignatureData2)
-      .digest('hex');
-
-    console.log(calculatedSignature2 === signature);
-
     console.log('MoMo IPN received signature:', signature);
     console.log('MoMo IPN calculated signature:', calculatedSignature);
-    console.log('MoMo IPN calculated signature 2:', calculatedSignature2);
 
-    return (
-      calculatedSignature === signature || calculatedSignature2 === signature
-    );
+    return calculatedSignature === signature;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   static sortObjectByKeys(obj: any): any {
-    const ordered = {};
-    if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
-      return obj;
+    const sortedResult = {};
+    const originalKeys = [];
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        originalKeys.push(key);
+      }
     }
-    Object.keys(obj)
-      .sort()
-      .forEach(function (key) {
-        ordered[key] = obj[key];
-      });
-    return ordered;
+    originalKeys.sort();
+
+    for (const key of originalKeys) {
+      sortedResult[key] = encodeURIComponent(obj[key].toString()).replace(
+        /%20/g,
+        '+',
+      );
+    }
+    return sortedResult;
   }
 }

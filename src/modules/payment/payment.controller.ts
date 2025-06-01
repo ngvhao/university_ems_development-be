@@ -5,11 +5,15 @@ import {
   HttpCode,
   HttpStatus,
   Res,
+  Query,
+  Get,
+  Req,
 } from '@nestjs/common';
 import { PaymentService } from './payment.service';
 import { EPaymentGateway } from 'src/utils/enums/payment.enum';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { MomoIpnDto } from './dto/momoIPNResponse.dto';
+import { VNPayIPNQueryDto } from './dto/vnpayIpnResponse.dto';
 
 @Controller('payments')
 export class PaymentController {
@@ -37,5 +41,34 @@ export class PaymentController {
       );
     }
     return res.status(HttpStatus.NO_CONTENT);
+  }
+  @Get('/vnpay/callback')
+  @HttpCode(HttpStatus.OK)
+  async handleVnPayIpn(
+    @Req() req: Request,
+    @Query() vnpayIpnDto: VNPayIPNQueryDto,
+    @Res() res: Response,
+  ) {
+    console.log('Raw req.query from Express:', JSON.stringify(req.query));
+    console.log('handleVnPayIpn@@vnpayIpnDto::', JSON.stringify(vnpayIpnDto));
+    console.log('handleVnPayIpn@@signature::', vnpayIpnDto.vnp_SecureHash);
+    const transactionId = vnpayIpnDto.vnp_TxnRef.split('T')[1];
+    try {
+      await this.paymentService.processPayment(
+        vnpayIpnDto.vnp_ResponseCode.toString(),
+        Number(transactionId),
+        EPaymentGateway.Momo,
+        vnpayIpnDto.vnp_TransactionNo.toString(),
+      );
+      console.log(
+        `VNPAY IPN processed successfully for orderId: ${vnpayIpnDto.vnp_TxnRef}, transId: ${vnpayIpnDto.vnp_TransactionNo}`,
+      );
+    } catch (processingError) {
+      console.error(
+        `Error processing VNPAY IPN for orderId: ${vnpayIpnDto.vnp_TransactionNo}, transId: ${vnpayIpnDto.vnp_TransactionNo}:`,
+        processingError,
+      );
+    }
+    res.status(200).json({ RspCode: '00', Message: 'Success' });
   }
 }
