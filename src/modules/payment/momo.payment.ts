@@ -1,5 +1,4 @@
 import { MomoConfig } from 'src/utils/constants';
-import { IPaymentStrategy } from './IPaymentStrategy.interface';
 import axios from 'axios';
 import * as crypto from 'crypto';
 import {
@@ -8,6 +7,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { PaymentOptionsDto } from './dto/paymentOptions.dto';
+import { IPaymentStrategy } from './ipayment.strategy.interface';
 
 @Injectable()
 export class MomoPayment implements IPaymentStrategy {

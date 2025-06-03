@@ -12,7 +12,7 @@ import {
 import { PaymentService } from './payment.service';
 import { EPaymentGateway } from 'src/utils/enums/payment.enum';
 import { Request, Response } from 'express';
-import { MomoIpnDto } from './dto/momoIPNResponse.dto';
+import { MomoIpnDto } from './dto/momoIpnResponse.dto';
 import { VNPayIPNQueryDto } from './dto/vnpayIpnResponse.dto';
 
 @Controller('payments')

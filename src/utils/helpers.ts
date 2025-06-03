@@ -2,7 +2,7 @@ import { hashSync, genSaltSync, compare } from 'bcryptjs';
 import { emailTailConstants, MomoConfig, SALT_ROUNDS } from './constants';
 import { EFacultyCode } from './enums/faculty.enum';
 import { EUserRole } from './enums/user.enum';
-import { MomoIpnDto } from 'src/modules/payment/dto/momoIPNResponse.dto';
+import { MomoIpnDto } from 'src/modules/payment/dto/momoIpnResponse.dto';
 import * as crypto from 'crypto';
 
 export class Helpers {

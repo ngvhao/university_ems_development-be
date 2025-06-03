@@ -1,5 +1,5 @@
 import { Inject, Injectable, Scope } from '@nestjs/common';
-import { IPaymentStrategy } from './IPaymentStrategy.interface';
+import { IPaymentStrategy } from './ipayment.strategy.interface';
 import { PAYMENT_STRATEGY_TOKEN } from 'src/utils/constants';
 import { PaymentOptionsDto } from './dto/paymentOptions.dto';
 

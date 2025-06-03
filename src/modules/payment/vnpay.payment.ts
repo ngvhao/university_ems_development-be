@@ -3,7 +3,7 @@ import {
   Injectable,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { IPaymentStrategy } from './IPaymentStrategy.interface';
+import { IPaymentStrategy } from './ipayment.strategy.interface';
 import { PaymentOptionsDto } from './dto/paymentOptions.dto';
 import * as crypto from 'crypto';
 import { VNPayConfig } from 'src/utils/constants';

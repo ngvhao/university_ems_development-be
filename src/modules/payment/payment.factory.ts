@@ -1,8 +1,8 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { IPaymentStrategy } from './IPaymentStrategy.interface';
-import { MomoPayment } from './Momo.payment';
-import { VnpayPayment } from './Vnpay.payment';
+import { MomoPayment } from './momo.payment';
+import { VnpayPayment } from './vnpay.payment';
 import { EPaymentGateway } from 'src/utils/enums/payment.enum';
+import { IPaymentStrategy } from './ipayment.strategy.interface';
 
 @Injectable()
 export class PaymentStrategyFactory {

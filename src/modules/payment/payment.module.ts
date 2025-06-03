@@ -1,6 +1,6 @@
 import { HttpModule } from '@nestjs/axios';
-import { MomoPayment } from './Momo.payment';
-import { VnpayPayment } from './Vnpay.payment';
+import { MomoPayment } from './momo.payment';
+import { VnpayPayment } from './vnpay.payment';
 import { PaymentContext } from './payment.context';
 import { PaymentStrategyFactory } from './payment.factory';
 import { PAYMENT_STRATEGY_TOKEN } from 'src/utils/constants';
