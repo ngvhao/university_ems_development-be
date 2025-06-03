@@ -6,12 +6,14 @@ import {
   JoinColumn,
   Index,
   CreateDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { StudentEntity } from 'src/modules/student/entities/student.entity';
 import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.entity';
 import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { EEnrollmentStatus } from 'src/utils/enums/course.enum';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { TuitionDetailEntity } from 'src/modules/tuition_detail/entities/tuition_detail.entity';
 
 @Entity('enrollment_courses')
 @Index(['studentId', 'classGroupId'], {
@@ -64,4 +66,10 @@ export class EnrollmentCourseEntity extends IEntity {
   @ApiProperty({ description: 'ID của nhóm lớp', example: 25 })
   @Column({ nullable: false })
   classGroupId: number;
+
+  @ApiPropertyOptional({ type: () => [TuitionDetailEntity] })
+  @OneToMany(() => TuitionDetailEntity, (tuition) => tuition.enrollment, {
+    eager: false,
+  })
+  tuitionDetails: TuitionDetailEntity[];
 }

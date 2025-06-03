@@ -346,6 +346,11 @@ export class EnrollmentCourseService {
     return enrollment;
   }
 
+  async findOneById(id: number): Promise<EnrollmentCourseEntity> {
+    const enrollment = await this.findEnrollmentByIdOrThrow(id);
+    return enrollment;
+  }
+
   /**
    * Hủy một lượt đăng ký môn học (chuyển trạng thái sang CANCELLED).
    * @param id - ID của lượt đăng ký cần hủy.

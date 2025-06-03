@@ -83,3 +83,27 @@ export const QueueConfig = {
   LOCALSTACK_ENDPOINT: 'http://localhost:4566',
   isLocalstack: false,
 };
+
+export const PAYMENT_STRATEGY_TOKEN = 'helloooooworlddd';
+
+export const MomoConfig = {
+  partnerCode: 'MOMO',
+  accessKey: process.env.MOMO_ACCESSKEY,
+  secretkey: process.env.MOMO_SECRETKEY,
+  redirectUrl: process.env.MOMO_REDIRECT_URL,
+  ipnUrl: process.env.MOMO_IPN_URL,
+  lang: 'vi',
+  requestType: 'captureWallet',
+  hostname: 'https://test-payment.momo.vn',
+  path: '/v2/gateway/api/create',
+  port: 443,
+};
+
+export const VNPayConfig = {
+  tmnCode: process.env.VNP_TMNCODE,
+  hashSecret: process.env.VNP_HASHSECRET,
+  hostname: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
+  vnp_Api: 'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction',
+  redirectUrl: process.env.VNP_REDIRECT_URL,
+  ipnUrl: process.env.VNP_INP_URL,
+};

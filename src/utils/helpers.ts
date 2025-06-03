@@ -1,7 +1,9 @@
 import { hashSync, genSaltSync, compare } from 'bcryptjs';
-import { emailTailConstants, SALT_ROUNDS } from './constants';
+import { emailTailConstants, MomoConfig, SALT_ROUNDS } from './constants';
 import { EFacultyCode } from './enums/faculty.enum';
 import { EUserRole } from './enums/user.enum';
+import { MomoIpnDto } from 'src/modules/payment/dto/momoIpnResponse.dto';
+import * as crypto from 'crypto';
 
 export class Helpers {
   static async hashPassword({
@@ -54,5 +56,50 @@ export class Helpers {
 
   static generateStudentEmail(studentCode: string) {
     return studentCode + emailTailConstants.student;
+  }
+
+  static verifyMomoSignature(dto: MomoIpnDto): boolean {
+    const { signature, ...restOfDto } = dto;
+
+    const sortedKeys = Object.keys(restOfDto).sort();
+
+    const rawSignatureData = sortedKeys
+      .map((key) => `${key}=${restOfDto[key]}`)
+      .join('&');
+
+    console.log(
+      'MoMo IPN rawSignatureData for verification:',
+      rawSignatureData,
+    );
+
+    const calculatedSignature = crypto
+      .createHmac('sha256', MomoConfig.secretkey)
+      .update(rawSignatureData)
+      .digest('hex');
+
+    console.log('MoMo IPN received signature:', signature);
+    console.log('MoMo IPN calculated signature:', calculatedSignature);
+
+    return calculatedSignature === signature;
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  static sortObjectByKeys(obj: any): any {
+    const sortedResult = {};
+    const originalKeys = [];
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        originalKeys.push(key);
+      }
+    }
+    originalKeys.sort();
+
+    for (const key of originalKeys) {
+      sortedResult[key] = encodeURIComponent(obj[key].toString()).replace(
+        /%20/g,
+        '+',
+      );
+    }
+    return sortedResult;
   }
 }
