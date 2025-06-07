@@ -11,7 +11,7 @@ import {
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import * as bodyParser from 'body-parser';
-import { API_PREFIX_PATH } from './utils/constants';
+import { API_PREFIX_PATH, FEUrl } from './utils/constants';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 
@@ -98,10 +98,7 @@ async function createAppInstance() {
   app.setGlobalPrefix(API_PREFIX_PATH);
   app.enableCors({
     origin: (origin, callback) => {
-      const allowedOrigins = [
-        'http://localhost:3000',
-        'https://your-production-domain.com',
-      ];
+      const allowedOrigins = ['http://localhost:3000', FEUrl.DEV];
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {

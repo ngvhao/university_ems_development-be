@@ -107,3 +107,7 @@ export const VNPayConfig = {
   redirectUrl: process.env.VNP_REDIRECT_URL,
   ipnUrl: process.env.VNP_INP_URL,
 };
+
+export const FEUrl = {
+  DEV: 'https://dev.d1yz213zk85fue.amplifyapp.com/',
+};
