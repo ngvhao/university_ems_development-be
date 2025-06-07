@@ -93,6 +93,7 @@ async function createAppInstance() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log'],
   });
+  app.setGlobalPrefix(API_PREFIX_PATH);
 
   setupMiddlewares(app);
 

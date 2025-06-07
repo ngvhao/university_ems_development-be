@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { FailedResponse } from 'src/utils/response';
 import { getRequestId } from 'src/utils/serverless-get-request';
 import { QueryFailedError } from 'typeorm';
 
@@ -37,7 +38,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
       statusCode = HttpStatus.BAD_REQUEST;
       message = 'Database query failed';
     }
-
     this.logger.error({
       timestamp,
       path,
@@ -53,6 +53,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
       requestId,
     };
 
-    response.status(statusCode).json(responseBody);
+    response.status(statusCode).json(new FailedResponse(responseBody));
   }
 }
