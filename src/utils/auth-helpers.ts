@@ -38,4 +38,18 @@ export class AuthHelpers {
       });
     }
   }
+
+  static setExpireTokens(res: Response): void {
+    res.cookie('accessToken', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 0,
+    });
+
+    res.cookie('refreshToken', '', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 0,
+    });
+  }
 }

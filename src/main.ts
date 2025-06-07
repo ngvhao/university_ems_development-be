@@ -13,6 +13,7 @@ import helmet from 'helmet';
 import * as bodyParser from 'body-parser';
 import { API_PREFIX_PATH } from './utils/constants';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import cookieParser from 'cookie-parser';
 
 export function setupMiddlewares(app: INestApplication) {
   const expressApp = app as NestExpressApplication;
@@ -62,6 +63,7 @@ export function setupMiddlewares(app: INestApplication) {
   });
 
   app.use(bodyParser.json());
+  app.use(cookieParser());
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -94,7 +96,20 @@ async function createAppInstance() {
     logger: ['error', 'warn', 'log'],
   });
   app.setGlobalPrefix(API_PREFIX_PATH);
-
+  app.enableCors({
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'https://your-production-domain.com',
+      ];
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  });
   setupMiddlewares(app);
 
   return app;
@@ -102,7 +117,6 @@ async function createAppInstance() {
 
 async function bootstrap() {
   const app = await createAppInstance();
-
   const port = process.env.PORT || 3001;
   await app.listen(port);
   console.log(`Server is running on PORT: ${port}`);
