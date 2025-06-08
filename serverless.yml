@@ -7,6 +7,7 @@ provider:
   runtime: nodejs20.x
   region: ap-southeast-1
   environment:
+    NODE_ENV: production
     DEBUG: ${env:DEBUG, 0}
     STAGE: ${env:STAGE, "dev"}
     PORT: ${env:PORT}
@@ -30,9 +31,31 @@ functions:
       - http:
           method: ANY
           path: /
+          cors:
+            origins:
+              - ${env:FE_URL_DEV}
+              - 'http://localhost:3000'
+            allowCredentials: true
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
       - http:
           method: ANY
           path: '{proxy+}'
+          cors:
+            origins:
+              - ${env:FE_URL_DEV}
+              - 'http://localhost:3000'
+            allowCredentials: true
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
 
 custom:
   dotenv:

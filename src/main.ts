@@ -87,14 +87,6 @@ export function setupMiddlewares(app: INestApplication) {
       },
     }),
   );
-  app.useGlobalFilters(new HttpExceptionFilter());
-  return expressApp;
-}
-
-async function createAppInstance() {
-  const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn', 'log'],
-  });
   app.setGlobalPrefix(API_PREFIX_PATH);
   app.enableCors({
     origin: (origin, callback) => {
@@ -106,8 +98,17 @@ async function createAppInstance() {
       }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   });
+  app.useGlobalFilters(new HttpExceptionFilter());
+  return expressApp;
+}
+
+async function createAppInstance() {
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log'],
+  });
+
   setupMiddlewares(app);
 
   return app;

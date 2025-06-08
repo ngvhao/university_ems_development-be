@@ -115,7 +115,6 @@ export class AuthController {
     }).send(res);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('/logout')
   async logout(@Res() res: Response) {
     AuthHelpers.setExpireTokens(res);

@@ -1,5 +1,5 @@
 import { JwtService } from '@nestjs/jwt';
-import { Response } from 'express';
+import { CookieOptions, Response } from 'express';
 import { jwtConstants, tokenConstants } from './constants';
 
 export class AuthHelpers {
@@ -24,16 +24,22 @@ export class AuthHelpers {
     accessToken: string,
     refreshToken?: string,
   ): void {
-    res.cookie('accessToken', accessToken, {
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    const baseCookieOptions: CookieOptions = {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
+    };
+
+    res.cookie('accessToken', accessToken, {
+      ...baseCookieOptions,
       maxAge: tokenConstants.accessTokenMaxAge,
     });
 
     if (refreshToken) {
       res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        ...baseCookieOptions,
         maxAge: tokenConstants.refreshTokenMaxAge,
       });
     }

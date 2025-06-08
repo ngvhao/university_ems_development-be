@@ -109,5 +109,6 @@ export const VNPayConfig = {
 };
 
 export const FEUrl = {
-  DEV: 'https://dev.d1yz213zk85fue.amplifyapp.com/',
+  DEV: process.env.FE_URL_DEV,
+  LOCAL: 'http://localhost:3000',
 };
