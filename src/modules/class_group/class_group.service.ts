@@ -152,7 +152,7 @@ export class ClassGroupService {
           for (const weeklySchedule of scheduleClassGroup.weeklyScheduleDetails) {
             console.log(
               'weeklySchedule.dayOfWeek@createWithWeeklySchedule: ',
-              weeklySchedule.dayOfWeek,
+              weeklySchedule,
             );
             const conflictSchedule = await queryRunner.manager.findOne(
               ClassWeeklyScheduleEntity,
@@ -187,6 +187,7 @@ export class ClassGroupService {
                 lecturerId: scheduleClassGroup.lecturerId,
                 startDate: scheduleClassGroup.groupStartDate,
                 endDate: scheduleClassGroup.groupEndDate,
+                scheduledDates: weeklySchedule.scheduledDates,
               },
             );
             const savedWeeklySchedule =

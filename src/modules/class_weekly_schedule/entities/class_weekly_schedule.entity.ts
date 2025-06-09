@@ -84,4 +84,12 @@ export class ClassWeeklyScheduleEntity extends IEntity {
   @ApiProperty({ example: 25, description: 'ID Giảng viên dạy buổi này' })
   @Column({ nullable: false })
   lecturerId: number;
+
+  @ApiProperty({
+    description: 'Các ngày được lên lịch (dạng mảng chuỗi ngày)',
+    example: ['2026-01-05', '2026-01-06', '2026-01-07'],
+    type: [String],
+  })
+  @Column({ type: 'text', array: true, nullable: false })
+  scheduledDates: string[];
 }

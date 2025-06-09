@@ -6,12 +6,14 @@ import { RoomModule } from 'src/modules/room/room.module';
 import { ClassGroupModule } from '../class_group/class_group.module';
 import { ClassAdjustmentScheduleEntity } from './entities/class_adjustment_schedule.entity';
 import { TimeSlotModule } from '../time_slot/time_slot.module';
+import { StudentModule } from '../student/student.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([ClassAdjustmentScheduleEntity]),
     forwardRef(() => ClassGroupModule),
     forwardRef(() => RoomModule),
     forwardRef(() => TimeSlotModule),
+    StudentModule,
   ],
   controllers: [ClassAdjustmentScheduleController],
   providers: [ClassAdjustmentScheduleService],

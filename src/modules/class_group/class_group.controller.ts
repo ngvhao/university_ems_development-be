@@ -155,6 +155,7 @@ export class ClassGroupController {
         maxSessionsPerWeekAllowed: maxSessionsPerWeekAllowed,
       },
     );
+    console.log('getClassGroupSchedule@@classGroups.data', classGroups.data);
     const savedClassGroups =
       await this.classGroupService.createWithWeeklySchedule(classGroups.data);
     return new SuccessResponse({

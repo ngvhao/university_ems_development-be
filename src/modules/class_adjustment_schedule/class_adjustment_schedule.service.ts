@@ -20,6 +20,7 @@ import { ClassGroupEntity } from '../class_group/entities/class_group.entity';
 import { ClassAdjustmentScheduleEntity } from './entities/class_adjustment_schedule.entity';
 import { TimeSlotService } from '../time_slot/time_slot.service';
 import { TimeSlotEntity } from '../time_slot/entities/time_slot.entity';
+import { StudentService } from '../student/student.service';
 
 @Injectable()
 export class ClassAdjustmentScheduleService {
@@ -32,6 +33,7 @@ export class ClassAdjustmentScheduleService {
     private readonly roomService: RoomService,
     @Inject(forwardRef(() => TimeSlotService))
     private readonly timeSlotService: TimeSlotService,
+    private readonly studentService: StudentService,
   ) {}
 
   /**
@@ -193,5 +195,36 @@ export class ClassAdjustmentScheduleService {
     });
 
     return courseMajor;
+  }
+
+  /**
+   * Lấy tất cả các lịch học đã được điều chỉnh của một sinh viên dựa trên các nhóm lớp sinh viên đó đã đăng ký.
+   * @param studentId - ID của sinh viên.
+   * @returns Danh sách các lịch học đã được điều chỉnh của sinh viên.
+   * @throws NotFoundException nếu sinh viên không tồn tại.
+   */
+  async getAdjustedSchedulesByStudentId(
+    studentId: number,
+  ): Promise<ClassAdjustmentScheduleEntity[]> {
+    await this.studentService.getOne({ id: studentId });
+
+    const schedules = await this.adjustmentRepo
+      .createQueryBuilder('schedule')
+      .innerJoin('schedule.classGroup', 'classGroup')
+      .innerJoin(
+        'classGroup.enrollments',
+        'enrollment',
+        'enrollment.studentId = :studentId',
+        { studentId },
+      )
+      .leftJoinAndSelect('schedule.room', 'room')
+      .leftJoinAndSelect('schedule.timeSlot', 'timeSlot')
+      .leftJoinAndSelect('classGroup.course', 'course')
+      .leftJoinAndSelect('classGroup.semester', 'semester')
+      .orderBy('schedule.adjustmentDate', 'ASC')
+      .addOrderBy('schedule.timeSlotId', 'ASC')
+      .getMany();
+
+    return schedules;
   }
 }

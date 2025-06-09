@@ -227,7 +227,7 @@ export class ClassWeeklyScheduleService {
 
     const schedules = await this.classWeeklyScheduleRepository
       .createQueryBuilder('schedule')
-      .innerJoin('schedule.classGroup', 'classGroup')
+      .innerJoinAndSelect('schedule.classGroup', 'classGroup')
       .innerJoin(
         'classGroup.enrollments',
         'enrollment',
@@ -236,8 +236,8 @@ export class ClassWeeklyScheduleService {
       )
       .leftJoinAndSelect('schedule.room', 'room')
       .leftJoinAndSelect('schedule.timeSlot', 'timeSlot')
-      .leftJoinAndSelect('classGroup.courseSemester', 'courseSemester')
-      .leftJoinAndSelect('courseSemester.course', 'course')
+      .leftJoinAndSelect('classGroup.course', 'course')
+      .leftJoinAndSelect('classGroup.semester', 'semester')
       .orderBy('schedule.dayOfWeek', 'ASC')
       .addOrderBy('schedule.timeSlotId', 'ASC')
       .getMany();

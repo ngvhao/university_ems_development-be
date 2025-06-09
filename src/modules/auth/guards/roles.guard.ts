@@ -12,18 +12,36 @@ export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const roles = this.reflector.get(Roles, context.getHandler());
-    console.log('roles:', roles);
-    if (!roles) {
-      return false;
+    const requiredRoles = this.reflector.getAllAndOverride<number[]>(Roles, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (!requiredRoles) {
+      return true;
     }
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-    console.log('user role:', user.role);
-    if (roles.includes(user.role)) {
+
+    if (!user || user.role === undefined || user.role === null) {
+      console.warn(
+        'RolesGuard: User or user role is missing after authentication.',
+      );
+      throw new ForbiddenException(
+        'User role information is missing. Access denied.',
+      );
+    }
+
+    console.log('RolesGuard: Required Roles:', requiredRoles);
+    console.log('RolesGuard: User Role:', user.role);
+
+    const hasPermission = requiredRoles.includes(user.role);
+
+    if (hasPermission) {
       return true;
     }
+
     throw new ForbiddenException(
       'You do not have permission to access this resource.',
     );

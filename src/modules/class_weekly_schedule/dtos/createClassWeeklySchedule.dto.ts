@@ -7,6 +7,10 @@ import {
   Min,
   IsPositive,
   IsDate,
+  ArrayNotEmpty,
+  IsArray,
+  IsDateString,
+  IsString,
 } from 'class-validator';
 import { EDayOfWeek } from 'src/utils/enums/schedule.enum';
 
@@ -79,4 +83,26 @@ export class CreateClassWeeklyScheduleDto {
   })
   @IsDate()
   endDate: Date;
+
+  @ApiProperty({
+    description:
+      'Các ngày được lên lịch (dạng mảng chuỗi, ví dụ: "YYYY-MM-DD")',
+    example: ['2026-01-05', '2026-01-06', '2026-01-07'],
+    type: [String],
+  })
+  @IsArray({ message: 'scheduledDates phải là một mảng.' })
+  @ArrayNotEmpty({ message: 'scheduledDates không được để trống.' })
+  @IsString({
+    each: true,
+    message: 'Mỗi phần tử trong scheduledDates phải là một chuỗi.',
+  })
+  @IsDateString(
+    {},
+    {
+      each: true,
+      message:
+        'Mỗi phần tử trong scheduledDates phải là một chuỗi ngày hợp lệ (YYYY-MM-DD).',
+    },
+  )
+  scheduledDates: string[];
 }

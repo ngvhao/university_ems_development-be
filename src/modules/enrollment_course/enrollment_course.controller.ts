@@ -1,8 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
-  Body,
   Patch,
   Param,
   Query,
@@ -23,7 +21,6 @@ import { EUserRole } from 'src/utils/enums/user.enum';
 import { SuccessResponse } from 'src/utils/response';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { CreateEnrollmentCourseDto } from './dtos/createEnrollmentCourse.dto';
 import { FilterEnrollmentCourseDto } from './dtos/filterEnrollmentCourse.dto';
 import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
 import {
@@ -33,7 +30,6 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
-  ApiBody,
 } from '@nestjs/swagger';
 import { EnrollmentCourseEntity } from './entities/enrollment_course.entity';
 import { EEnrollmentStatus } from 'src/utils/enums/course.enum';
@@ -44,57 +40,6 @@ import { EEnrollmentStatus } from 'src/utils/enums/course.enum';
 @Controller('enrollments')
 export class EnrollmentCourseController {
   constructor(private readonly enrollmentService: EnrollmentCourseService) {}
-
-  @Post()
-  @UseGuards(RolesGuard)
-  @Roles([
-    EUserRole.STUDENT,
-    EUserRole.ACADEMIC_MANAGER,
-    EUserRole.ADMINISTRATOR,
-  ])
-  @ApiOperation({ summary: 'Tạo một lượt đăng ký môn học mới' })
-  @ApiBody({ type: CreateEnrollmentCourseDto })
-  @ApiResponse({
-    status: HttpStatus.CREATED,
-    description: 'Đăng ký thành công.',
-    type: EnrollmentCourseEntity,
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description:
-      'Dữ liệu không hợp lệ (thiếu studentId, lớp đầy, lớp không mở,...).',
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Chưa xác thực.',
-  })
-  @ApiResponse({
-    status: HttpStatus.FORBIDDEN,
-    description:
-      'Không có quyền thực hiện (vd: user không có profile SV, cố đăng ký cho SV khác).',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description:
-      'Không tìm thấy Nhóm lớp hoặc Sinh viên (nếu studentId được cung cấp).',
-  })
-  @ApiResponse({
-    status: HttpStatus.CONFLICT,
-    description: 'Sinh viên đã đăng ký nhóm lớp này rồi.',
-  })
-  async enrollClassGroup(
-    @Body() createDto: CreateEnrollmentCourseDto,
-    @Req() req: RequestHasUserDto & Request,
-    @Res() res: Response,
-  ) {
-    const currentUser = req.user;
-    const result = await this.enrollmentService.create(createDto, currentUser);
-    return new SuccessResponse({
-      statusCode: HttpStatus.CREATED,
-      data: result,
-      message: 'Đăng ký nhóm lớp của môn học thành công',
-    }).send(res);
-  }
 
   @Get()
   @UseGuards(RolesGuard)

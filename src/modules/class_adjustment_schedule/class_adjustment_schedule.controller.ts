@@ -11,6 +11,8 @@ import {
   UseGuards,
   ParseIntPipe,
   HttpStatus,
+  Req,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ClassAdjustmentScheduleService } from './class_adjustment_schedule.service';
@@ -30,6 +32,8 @@ import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { CreateAdjustmentScheduleDto } from './dto/createClassAdjustmentSchedule.dto';
 import { UpdateAdjustmentScheduleDto } from './dto/updateClassAdjustmentSchedule.dto';
 import { ClassAdjustmentScheduleEntity } from './entities/class_adjustment_schedule.entity';
+import { StudentInterceptor } from 'src/interceptors/get-student.interceptor';
+import { RequestHasStudentDto } from 'src/utils/request-has-student-dto';
 
 @ApiTags('Quản lý Lịch học Điều chỉnh (Class Adjustment Schedules)')
 @ApiBearerAuth('token')
@@ -71,6 +75,39 @@ export class ClassAdjustmentScheduleController {
       statusCode: HttpStatus.CREATED,
       message: 'Tạo lịch điều chỉnh thành công',
       data: schedule,
+    }).send(res);
+  }
+
+  @Get('student/my-schedule')
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.STUDENT])
+  @UseInterceptors(StudentInterceptor)
+  @ApiOperation({ summary: '[Student] Lấy lịch học cá nhân' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy lịch học cá nhân thành công.',
+    type: [ClassAdjustmentScheduleEntity],
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực hoặc không phải sinh viên.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền (ví dụ: không phải là sinh viên).',
+  })
+  async getMySchedule(
+    @Req() req: RequestHasStudentDto & Request,
+    @Res() res: Response,
+  ) {
+    const student = req.student!;
+    const data =
+      await this.classAdjustmentService.getAdjustedSchedulesByStudentId(
+        student.id,
+      );
+    return new SuccessResponse({
+      data,
+      message: 'Lấy lịch học cá nhân được chỉnh sửa thành công',
     }).send(res);
   }
 

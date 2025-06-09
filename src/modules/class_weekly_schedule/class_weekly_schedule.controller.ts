@@ -39,7 +39,7 @@ import { ClassWeeklyScheduleEntity } from './entities/class_weekly_schedule.enti
 
 @ApiTags('Quản lý Lịch học Hàng tuần (Class Weekly Schedules)')
 @ApiBearerAuth('token')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('class-weekly-schedules')
 export class ClassWeeklyScheduleController {
   constructor(
@@ -47,7 +47,6 @@ export class ClassWeeklyScheduleController {
   ) {}
 
   @Post()
-  @UseGuards(RolesGuard)
   @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
   @ApiOperation({ summary: 'Tạo một lịch học hàng tuần mới' })
   @ApiBody({ type: CreateClassWeeklyScheduleDto })
@@ -121,8 +120,38 @@ export class ClassWeeklyScheduleController {
     }).send(res);
   }
 
+  @Get('student/my-schedule')
+  @Roles([EUserRole.STUDENT])
+  @UseInterceptors(StudentInterceptor)
+  @ApiOperation({ summary: '[Student] Lấy lịch học cá nhân' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy lịch học cá nhân thành công.',
+    type: [ClassWeeklyScheduleEntity],
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực hoặc không phải sinh viên.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền (ví dụ: không phải là sinh viên).',
+  })
+  async getMySchedule(
+    @Req() req: RequestHasStudentDto & Request,
+    @Res() res: Response,
+  ) {
+    const student = req.student!;
+    const data = await this.classWeeklyScheduleService.getScheduleByStudentId(
+      student.id,
+    );
+    return new SuccessResponse({
+      data,
+      message: 'Lấy lịch học cá nhân theo tuần thành công',
+    }).send(res);
+  }
+
   @Get('student/:studentId')
-  @UseGuards(RolesGuard)
   @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
   @ApiOperation({
     summary: '[Admin/Academic] Lấy lịch học của một sinh viên cụ thể',
@@ -161,38 +190,6 @@ export class ClassWeeklyScheduleController {
     }).send(res);
   }
 
-  @Get('student/my-schedule')
-  @UseGuards(RolesGuard)
-  @Roles([EUserRole.STUDENT])
-  @UseInterceptors(StudentInterceptor)
-  @ApiOperation({ summary: '[Student] Lấy lịch học cá nhân' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Lấy lịch học cá nhân thành công.',
-    type: [ClassWeeklyScheduleEntity],
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Chưa xác thực hoặc không phải sinh viên.',
-  })
-  @ApiResponse({
-    status: HttpStatus.FORBIDDEN,
-    description: 'Không có quyền (ví dụ: không phải là sinh viên).',
-  })
-  async getMySchedule(
-    @Req() req: RequestHasStudentDto & Request,
-    @Res() res: Response,
-  ) {
-    const student = req.student!;
-    const data = await this.classWeeklyScheduleService.getScheduleByStudentId(
-      student.id,
-    );
-    return new SuccessResponse({
-      data,
-      message: 'Lấy lịch học cá nhân thành công',
-    }).send(res);
-  }
-
   @Get(':id')
   @ApiOperation({
     summary: 'Lấy thông tin chi tiết một lịch học hàng tuần bằng ID',
@@ -220,7 +217,6 @@ export class ClassWeeklyScheduleController {
   }
 
   @Patch(':id')
-  @UseGuards(RolesGuard)
   @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
   @ApiOperation({ summary: 'Cập nhật thông tin một lịch học hàng tuần' })
   @ApiParam({
@@ -267,7 +263,6 @@ export class ClassWeeklyScheduleController {
   }
 
   @Delete(':id')
-  @UseGuards(RolesGuard)
   @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
   @ApiOperation({ summary: 'Xóa một lịch học hàng tuần' })
   @ApiParam({
