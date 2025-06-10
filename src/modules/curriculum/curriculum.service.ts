@@ -62,11 +62,11 @@ export class CurriculumService {
     academicYear?: number,
   ): Promise<CurriculumEntity | null> {
     const condicionesWhere: FindOptionsWhere<CurriculumEntity> = {};
-
+    console.log('majorId:', student.majorId);
     if (student && student.majorId) {
       condicionesWhere.majorId = student.majorId;
-    } else if (student && student.majorId) {
-      condicionesWhere.majorId = student.majorId;
+    } else if (majorId) {
+      condicionesWhere.majorId = majorId;
     } else {
       throw new NotFoundException(
         'Không thể xác định ngành học để tìm chương trình đào tạo.',
@@ -86,6 +86,7 @@ export class CurriculumService {
         'curriculumCourses',
         'curriculumCourses.course',
         'curriculumCourses.semester',
+        'curriculumCourses.prerequisiteCourse',
       ],
     });
 
