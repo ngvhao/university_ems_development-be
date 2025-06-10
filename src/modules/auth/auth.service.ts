@@ -49,6 +49,7 @@ export class AuthService {
     password: string,
   ): Promise<Partial<UserEntity>> {
     const user = await this.userService.getUserByUniEmail(uniEmail);
+    console.log('validateOther@@user:', user);
     if (!user) {
       throw new UnauthorizedException(
         'Invalid credentials (Should login with university email)',

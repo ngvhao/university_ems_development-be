@@ -7,6 +7,8 @@ import { SemesterModule } from '../semester/semester.module';
 import { StudentModule } from '../student/student.module';
 import { CourseModule } from '../course/course.module';
 import { LecturerCourseModule } from '../lecturer_course/lecturer_course.module';
+import { CurriculumModule } from '../curriculum/curriculum.module';
+import { SettingModule } from '../setting/setting.module';
 
 @Module({
   imports: [
@@ -15,6 +17,9 @@ import { LecturerCourseModule } from '../lecturer_course/lecturer_course.module'
     StudentModule,
     CourseModule,
     LecturerCourseModule,
+    CurriculumModule,
+    SettingModule,
+    SemesterModule,
   ],
   controllers: [StudyPlanController],
   providers: [StudyPlanService],

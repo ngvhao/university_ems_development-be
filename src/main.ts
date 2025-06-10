@@ -49,6 +49,7 @@ export function setupMiddlewares(app: INestApplication) {
   );
 
   const apiPath = `${API_PREFIX_PATH}/docs`;
+  app.setGlobalPrefix(API_PREFIX_PATH);
 
   const config = new DocumentBuilder()
     .setTitle('Xypass')
@@ -87,10 +88,13 @@ export function setupMiddlewares(app: INestApplication) {
       },
     }),
   );
-  app.setGlobalPrefix(API_PREFIX_PATH);
   app.enableCors({
     origin: (origin, callback) => {
-      const allowedOrigins = ['http://localhost:3000', FEUrl.DEV];
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        FEUrl.DEV,
+      ];
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -119,6 +123,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port);
   console.log(`Server is running on PORT: ${port}`);
+  console.log(`Swagger docs: ${`${API_PREFIX_PATH}/docs`}`);
 }
 
 bootstrap();

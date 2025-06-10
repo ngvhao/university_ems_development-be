@@ -62,7 +62,7 @@ export class CurriculumService {
     academicYear?: number,
   ): Promise<CurriculumEntity | null> {
     const condicionesWhere: FindOptionsWhere<CurriculumEntity> = {};
-    console.log('majorId:', student.majorId);
+    console.log('findCurriculum@@student:', student);
     if (student && student.majorId) {
       condicionesWhere.majorId = student.majorId;
     } else if (majorId) {

@@ -30,6 +30,7 @@ import { TuitionModule } from './modules/tuition/tuition.module';
 import { TuitionDetailModule } from './modules/tuition_detail/tuition_detail.module';
 import { PaymentTransactionModule } from './modules/payment_transaction/payment_transaction.module';
 import { PaymentModule } from './modules/payment/payment.module';
+import { SettingModule } from './modules/setting/setting.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { PaymentModule } from './modules/payment/payment.module';
     TuitionDetailModule,
     PaymentTransactionModule,
     PaymentModule,
+    SettingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

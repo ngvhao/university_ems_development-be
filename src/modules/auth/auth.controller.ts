@@ -39,6 +39,7 @@ export class AuthController {
     @Res() res: Response,
   ) {
     const user = req.user;
+    console.log('user:', user);
     const payload = { id: user.id, sub: user.universityEmail };
 
     // Create accessToken

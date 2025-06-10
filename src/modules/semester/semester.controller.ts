@@ -31,13 +31,17 @@ import {
   ApiBearerAuth,
   ApiQuery,
 } from '@nestjs/swagger';
+import { SettingService } from '../setting/setting.service';
 
 @ApiTags('Quản lý Học kỳ (Semesters)')
 @ApiBearerAuth('token')
 @UseGuards(JwtAuthGuard)
 @Controller('semesters')
 export class SemesterController {
-  constructor(private readonly semesterService: SemesterService) {}
+  constructor(
+    private readonly semesterService: SemesterService,
+    private readonly settingService: SettingService,
+  ) {}
 
   @Post()
   @UseGuards(RolesGuard)
@@ -105,6 +109,15 @@ export class SemesterController {
       data,
       metadata: meta,
       message: 'Lấy danh sách học kỳ thành công.',
+    }).send(res);
+  }
+  @Get('currentSemester')
+  async getCurrentSemester(@Res() res: Response) {
+    const semesterId = await this.settingService.findOne('currentSemesterId');
+    const semester = await this.semesterService.findOne(semesterId.value);
+    return new SuccessResponse({
+      data: semester,
+      message: 'Lấy thông tin học kỳ thành công.',
     }).send(res);
   }
 

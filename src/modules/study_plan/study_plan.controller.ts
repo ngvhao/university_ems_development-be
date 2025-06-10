@@ -13,6 +13,7 @@ import {
   Req,
   HttpStatus,
   HttpCode,
+  UseInterceptors,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -37,13 +38,23 @@ import { StudyPlanEntity } from './entities/study_plan.entity';
 import { FilterStudyPlanDto } from './dtos/filterStudyPlan.dto';
 import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
 import { EStudyPlanStatus } from 'src/utils/enums/study-plan.enum';
+import { CurriculumService } from '../curriculum/curriculum.service';
+import { SettingService } from '../setting/setting.service';
+import { RequestHasStudentDto } from 'src/utils/request-has-student-dto';
+import { StudentInterceptor } from 'src/interceptors/get-student.interceptor';
+import { SemesterService } from '../semester/semester.service';
 
 @ApiTags('Quản lý Kế hoạch học tập (Study Plans)')
 @ApiBearerAuth('token')
 @UseGuards(JwtAuthGuard)
 @Controller('study-plans')
 export class StudyPlanController {
-  constructor(private readonly studyPlanService: StudyPlanService) {}
+  constructor(
+    private readonly studyPlanService: StudyPlanService,
+    private readonly curriculumService: CurriculumService,
+    private readonly settingService: SettingService,
+    private readonly semesterService: SemesterService,
+  ) {}
 
   @Post()
   @UseGuards(RolesGuard)
@@ -141,6 +152,68 @@ export class StudyPlanController {
     return new SuccessResponse({
       ...result,
       message: 'Lấy danh sách kế hoạch học tập thành công',
+    }).send(res);
+  }
+
+  @Get('/me/for-registration')
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.STUDENT])
+  @UseInterceptors(StudentInterceptor)
+  @ApiOperation({ summary: '[Student] Lấy kế hoạch học tập của bản thân' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng kết quả mỗi trang',
+  })
+  @ApiQuery({
+    name: 'semesterId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID Học kỳ',
+  })
+  @ApiQuery({
+    name: 'courseId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID Môn học',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: EStudyPlanStatus,
+    description: 'Lọc theo trạng thái (0: Cancelled, 1: Planned)',
+    type: 'number',
+  })
+  async getStudyPlanForRegistration(
+    @Req() req: RequestHasStudentDto & Request,
+    @Res() res: Response,
+  ) {
+    const { student } = req;
+    console.log('getStudyPlanForRegistration@student:', student);
+    const nextRegisterStudyPlanSemester = await this.settingService.findOne(
+      'nextRegisterStudyPlanSemesterId',
+    );
+    const semester = await this.semesterService.findOne(
+      nextRegisterStudyPlanSemester.value,
+    );
+    const curriculum = await this.curriculumService.findCurriculum(student);
+    console.log(
+      'getStudyPlanForRegistration@@nextRegisterStudyPlanSemester:',
+      nextRegisterStudyPlanSemester,
+    );
+    return new SuccessResponse({
+      data: {
+        curriculum,
+        semesterForRegistration: semester,
+      },
+      message: 'Lấy kế hoạch học tập của bạn thành công.',
     }).send(res);
   }
 
