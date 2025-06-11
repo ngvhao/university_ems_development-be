@@ -7,6 +7,7 @@ phases:
     commands:
       - echo Installing dependencies...
       - npm ci
+      - printenv | grep -vE '^(HOME|PATH|PWD|SHLVL|_|LANG|TERM|HOSTNAME)' > .env
   build:
     commands:
       - echo Building application...
