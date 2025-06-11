@@ -118,11 +118,7 @@ export class CourseService {
    * @throws NotFoundException nếu không tìm thấy.
    */
   async findOne(id: number): Promise<CourseEntity> {
-    return this.findCourseByIdOrThrow(id, [
-      'courseMajors',
-      'courseMajors.major',
-      'courseSemesters',
-    ]);
+    return this.findCourseByIdOrThrow(id);
   }
 
   /**

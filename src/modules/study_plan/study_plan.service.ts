@@ -160,8 +160,9 @@ export class StudyPlanService {
   async create(
     createStudyPlanDto: CreateStudyPlanDto,
     currentUser: UserEntity,
-  ): Promise<StudyPlanEntity> {
-    const { semesterId, courseId } = createStudyPlanDto;
+    registerSemesterId: number,
+  ): Promise<StudyPlanEntity[]> {
+    const { courseIds } = createStudyPlanDto;
     let { studentId } = createStudyPlanDto;
 
     if (!studentId) {
@@ -194,31 +195,83 @@ export class StudyPlanService {
       });
     }
 
-    await Promise.all([
-      this.semesterService.findOne(semesterId),
-      this.courseService.findOne(courseId),
+    const [semester, courses] = await Promise.all([
+      this.semesterService.findOne(registerSemesterId),
+      Promise.all(courseIds.map((id) => this.courseService.findOne(id))),
     ]);
 
-    await this.checkConflict(studentId, semesterId, courseId);
-
-    try {
-      const studyPlan = this.studyPlanRepository.create({
-        studentId,
-        semesterId,
-        courseId,
-        status: EStudyPlanStatus.PLANNED,
-      });
-      const saved = await this.studyPlanRepository.save(studyPlan);
-      return this.findOne(saved.id, ['student', 'semester', 'course']);
-    } catch (error) {
-      if (error.code === '23505') {
-        throw new ConflictException(
-          `Sinh viên ID ${studentId} có thể đã có kế hoạch học Môn học ID ${courseId} trong Học kỳ ID ${semesterId}.`,
-        );
-      }
-      console.error('Lỗi khi tạo kế hoạch học tập:', error);
-      throw new BadRequestException('Không thể tạo kế hoạch học tập.');
+    if (!semester) {
+      throw new NotFoundException(
+        `Học kỳ với ID ${registerSemesterId} không tồn tại.`,
+      );
     }
+
+    const existingCourses = courses.filter(Boolean);
+    if (existingCourses.length !== courseIds.length) {
+      const missingCourseIds = courseIds.filter(
+        (id) => !existingCourses.some((c) => c.id === id),
+      );
+      throw new NotFoundException(
+        `Một hoặc nhiều môn học với ID [${missingCourseIds.join(
+          ', ',
+        )}] không tồn tại.`,
+      );
+    }
+
+    const createdStudyPlans: StudyPlanEntity[] = [];
+    const conflictMessages: string[] = [];
+
+    for (const courseId of courseIds) {
+      try {
+        await this.checkConflict(studentId, registerSemesterId, courseId);
+
+        const studyPlan = this.studyPlanRepository.create({
+          studentId,
+          semesterId: registerSemesterId,
+          courseId,
+          status: EStudyPlanStatus.PLANNED,
+        });
+
+        const savedPlan = await this.studyPlanRepository.save(studyPlan);
+        createdStudyPlans.push(
+          await this.findOne(savedPlan.id, ['student', 'semester', 'course']),
+        );
+      } catch (error) {
+        if (error.code === '23505') {
+          conflictMessages.push(
+            `Môn học ID ${courseId}: Sinh viên ID ${studentId} đã có kế hoạch học môn này trong Học kỳ ID ${registerSemesterId}.`,
+          );
+        } else if (error instanceof ConflictException) {
+          conflictMessages.push(`Môn học ID ${courseId}: ${error.message}`);
+        } else {
+          console.error(
+            `Lỗi khi tạo kế hoạch học tập cho Môn học ID ${courseId}:`,
+            error,
+          );
+          conflictMessages.push(
+            `Môn học ID ${courseId}: Không thể tạo kế hoạch học tập do lỗi không xác định.`,
+          );
+        }
+      }
+    }
+
+    if (conflictMessages.length > 0) {
+      if (createdStudyPlans.length > 0) {
+        throw new BadRequestException({
+          message:
+            'Một số kế hoạch học tập đã được tạo, nhưng có lỗi xảy ra với những môn học khác.',
+          successfulRegistrations: createdStudyPlans,
+          failedRegistrations: conflictMessages,
+        });
+      } else {
+        throw new ConflictException({
+          message: 'Không thể tạo bất kỳ kế hoạch học tập nào do các lỗi sau:',
+          errors: conflictMessages,
+        });
+      }
+    }
+
+    return createdStudyPlans;
   }
 
   /**

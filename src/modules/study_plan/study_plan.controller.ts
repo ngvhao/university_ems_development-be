@@ -78,9 +78,16 @@ export class StudyPlanController {
     @Res() res: Response,
   ) {
     const currentUser = req.user;
+    const nextRegisterStudyPlanSemester = await this.settingService.findOne(
+      'nextRegisterStudyPlanSemesterId',
+    );
+    const semester = await this.semesterService.findOne(
+      nextRegisterStudyPlanSemester.value,
+    );
     const studyPlan = await this.studyPlanService.create(
       createStudyPlanDto,
       currentUser,
+      semester.id,
     );
     return new SuccessResponse({
       statusCode: HttpStatus.CREATED,
