@@ -10,18 +10,14 @@ phases:
       - echo "Generating .env from whitelist..."
       - rm -f .env
       - |
-        # Đảm bảo shell đang dùng là bash nếu cần cú pháp !var_name
-        # Dòng này thường không cần nếu CodeBuild mặc định là bash, nhưng có thể giúp.
-        # set -eo pipefail # Thêm dòng này để xử lý lỗi tốt hơn trong script
         while IFS= read -r var_name; do
-          # Kiểm tra xem biến có tồn tại và không rỗng không
           if [[ -n "${!var_name}" ]]; then
-            echo "$var_name=\"${!var_name}\"" >> .env # Thêm dấu ngoặc kép cho giá trị
+            echo "$var_name=\"${!var_name}\"" >> .env  
           else
-            echo "$var_name=\"\"" >> .env # Hoặc xử lý biến rỗng
+            echo "$var_name=\"\"" >> .env  
             # echo "Warning: Environment variable '$var_name' not found or is empty."
           fi
-        done < env.whitelist
+        done < .env.whitelist
   build:
     commands:
       - echo Building application...

@@ -57,7 +57,7 @@ export class CreateSemesterDto {
   })
   @IsDateString({}, { message: 'Ngày bắt đầu phải là chuỗi ngày ISO hợp lệ' })
   @IsNotEmpty({ message: 'Ngày bắt đầu là bắt buộc' })
-  startDate: Date;
+  startDate: string;
 
   @ApiProperty({
     description: 'Ngày kết thúc học kỳ (định dạng ISO 8601)',
@@ -67,5 +67,5 @@ export class CreateSemesterDto {
   })
   @IsDateString({}, { message: 'Ngày kết thúc phải là chuỗi ngày ISO hợp lệ' })
   @IsNotEmpty({ message: 'Ngày kết thúc là bắt buộc' })
-  endDate: Date;
+  endDate: string;
 }
