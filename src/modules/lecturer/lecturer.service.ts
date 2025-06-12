@@ -24,7 +24,7 @@ import { Helpers } from 'src/utils/helpers';
 import { UserEntity } from '../user/entities/user.entity';
 import { EAccountStatus, EUserRole } from 'src/utils/enums/user.enum';
 import _ from 'lodash';
-import { PAGINATION } from 'src/utils/constants';
+import { DEFAULT_PAGINATION } from 'src/utils/constants';
 
 @Injectable()
 export class LecturerService {
@@ -162,7 +162,7 @@ export class LecturerService {
   }
 
   async findAll(
-    paginationDto: PaginationDto = PAGINATION,
+    paginationDto: PaginationDto = DEFAULT_PAGINATION,
   ): Promise<{ data: LecturerEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
 

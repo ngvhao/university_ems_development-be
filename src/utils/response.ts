@@ -71,7 +71,7 @@ interface SuccessResponseOptions<T> {
 interface FailedResponseOptions {
   status?: number;
   msgcode?: string;
-  message?: string;
+  message: string;
   statusCode?: HttpStatus;
   errors?: Record<string, any>;
   metadata?: MetaDataInterface;

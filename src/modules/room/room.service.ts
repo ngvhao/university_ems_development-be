@@ -7,7 +7,7 @@ import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { CreateRoomDto } from './dtos/createRoom.dto';
 import { UpdateRoomDto } from './dtos/updateRoom.dto';
-import { PAGINATION } from 'src/utils/constants';
+import { DEFAULT_PAGINATION } from 'src/utils/constants';
 
 @Injectable()
 export class RoomService {
@@ -42,7 +42,7 @@ export class RoomService {
    */
   async findAll(
     condition?: FindOptionsWhere<RoomEntity> | FindOptionsWhere<RoomEntity>[],
-    paginationDto: PaginationDto = PAGINATION,
+    paginationDto: PaginationDto = DEFAULT_PAGINATION,
   ): Promise<{ data: RoomEntity[]; meta: MetaDataInterface }> {
     const { page, limit } = paginationDto;
 

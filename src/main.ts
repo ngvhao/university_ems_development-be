@@ -94,6 +94,7 @@ export function setupMiddlewares(app: INestApplication) {
         'http://localhost:3000',
         'http://localhost:3001',
         FEUrl.DEV,
+        FEUrl.PRD,
       ];
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);

@@ -8,8 +8,8 @@ import {
   forwardRef,
   InternalServerErrorException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, Not, In } from 'typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { Repository, FindOptionsWhere, Not, In, DataSource } from 'typeorm';
 import { CreateStudyPlanDto } from './dtos/createStudyPlan.dto';
 import { UpdateStudyPlanDto } from './dtos/updateStudyPlan.dto';
 import { StudyPlanEntity } from './entities/study_plan.entity';
@@ -28,10 +28,13 @@ import { CourseEntity } from '../course/entities/course.entity';
 import { LecturerCourseService } from '../lecturer_course/lecturer_course.service';
 import { CourseSchedulingInfoDTO } from './dtos/courseScheduling.dto';
 import { CourseHelper } from 'src/utils/helpers/course.helper';
+import { DEFAULT_PAGINATION } from 'src/utils/constants';
 
 @Injectable()
 export class StudyPlanService {
   constructor(
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
     @InjectRepository(StudyPlanEntity)
     private readonly studyPlanRepository: Repository<StudyPlanEntity>,
     @Inject(forwardRef(() => StudentService))
@@ -150,12 +153,15 @@ export class StudyPlanService {
 
   /**
    * Tạo một mục mới trong kế hoạch học tập với status mặc định là PLANNED.
+   * Hoặc cập nhật status thành PLANNED nếu đã tồn tại nhưng không phải PLANNED.
    * @param createStudyPlanDto - Dữ liệu tạo kế hoạch.
    * @param currentUser - Thông tin người dùng thực hiện.
-   * @returns Promise<StudyPlanEntity> - Mục kế hoạch vừa tạo.
+   * @param registerSemesterId - ID học kỳ đăng ký.
+   * @returns Promise<StudyPlanEntity[]> - Danh sách các mục kế hoạch vừa tạo/cập nhật.
    * @throws ForbiddenException nếu user không có quyền hoặc không phải là SV tương ứng.
    * @throws NotFoundException nếu Student, Semester hoặc Course không tồn tại.
-   * @throws ConflictException nếu mục kế hoạch đã tồn tại.
+   * @throws BadRequestException nếu có lỗi validation hoặc xung đột không hoàn toàn.
+   * @throws ConflictException nếu không thể tạo bất kỳ kế hoạch nào do xung đột.
    */
   async create(
     createStudyPlanDto: CreateStudyPlanDto,
@@ -165,6 +171,7 @@ export class StudyPlanService {
     const { courseIds } = createStudyPlanDto;
     let { studentId } = createStudyPlanDto;
 
+    // 1. Kiểm tra quyền và xác định studentId
     if (!studentId) {
       if (currentUser.role !== EUserRole.STUDENT) {
         throw new ForbiddenException(
@@ -190,11 +197,13 @@ export class StudyPlanService {
           'Bạn không có quyền tạo kế hoạch học tập cho sinh viên khác.',
         );
       }
+      // Đảm bảo studentId tồn tại
       await this.studentService.getOne({
         id: studentId,
       });
     }
 
+    // 2. Kiểm tra tồn tại Semester và Courses
     const [semester, courses] = await Promise.all([
       this.semesterService.findOne(registerSemesterId),
       Promise.all(courseIds.map((id) => this.courseService.findOne(id))),
@@ -218,60 +227,101 @@ export class StudyPlanService {
       );
     }
 
-    const createdStudyPlans: StudyPlanEntity[] = [];
+    // 3. Thực hiện tạo/cập nhật trong Transaction
+    const createdOrUpdatedStudyPlanIds: number[] = [];
     const conflictMessages: string[] = [];
 
-    for (const courseId of courseIds) {
-      try {
-        await this.checkConflict(studentId, registerSemesterId, courseId);
+    // Bắt đầu một giao dịch để đảm bảo tính toàn vẹn dữ liệu
+    await this.dataSource.transaction(async (transactionalEntityManager) => {
+      for (const course of existingCourses) {
+        // Lặp qua các Course Entity đã tìm thấy
+        const courseId = course.id;
+        try {
+          // 3.1. Kiểm tra xung đột/Tồn tại
+          const existingStudyPlan = await transactionalEntityManager.findOne(
+            StudyPlanEntity,
+            {
+              where: {
+                studentId,
+                semesterId: registerSemesterId,
+                courseId,
+              },
+            },
+          );
 
-        const studyPlan = this.studyPlanRepository.create({
-          studentId,
-          semesterId: registerSemesterId,
-          courseId,
-          status: EStudyPlanStatus.PLANNED,
-        });
-
-        const savedPlan = await this.studyPlanRepository.save(studyPlan);
-        createdStudyPlans.push(
-          await this.findOne(savedPlan.id, ['student', 'semester', 'course']),
-        );
-      } catch (error) {
-        if (error.code === '23505') {
-          conflictMessages.push(
-            `Môn học ID ${courseId}: Sinh viên ID ${studentId} đã có kế hoạch học môn này trong Học kỳ ID ${registerSemesterId}.`,
-          );
-        } else if (error instanceof ConflictException) {
-          conflictMessages.push(`Môn học ID ${courseId}: ${error.message}`);
-        } else {
-          console.error(
-            `Lỗi khi tạo kế hoạch học tập cho Môn học ID ${courseId}:`,
-            error,
-          );
-          conflictMessages.push(
-            `Môn học ID ${courseId}: Không thể tạo kế hoạch học tập do lỗi không xác định.`,
-          );
+          if (existingStudyPlan) {
+            // Kế hoạch đã tồn tại
+            if (existingStudyPlan.status !== EStudyPlanStatus.PLANNED) {
+              // Cập nhật trạng thái thành PLANNED nếu chưa phải
+              existingStudyPlan.status = EStudyPlanStatus.PLANNED;
+              await transactionalEntityManager.save(existingStudyPlan);
+              createdOrUpdatedStudyPlanIds.push(existingStudyPlan.id);
+            } else {
+              // Nếu đã tồn tại và status đã là PLANNED, coi là xung đột không cần cập nhật
+              conflictMessages.push(
+                `Môn học ID ${courseId}: Kế hoạch đã tồn tại và đang ở trạng thái PLANNED.`,
+              );
+            }
+          } else {
+            // Tạo mới kế hoạch học tập
+            const newStudyPlan = transactionalEntityManager.create(
+              StudyPlanEntity,
+              {
+                studentId,
+                semesterId: registerSemesterId,
+                courseId,
+                status: EStudyPlanStatus.PLANNED,
+              },
+            );
+            const savedPlan =
+              await transactionalEntityManager.save(newStudyPlan);
+            createdOrUpdatedStudyPlanIds.push(savedPlan.id);
+          }
+        } catch (error) {
+          if (error.code === '23505') {
+            conflictMessages.push(
+              `Môn học ID ${courseId}: Sinh viên ID ${studentId} đã có kế hoạch học môn này trong Học kỳ ID ${registerSemesterId}.`,
+            );
+          } else if (error instanceof ConflictException) {
+            conflictMessages.push(`Môn học ID ${courseId}: ${error.message}`);
+          } else {
+            console.error(
+              `Lỗi khi tạo/cập nhật kế hoạch học tập cho Môn học ID ${courseId}:`,
+              error,
+            );
+            conflictMessages.push(
+              `Môn học ID ${courseId}: Không thể tạo/cập nhật kế hoạch học tập do lỗi không xác định.`,
+            );
+          }
         }
       }
-    }
+    });
 
+    // 4. Xử lý kết quả và phản hồi lỗi
     if (conflictMessages.length > 0) {
-      if (createdStudyPlans.length > 0) {
+      if (createdOrUpdatedStudyPlanIds.length > 0) {
+        const successfulStudyPlans = await this.studyPlanRepository.find({
+          where: { id: In(createdOrUpdatedStudyPlanIds) },
+          relations: ['student', 'semester', 'course'],
+        });
         throw new BadRequestException({
           message:
-            'Một số kế hoạch học tập đã được tạo, nhưng có lỗi xảy ra với những môn học khác.',
-          successfulRegistrations: createdStudyPlans,
+            'Một số kế hoạch học tập đã được tạo/cập nhật, nhưng có lỗi xảy ra với những môn học khác.',
+          successfulRegistrations: successfulStudyPlans,
           failedRegistrations: conflictMessages,
         });
       } else {
         throw new ConflictException({
-          message: 'Không thể tạo bất kỳ kế hoạch học tập nào do các lỗi sau:',
+          message: 'Không thể tạo bất kỳ kế hoạch học tập nào.',
           errors: conflictMessages,
         });
       }
     }
 
-    return createdStudyPlans;
+    return this.studyPlanRepository.find({
+      where: { id: In(createdOrUpdatedStudyPlanIds) },
+      relations: ['student', 'semester', 'course'],
+    });
   }
 
   /**
@@ -334,7 +384,7 @@ export class StudyPlanService {
   async findAll(
     currentUser: UserEntity,
     filterDto: FilterStudyPlanDto,
-    paginationDto: PaginationDto,
+    paginationDto: PaginationDto = DEFAULT_PAGINATION,
   ): Promise<{ data: StudyPlanEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
     const { semesterId, courseId, status } = filterDto;
@@ -482,7 +532,7 @@ export class StudyPlanService {
    * @throws BadRequestException nếu kế hoạch đã bị hủy trước đó.
    */
   async cancel(id: number, currentUser: UserEntity): Promise<StudyPlanEntity> {
-    const studyPlan = await this.findOneWithAuth(id, currentUser, ['student']); // Đã check quyền
+    const studyPlan = await this.findOneWithAuth(id, currentUser, ['student']);
 
     if (studyPlan.status === EStudyPlanStatus.CANCELLED) {
       throw new BadRequestException(
@@ -498,6 +548,73 @@ export class StudyPlanService {
     } catch (error) {
       console.error('Lỗi khi hủy kế hoạch học tập:', error);
       throw new InternalServerErrorException('Không thể hủy kế hoạch học tập.');
+    }
+  }
+
+  /**
+   * Hủy nhiều mục trong kế hoạch học tập (chuyển status thành CANCELLED).
+   * @param ids - Mảng ID của các StudyPlan cần hủy.
+   * @param currentUser - Người dùng thực hiện.
+   * @returns Promise<StudyPlanEntity[]> - Danh sách các mục kế hoạch sau khi hủy.
+   * @throws BadRequestException nếu mảng IDs rỗng hoặc có kế hoạch đã hủy.
+   * @throws ForbiddenException nếu không có quyền trên bất kỳ kế hoạch nào.
+   * @throws NotFoundException nếu không tìm thấy bất kỳ kế hoạch nào.
+   * @throws InternalServerErrorException nếu có lỗi hệ thống.
+   */
+  async cancelMultiple(
+    ids: number[],
+    currentUser: UserEntity,
+  ): Promise<StudyPlanEntity[]> {
+    if (!ids || ids.length === 0) {
+      throw new BadRequestException('Vui lòng cung cấp danh sách ID để hủy.');
+    }
+
+    const studyPlans = await this.studyPlanRepository.find({
+      where: { id: In(ids) },
+      relations: ['student'],
+    });
+
+    if (studyPlans.length !== ids.length) {
+      const foundIds = new Set(studyPlans.map((sp) => sp.id));
+      const notFoundIds = ids.filter((id) => !foundIds.has(id));
+      throw new NotFoundException(
+        `Các kế hoạch học tập với ID sau không tìm thấy: ${notFoundIds.join(', ')}.`,
+      );
+    }
+
+    // 3. Kiểm tra quyền và trạng thái cho từng kế hoạch
+    for (const studyPlan of studyPlans) {
+      if (
+        studyPlan.student.id !== currentUser.id &&
+        [EUserRole.ADMINISTRATOR, EUserRole.LECTURER].includes(currentUser.role)
+      ) {
+        throw new ForbiddenException(
+          `Bạn không có quyền hủy kế hoạch học tập ID ${studyPlan.id}.`,
+        );
+      }
+      if (studyPlan.status === EStudyPlanStatus.CANCELLED) {
+        // throw new BadRequestException(
+        //   `Kế hoạch học tập ID ${studyPlan.id} đã bị hủy trước đó.`,
+        // );
+        continue;
+      }
+    }
+
+    try {
+      await this.studyPlanRepository.update(
+        { id: In(ids) },
+        { status: EStudyPlanStatus.CANCELLED },
+      );
+
+      return await this.studyPlanRepository.find({
+        where: { id: In(ids) },
+        relations: ['student', 'semester', 'course'],
+      });
+    } catch (error) {
+      console.error('Lỗi khi hủy nhiều kế hoạch học tập:', error);
+      throw new InternalServerErrorException(
+        'Không thể hủy các kế hoạch học tập đã chọn.',
+      );
     }
   }
 

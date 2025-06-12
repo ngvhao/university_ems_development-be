@@ -16,7 +16,7 @@ import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { TimeSlotEntity } from './entities/time_slot.entity';
 import { ClassWeeklyScheduleService } from '../class_weekly_schedule/class_weekly_schedule.service';
 import { ClassAdjustmentScheduleService } from '../class_adjustment_schedule/class_adjustment_schedule.service';
-import { PAGINATION } from 'src/utils/constants';
+import { DEFAULT_PAGINATION } from 'src/utils/constants';
 
 @Injectable()
 export class TimeSlotService {
@@ -146,7 +146,7 @@ export class TimeSlotService {
    * @returns Promise<{ data: TimeSlotEntity[]; meta: MetaDataInterface }> - Danh sách và metadata.
    */
   async findAll(
-    paginationDto: PaginationDto = PAGINATION,
+    paginationDto: PaginationDto = DEFAULT_PAGINATION,
   ): Promise<{ data: TimeSlotEntity[]; meta: MetaDataInterface }> {
     const { page, limit } = paginationDto;
     // const where: FindOptionsWhere<TimeSlotEntity> = {};

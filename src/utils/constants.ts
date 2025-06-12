@@ -16,8 +16,8 @@ export const DATE_FORMAT = 'DD';
 export const THROTTLE_TTL = 60;
 export const THROTTLE_LIMIT = 30;
 
-export const PAGINATION = {
-  limit: 100,
+export const DEFAULT_PAGINATION = {
+  limit: 1000,
   page: 1,
 };
 
@@ -110,5 +110,6 @@ export const VNPayConfig = {
 
 export const FEUrl = {
   DEV: process.env.FE_URL_DEV,
+  PRD: process.env.FE_URL_PRD,
   LOCAL: 'http://localhost:3000',
 };

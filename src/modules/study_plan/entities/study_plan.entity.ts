@@ -20,6 +20,7 @@ export class StudyPlanEntity extends IEntity {
     enum: EStudyPlanStatus,
     default: EStudyPlanStatus.PLANNED,
     nullable: false,
+    comment: 'Trạng thái kế hoạch (0: Đã hủy, 1: Đã lên kế hoạch)',
   })
   status: EStudyPlanStatus;
 
