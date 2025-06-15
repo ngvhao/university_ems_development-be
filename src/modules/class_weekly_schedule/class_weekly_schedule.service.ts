@@ -204,7 +204,6 @@ export class ClassWeeklyScheduleService {
    * @throws NotFoundException nếu không tìm thấy.
    */
   async findOne(id: number): Promise<ClassWeeklyScheduleEntity> {
-    // Load đủ thông tin cần thiết khi xem chi tiết
     return this.findScheduleByIdOrThrow(id, [
       'classGroup',
       'room',
@@ -212,6 +211,27 @@ export class ClassWeeklyScheduleService {
       'classGroup.courseSemester',
       'classGroup.courseSemester.course',
     ]);
+  }
+
+  async getTodayScheduleByStudentId(studentId: number): Promise<number> {
+    const today = new Date();
+    const todayFormatted = today.toISOString().split('T')[0];
+    const queryBuilder = this.classWeeklyScheduleRepository
+      .createQueryBuilder('schedule')
+      .innerJoinAndSelect('schedule.classGroup', 'classGroup')
+      .innerJoin(
+        'classGroup.enrollments',
+        'enrollment',
+        'enrollment.studentId = :studentId',
+        { studentId },
+      )
+      .where(':todayFormatted = ANY(schedule.scheduledDates)', {
+        todayFormatted,
+      });
+
+    const [_schedules, count] = await queryBuilder.getManyAndCount();
+
+    return count;
   }
 
   /**
@@ -222,10 +242,11 @@ export class ClassWeeklyScheduleService {
    */
   async getScheduleByStudentId(
     studentId: number,
+    semesterCode?: string,
   ): Promise<ClassWeeklyScheduleEntity[]> {
     await this.studentService.getOne({ id: studentId });
 
-    const schedules = await this.classWeeklyScheduleRepository
+    const queryBuilder = this.classWeeklyScheduleRepository
       .createQueryBuilder('schedule')
       .innerJoinAndSelect('schedule.classGroup', 'classGroup')
       .innerJoin(
@@ -239,8 +260,14 @@ export class ClassWeeklyScheduleService {
       .leftJoinAndSelect('classGroup.course', 'course')
       .leftJoinAndSelect('classGroup.semester', 'semester')
       .orderBy('schedule.dayOfWeek', 'ASC')
-      .addOrderBy('schedule.timeSlotId', 'ASC')
-      .getMany();
+      .addOrderBy('schedule.timeSlotId', 'ASC');
+
+    if (semesterCode) {
+      queryBuilder.andWhere('semester.semesterCode = :semesterCode', {
+        semesterCode,
+      });
+    }
+    const schedules = await queryBuilder.getMany();
 
     return schedules;
   }

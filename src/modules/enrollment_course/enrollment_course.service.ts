@@ -247,6 +247,26 @@ export class EnrollmentCourseService {
     }
   }
 
+  async findEnrollmentNumberBySemester(
+    semesterCode: string,
+    studentId: number,
+  ): Promise<number> {
+    const [_enrollments, number] = await this.enrollmentRepository.findAndCount(
+      {
+        where: {
+          studentId: studentId,
+          classGroup: {
+            semester: {
+              semesterCode: semesterCode,
+            },
+          },
+          status: EEnrollmentStatus.ENROLLED,
+        },
+      },
+    );
+    return number;
+  }
+
   /**
    * Lấy danh sách các lượt đăng ký .
    * Áp dụng tự động lọc theo sinh viên nếu người dùng là STUDENT.

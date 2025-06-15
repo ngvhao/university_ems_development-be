@@ -51,20 +51,13 @@ export class SemesterService {
     const { page = 1, limit = 10 } = paginationDto;
 
     const [data, total] = await this.semesterRepository.findAndCount({
-      relations: [
-        'courseSemesters',
-        'registrationSchedules',
-        'studyPlans',
-        'curriculumCourses',
-      ],
+      relations: ['registrationSchedules', 'studyPlans', 'curriculumCourses'],
       order: {
         startYear: 'DESC',
         term: 'DESC',
       },
-      // Phân trang
       skip: (page - 1) * limit,
       take: limit,
-      // where: { ... }
     });
 
     const meta = generatePaginationMeta(total, page, limit);

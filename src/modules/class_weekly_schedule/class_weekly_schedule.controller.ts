@@ -36,6 +36,7 @@ import { StudentInterceptor } from 'src/interceptors/get-student.interceptor';
 import { RequestHasStudentDto } from 'src/utils/request-has-student-dto';
 import { ClassWeeklyScheduleService } from './class_weekly_schedule.service';
 import { ClassWeeklyScheduleEntity } from './entities/class_weekly_schedule.entity';
+import { EnrollmentCourseService } from '../enrollment_course/enrollment_course.service';
 
 @ApiTags('Quản lý Lịch học Hàng tuần (Class Weekly Schedules)')
 @ApiBearerAuth('token')
@@ -44,6 +45,7 @@ import { ClassWeeklyScheduleEntity } from './entities/class_weekly_schedule.enti
 export class ClassWeeklyScheduleController {
   constructor(
     private readonly classWeeklyScheduleService: ClassWeeklyScheduleService,
+    private readonly enrollmentService: EnrollmentCourseService,
   ) {}
 
   @Post()
@@ -120,6 +122,48 @@ export class ClassWeeklyScheduleController {
     }).send(res);
   }
 
+  @Get('student/my-general-info')
+  @Roles([EUserRole.STUDENT])
+  @UseInterceptors(StudentInterceptor)
+  @ApiOperation({ summary: '[Student] Lấy lịch học cá nhân' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy lịch học cá nhân thành công.',
+    type: [ClassWeeklyScheduleEntity],
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực hoặc không phải sinh viên.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền (ví dụ: không phải là sinh viên).',
+  })
+  async getMyGeneralInfo(
+    @Query() query: { semesterCode: string },
+    @Req() req: RequestHasStudentDto & Request,
+    @Res() res: Response,
+  ) {
+    const { semesterCode } = query;
+    const student = req.student!;
+    const enrollments =
+      await this.enrollmentService.findEnrollmentNumberBySemester(
+        semesterCode,
+        student.id,
+      );
+    const schedules =
+      await this.classWeeklyScheduleService.getTodayScheduleByStudentId(
+        student.id,
+      );
+    return new SuccessResponse({
+      data: {
+        enrollmentNumber: enrollments,
+        todayScheduleNumber: schedules,
+      },
+      message: 'Lấy lịch học cá nhân theo tuần thành công',
+    }).send(res);
+  }
+
   @Get('student/my-schedule')
   @Roles([EUserRole.STUDENT])
   @UseInterceptors(StudentInterceptor)
@@ -138,12 +182,15 @@ export class ClassWeeklyScheduleController {
     description: 'Không có quyền (ví dụ: không phải là sinh viên).',
   })
   async getMySchedule(
+    @Query() query: { semesterCode: string },
     @Req() req: RequestHasStudentDto & Request,
     @Res() res: Response,
   ) {
+    const { semesterCode } = query;
     const student = req.student!;
     const data = await this.classWeeklyScheduleService.getScheduleByStudentId(
       student.id,
+      semesterCode,
     );
     return new SuccessResponse({
       data,

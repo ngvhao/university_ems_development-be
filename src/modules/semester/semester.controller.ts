@@ -80,6 +80,16 @@ export class SemesterController {
     }).send(res);
   }
 
+  @Get('currentSemester')
+  async getCurrentSemester(@Res() res: Response) {
+    const semesterId = await this.settingService.findOne('currentSemesterId');
+    const semester = await this.semesterService.findOne(semesterId.value);
+    return new SuccessResponse({
+      data: semester,
+      message: 'Lấy thông tin học kỳ thành công.',
+    }).send(res);
+  }
+
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách học kỳ (phân trang)' })
   @ApiQuery({
@@ -97,7 +107,7 @@ export class SemesterController {
   @ApiResponse({
     status: HttpStatus.OK,
     description:
-      'Lấy danh sách học kỳ thành công. Dữ liệu trả về chứa danh sách học kỳ và các thông tin liên quan (khóa học, lịch đăng ký,...).' /* type: FindAllSemestersSuccessResponseDto */,
+      'Lấy danh sách học kỳ thành công. Dữ liệu trả về chứa danh sách học kỳ và các thông tin liên quan (khóa học, lịch đăng ký,...).',
   })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
@@ -109,15 +119,6 @@ export class SemesterController {
       data,
       metadata: meta,
       message: 'Lấy danh sách học kỳ thành công.',
-    }).send(res);
-  }
-  @Get('currentSemester')
-  async getCurrentSemester(@Res() res: Response) {
-    const semesterId = await this.settingService.findOne('currentSemesterId');
-    const semester = await this.semesterService.findOne(semesterId.value);
-    return new SuccessResponse({
-      data: semester,
-      message: 'Lấy thông tin học kỳ thành công.',
     }).send(res);
   }
 

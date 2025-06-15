@@ -97,13 +97,16 @@ export class ClassAdjustmentScheduleController {
     description: 'Không có quyền (ví dụ: không phải là sinh viên).',
   })
   async getMySchedule(
+    @Query() query: { semesterCode: string },
     @Req() req: RequestHasStudentDto & Request,
     @Res() res: Response,
   ) {
+    const { semesterCode } = query;
     const student = req.student!;
     const data =
       await this.classAdjustmentService.getAdjustedSchedulesByStudentId(
         student.id,
+        semesterCode,
       );
     return new SuccessResponse({
       data,

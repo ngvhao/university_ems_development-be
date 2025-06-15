@@ -11,14 +11,14 @@ export class TimeSlotEntity extends IEntity {
     description: 'Thời gian bắt đầu (HH:MM:SS)',
     example: '07:00:00',
   })
-  @Column({ type: 'time', nullable: false })
+  @Column({ type: 'time with time zone', nullable: true })
   startTime: string;
 
   @ApiProperty({
     description: 'Thời gian kết thúc (HH:MM:SS)',
     example: '09:30:00',
   })
-  @Column({ type: 'time', nullable: false })
+  @Column({ type: 'time with time zone', nullable: true })
   endTime: string;
 
   @ApiProperty({ description: 'Tiết học/Ca học', example: 1 })

@@ -205,10 +205,11 @@ export class ClassAdjustmentScheduleService {
    */
   async getAdjustedSchedulesByStudentId(
     studentId: number,
+    semesterCode?: string,
   ): Promise<ClassAdjustmentScheduleEntity[]> {
     await this.studentService.getOne({ id: studentId });
 
-    const schedules = await this.adjustmentRepo
+    const queryBuilder = this.adjustmentRepo
       .createQueryBuilder('schedule')
       .innerJoin('schedule.classGroup', 'classGroup')
       .innerJoin(
@@ -222,8 +223,15 @@ export class ClassAdjustmentScheduleService {
       .leftJoinAndSelect('classGroup.course', 'course')
       .leftJoinAndSelect('classGroup.semester', 'semester')
       .orderBy('schedule.adjustmentDate', 'ASC')
-      .addOrderBy('schedule.timeSlotId', 'ASC')
-      .getMany();
+      .addOrderBy('schedule.timeSlotId', 'ASC');
+
+    if (semesterCode) {
+      queryBuilder.andWhere('semester.semesterCode = :semesterCode', {
+        semesterCode,
+      });
+    }
+
+    const schedules = await queryBuilder.getMany();
 
     return schedules;
   }

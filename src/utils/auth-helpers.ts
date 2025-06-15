@@ -1,11 +1,12 @@
 import { JwtService } from '@nestjs/jwt';
 import { CookieOptions, Response } from 'express';
 import { jwtConstants, tokenConstants } from './constants';
+import { EUserRole } from './enums/user.enum';
 
 export class AuthHelpers {
   static generateToken(
     jwtService: JwtService,
-    payload: { id: number; sub: string },
+    payload: { id: number; sub: string; role: EUserRole },
     type: 'access' | 'refresh',
   ): string {
     const isAccessToken = type === 'access';
