@@ -30,7 +30,7 @@ export class AuthHelpers {
     const baseCookieOptions: CookieOptions = {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'none' : 'lax',
+      sameSite: isProduction ? 'lax' : 'none',
     };
 
     res.cookie('accessToken', accessToken, {
