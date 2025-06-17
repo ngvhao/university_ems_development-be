@@ -13,6 +13,9 @@ import {
   DataSource,
   LessThanOrEqual,
   MoreThanOrEqual,
+  In,
+  FindOptionsRelations,
+  FindOptionsSelect,
 } from 'typeorm';
 import { ClassGroupEntity } from './entities/class_group.entity';
 import { CreateClassGroupDto } from './dtos/createClassGroup.dto';
@@ -222,19 +225,26 @@ export class ClassGroupService {
    * @param filterDto - Thông tin lọc (semesterId, status, groupNumber).
    * @returns Promise<{ data: ClassGroupEntity[]; meta: MetaDataInterface }> - Danh sách nhóm lớp và metadata phân trang.
    */
-  async findAll(
-    filterDto: FilterClassGroupDto,
-    paginationDto: PaginationDto,
-  ): Promise<{ data: ClassGroupEntity[]; meta: MetaDataInterface }> {
+  async findAll({
+    filterDto,
+    paginationDto,
+    relations,
+    // select,
+  }: {
+    filterDto: FilterClassGroupDto;
+    paginationDto: PaginationDto;
+    relations?: FindOptionsRelations<ClassGroupEntity>;
+    select?: FindOptionsSelect<ClassGroupEntity>;
+  }): Promise<{ data: ClassGroupEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
-    const { semesterId, status, majorId, yearAdmission } = filterDto;
+    const { semesterId, statuses, majorId, yearAdmission } = filterDto;
 
     const where: FindOptionsWhere<ClassGroupEntity> = {};
     if (semesterId !== undefined) {
       where.semesterId = semesterId;
     }
-    if (status !== undefined) {
-      where.status = status;
+    if (statuses !== undefined) {
+      where.status = In(statuses);
     }
 
     if (majorId !== undefined && yearAdmission !== undefined) {
@@ -250,9 +260,16 @@ export class ClassGroupService {
 
     const [data, total] = await this.classGroupRepository.findAndCount({
       where,
-      relations: ['course', 'semester'],
+      relations: relations ? relations : ['course', 'semester'],
       skip: (page - 1) * limit,
       take: limit,
+      select: {
+        schedules: {
+          room: true,
+          timeSlot: true,
+        },
+        course: true,
+      },
       order: { semesterId: 'ASC', groupNumber: 'ASC' },
     });
 
@@ -406,7 +423,7 @@ export class ClassGroupService {
   async incrementRegistered(id: number, count = 1): Promise<ClassGroupEntity> {
     const group = await this.findGroupByIdOrThrow(id);
 
-    if (group.status !== EClassGroupStatus.OPEN) {
+    if (group.status !== EClassGroupStatus.OPEN_FOR_REGISTER) {
       throw new BadRequestException(
         `Nhóm lớp ID ${id} không mở để đăng ký (trạng thái: ${group.status}).`,
       );
@@ -419,7 +436,7 @@ export class ClassGroupService {
 
     group.registeredStudents += count;
     if (group.registeredStudents === group.maxStudents) {
-      group.status = EClassGroupStatus.CLOSED;
+      group.status = EClassGroupStatus.CLOSED_FOR_REGISTER;
     }
     return this.classGroupRepository.save(group);
   }
@@ -447,11 +464,11 @@ export class ClassGroupService {
     group.registeredStudents -= count;
 
     if (
-      group.status === EClassGroupStatus.CLOSED &&
+      group.status === EClassGroupStatus.CLOSED_FOR_REGISTER &&
       wasFull &&
       group.registeredStudents < group.maxStudents
     ) {
-      group.status = EClassGroupStatus.OPEN;
+      group.status = EClassGroupStatus.OPEN_FOR_REGISTER;
     }
     return this.classGroupRepository.save(group);
   }
@@ -470,7 +487,7 @@ export class ClassGroupService {
     const group = await this.findGroupByIdOrThrow(id);
     if (
       group.status === EClassGroupStatus.CANCELLED &&
-      status === EClassGroupStatus.OPEN
+      status === EClassGroupStatus.OPEN_FOR_REGISTER
     ) {
       throw new BadRequestException('Không thể mở lại một nhóm lớp đã bị hủy.');
     }

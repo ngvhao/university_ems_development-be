@@ -171,7 +171,7 @@ export class EnrollmentCourseService {
         }
 
         // Kiểm tra trạng thái và số lượng chỗ trống của ClassGroup
-        if (classGroup.status !== EClassGroupStatus.OPEN) {
+        if (classGroup.status !== EClassGroupStatus.OPEN_FOR_REGISTER) {
           throw new BadRequestException(
             `Nhóm lớp học ID ${classGroupId} không mở để đăng ký (trạng thái: ${classGroup.status}).`,
           );
@@ -219,7 +219,7 @@ export class EnrollmentCourseService {
         // Cập nhật trạng thái lớp
         if (classGroup.registeredStudents + 1 === classGroup.maxStudents) {
           await queryRunner.manager.update(ClassGroupEntity, classGroupId, {
-            status: EClassGroupStatus.CLOSED,
+            status: EClassGroupStatus.CLOSED_FOR_REGISTER,
           });
         }
 

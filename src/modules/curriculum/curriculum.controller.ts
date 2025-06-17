@@ -35,7 +35,6 @@ import {
 } from '@nestjs/swagger';
 import { CurriculumEntity } from './entities/curriculum.entity';
 import { RequestHasStudentDto } from 'src/utils/request-has-student-dto';
-import { GetMyCurriculumsQueryDto } from './dtos/getMyCurriculum.dto';
 import { StudentInterceptor } from 'src/interceptors/get-student.interceptor';
 
 @ApiTags('Quản lý Chương trình Đào tạo (Curriculums)')
@@ -157,8 +156,6 @@ export class CurriculumController {
   @UseInterceptors(StudentInterceptor)
   async getMyCurriculums(
     @Req() req: RequestHasStudentDto & Request,
-    @Query()
-    query: GetMyCurriculumsQueryDto,
     @Res() res: Response,
   ) {
     const { student } = req;

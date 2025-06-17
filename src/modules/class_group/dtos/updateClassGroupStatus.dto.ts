@@ -6,7 +6,7 @@ export class UpdateClassGroupStatusDto {
   @ApiProperty({
     description: 'Trạng thái mới cần cập nhật cho nhóm lớp',
     enum: EClassGroupStatus,
-    example: EClassGroupStatus.CLOSED,
+    example: EClassGroupStatus.CLOSED_FOR_REGISTER,
     required: true,
   })
   @IsNotEmpty({ message: 'Trạng thái không được để trống' })

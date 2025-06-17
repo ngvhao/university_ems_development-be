@@ -1,5 +1,11 @@
-import { IsOptional, IsEnum, IsPositive, IsNumber } from 'class-validator';
-import { Type } from 'class-transformer';
+import {
+  IsOptional,
+  IsEnum,
+  IsPositive,
+  IsNumber,
+  IsArray,
+} from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { EClassGroupStatus } from 'src/utils/enums/class.enum';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -18,11 +24,16 @@ export class FilterClassGroupDto {
   @ApiPropertyOptional({
     description: 'Lọc theo trạng thái nhóm lớp',
     enum: EClassGroupStatus,
-    example: EClassGroupStatus.OPEN,
+    example: [EClassGroupStatus.OPEN_FOR_REGISTER],
   })
   @IsOptional()
-  @IsEnum(EClassGroupStatus, { message: 'Trạng thái không hợp lệ' })
-  status?: EClassGroupStatus;
+  @IsArray({ message: 'Trạng thái phải là một mảng' })
+  @IsEnum(EClassGroupStatus, { each: true, message: 'Trạng thái không hợp lệ' })
+  @Transform(({ value }) => {
+    const arrayValue = Array.isArray(value) ? value : [value];
+    return arrayValue.map((item) => parseInt(item, 10));
+  })
+  statuses?: EClassGroupStatus[];
 
   @ApiPropertyOptional({
     description: 'Lọc theo ngành',

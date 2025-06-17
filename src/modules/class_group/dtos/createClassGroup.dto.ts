@@ -59,9 +59,9 @@ export class CreateClassGroupDto {
   @ApiProperty({
     description: 'Trạng thái ban đầu của nhóm lớp (mặc định là OPEN)',
     enum: EClassGroupStatus,
-    example: EClassGroupStatus.OPEN,
+    example: EClassGroupStatus.OPEN_FOR_REGISTER,
     required: false,
-    default: EClassGroupStatus.OPEN,
+    default: EClassGroupStatus.OPEN_FOR_REGISTER,
   })
   @IsOptional()
   @IsEnum(EClassGroupStatus, { message: 'Trạng thái không hợp lệ' })

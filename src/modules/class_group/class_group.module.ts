@@ -8,6 +8,7 @@ import { SemesterModule } from '../semester/semester.module';
 import { TimeSlotModule } from '../time_slot/time_slot.module';
 import { LecturerModule } from '../lecturer/lecturer.module';
 import { RoomModule } from '../room/room.module';
+import { SettingModule } from '../setting/setting.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { RoomModule } from '../room/room.module';
     TimeSlotModule,
     LecturerModule,
     RoomModule,
+    SettingModule,
   ],
   controllers: [ClassGroupController],
   providers: [ClassGroupService],

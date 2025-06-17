@@ -44,6 +44,7 @@ import { LecturerService } from '../lecturer/lecturer.service';
 import { RoomService } from '../room/room.service';
 import { ERoomType } from 'src/utils/enums/room.enum';
 import axios from 'axios';
+import { SettingService } from '../setting/setting.service';
 
 @ApiTags('Quản lý Nhóm lớp học (Class Groups)')
 @ApiBearerAuth('token')
@@ -57,6 +58,7 @@ export class ClassGroupController {
     private readonly timeSlotService: TimeSlotService,
     private readonly lecturerService: LecturerService,
     private readonly roomService: RoomService,
+    private readonly settingService: SettingService,
   ) {}
 
   @Post()
@@ -164,6 +166,57 @@ export class ClassGroupController {
     }).send(res);
   }
 
+  @Get('/me/for-registration')
+  @ApiOperation({ summary: 'Lấy danh sách nhóm lớp' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng kết quả mỗi trang',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách nhóm lớp thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  async getClassGroupsForRegistration(
+    @Query() paginationDto: PaginationDto,
+    @Query() filterDto: FilterClassGroupDto,
+    @Res() res: Response,
+  ) {
+    const nextRegisterStudyPlanSemester = await this.settingService.findOne(
+      'nextRegisterCourseSemesterId',
+    );
+    const semester = await this.semesterService.findOne(
+      nextRegisterStudyPlanSemester.value,
+    );
+    filterDto.semesterId = semester.id;
+    const { data, meta } = await this.classGroupService.findAll({
+      filterDto: filterDto,
+      paginationDto: paginationDto,
+      select: {
+        course: {
+          courseCode: true,
+        },
+      },
+      relations: {},
+    });
+    return new SuccessResponse({
+      data: data,
+      metadata: meta,
+      message: 'Lấy danh sách nhóm lớp thành công.',
+    }).send(res);
+  }
+
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách nhóm lớp' })
   @ApiQuery({
@@ -191,10 +244,10 @@ export class ClassGroupController {
     @Query() filterDto: FilterClassGroupDto,
     @Res() res: Response,
   ) {
-    const { data, meta } = await this.classGroupService.findAll(
+    const { data, meta } = await this.classGroupService.findAll({
       filterDto,
       paginationDto,
-    );
+    });
     return new SuccessResponse({
       data: data,
       metadata: meta,
