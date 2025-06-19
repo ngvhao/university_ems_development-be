@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.entity';
 import { CurriculumCourseEntity } from 'src/modules/curriculum_course/entities/curriculum_course.entity';
 import { FacultyRegistrationScheduleEntity } from 'src/modules/faculty_registration_schedule/entities/faculty_registration_schedule.entity';
+import { NotificationEntity } from 'src/modules/notification/entities/notification.entity';
 import { StudyPlanEntity } from 'src/modules/study_plan/entities/study_plan.entity';
 import { TuitionEntity } from 'src/modules/tuition/entities/tuition.entity';
 import { IEntity } from 'src/utils/interfaces/entity.interface';
@@ -80,4 +81,11 @@ export class SemesterEntity extends IEntity {
   })
   @OneToMany(() => TuitionEntity, (tuition) => tuition.semester)
   tuitions: TuitionEntity[];
+
+  @ApiProperty({
+    type: () => [Notification],
+    required: false,
+  })
+  @OneToMany(() => NotificationEntity, (notification) => notification.semester)
+  notifications: NotificationEntity[];
 }

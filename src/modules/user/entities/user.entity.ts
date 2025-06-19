@@ -1,9 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LecturerEntity } from 'src/modules/lecturer/entities/lecturer.entity';
+import { NotificationEntity } from 'src/modules/notification/entities/notification.entity';
+import { NotificationRecipientEntity } from 'src/modules/notification_recipient/entities/notification_recipient.entity';
 import { StudentEntity } from 'src/modules/student/entities/student.entity';
 import { EAccountStatus, EUserRole } from 'src/utils/enums/user.enum';
 import { IEntity } from 'src/utils/interfaces/entity.interface';
-import { Column, Entity, OneToOne, Index } from 'typeorm';
+import { Column, Entity, OneToOne, Index, OneToMany } from 'typeorm';
 
 @Entity('users')
 @Index(['universityEmail'], { unique: true })
@@ -121,4 +123,12 @@ export class UserEntity extends IEntity {
     eager: false,
   })
   lecturer?: LecturerEntity;
+
+  @ApiPropertyOptional({ type: () => LecturerEntity })
+  @OneToMany(() => NotificationEntity, (noti) => noti.createdByUser)
+  createdNotifications: NotificationEntity[];
+
+  @ApiPropertyOptional({ type: () => LecturerEntity })
+  @OneToMany(() => NotificationEntity, (noti) => noti.createdByUser)
+  receivedNotifications: NotificationRecipientEntity[];
 }
