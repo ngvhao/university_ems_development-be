@@ -200,18 +200,16 @@ export class ClassGroupController {
       nextRegisterStudyPlanSemester.value,
     );
     filterDto.semesterId = semester.id;
-    const { data, meta } = await this.classGroupService.findAll({
-      filterDto: filterDto,
-      paginationDto: paginationDto,
-      select: {
-        course: {
-          courseCode: true,
-        },
-      },
-      relations: {},
-    });
+    const { data, meta } =
+      await this.classGroupService.getClassGroupsForRegistration({
+        filterDto: filterDto,
+        paginationDto: paginationDto,
+      });
     return new SuccessResponse({
-      data: data,
+      data: {
+        classGroups: data,
+        semester: semester,
+      },
       metadata: meta,
       message: 'Lấy danh sách nhóm lớp thành công.',
     }).send(res);

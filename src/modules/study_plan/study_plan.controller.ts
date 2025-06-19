@@ -154,11 +154,11 @@ export class StudyPlanController {
     @Res() res: Response,
   ) {
     const currentUser = req.user;
-    const result = await this.studyPlanService.findAll(
+    const result = await this.studyPlanService.findAll({
       currentUser,
       filterDto,
       paginationDto,
-    );
+    });
     return new SuccessResponse({
       ...result,
       message: 'Lấy danh sách kế hoạch học tập thành công',
@@ -272,7 +272,11 @@ export class StudyPlanController {
       'nextRegisterStudyPlanSemesterId',
     );
     filterDto.semesterId = nextRegisterStudyPlanSemester.value;
-    const result = await this.studyPlanService.findAll(currentUser, filterDto);
+    const result = await this.studyPlanService.findAll({
+      currentUser: currentUser,
+      filterDto: filterDto,
+      order: { updatedAt: 'ASC' },
+    });
     return new SuccessResponse({
       ...result,
       message: 'Lấy kế hoạch học tập của bạn thành công.',

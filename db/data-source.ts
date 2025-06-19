@@ -14,6 +14,7 @@ export const initDataSource = (): DataSourceOptions => ({
   logging: false,
   entities: ['dist/**/*.entity.js'],
   migrations: ['dist/db/migrations/*.js'],
+  cache: true,
 });
 const dataSource = new DataSource(initDataSource());
 

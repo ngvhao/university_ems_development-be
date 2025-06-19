@@ -225,6 +225,108 @@ export class ClassGroupService {
    * @param filterDto - Thông tin lọc (semesterId, status, groupNumber).
    * @returns Promise<{ data: ClassGroupEntity[]; meta: MetaDataInterface }> - Danh sách nhóm lớp và metadata phân trang.
    */
+  async getClassGroupsForRegistration({
+    filterDto,
+    paginationDto,
+  }: {
+    filterDto: FilterClassGroupDto;
+    paginationDto: PaginationDto;
+  }): Promise<{ data: ClassGroupEntity[]; meta: MetaDataInterface }> {
+    const { page = 1, limit = 10 } = paginationDto;
+    const { semesterId, statuses, majorId, yearAdmission } = filterDto;
+
+    const queryBuilder =
+      this.classGroupRepository.createQueryBuilder('classGroup');
+
+    queryBuilder
+      .select([
+        'classGroup.id',
+        'classGroup.groupNumber',
+        'classGroup.semesterId',
+        'classGroup.status',
+        'classGroup.registeredStudents',
+        'classGroup.maxStudents',
+      ])
+      .leftJoin('classGroup.course', 'course')
+      .addSelect([
+        'course.id',
+        'course.courseCode',
+        'course.name',
+        'course.credit',
+        'course.description',
+      ])
+
+      .leftJoin('classGroup.semester', 'semester')
+
+      .leftJoin('classGroup.schedules', 'schedules')
+      .addSelect([
+        'schedules.startDate',
+        'schedules.endDate',
+        'schedules.dayOfWeek',
+        'schedules.scheduledDates',
+      ])
+
+      .leftJoin('schedules.room', 'room')
+      .addSelect('room.roomNumber')
+
+      .leftJoin('schedules.timeSlot', 'timeSlot')
+      .addSelect(['timeSlot.shift', 'timeSlot.startTime', 'timeSlot.endTime'])
+
+      .leftJoin('course.curriculumCourses', 'curriculumCourse')
+      .leftJoin('curriculumCourse.prerequisiteCourse', 'prerequisiteCourse')
+      .addSelect([
+        'prerequisiteCourse.id',
+        'prerequisiteCourse.courseCode',
+        'prerequisiteCourse.name',
+      ]);
+
+    if (semesterId !== undefined) {
+      queryBuilder.andWhere('classGroup.semesterId = :semesterId', {
+        semesterId,
+      });
+    }
+
+    if (statuses !== undefined && statuses.length > 0) {
+      queryBuilder.andWhere('classGroup.status IN (:...statuses)', {
+        statuses,
+      });
+    }
+
+    if (majorId !== undefined && yearAdmission !== undefined) {
+      queryBuilder
+        .innerJoin('course.curriculumCourses', 'filterCurriculumCourse')
+        .innerJoin('filterCurriculumCourse.curriculum', 'filterCurriculum')
+        .andWhere('filterCurriculum.majorId = :majorId', { majorId })
+        .andWhere('filterCurriculum.startAcademicYear = :yearAdmission', {
+          yearAdmission,
+        });
+
+      queryBuilder
+        .addSelect(['filterCurriculumCourse.id'])
+        .leftJoin('filterCurriculumCourse.prerequisiteCourse', 'prerequisite')
+        .addSelect([
+          'prerequisite.id',
+          'prerequisite.courseCode',
+          'prerequisite.name',
+        ]);
+    }
+
+    queryBuilder
+      .orderBy('course.courseCode', 'ASC')
+      .addOrderBy('classGroup.groupNumber');
+
+    const [data, total] = await queryBuilder.cache(true).getManyAndCount();
+
+    const meta = generatePaginationMeta(total, page, limit);
+    return { data, meta };
+  }
+
+  /**
+   * Lấy danh sách các nhóm lớp có phân trang và lọc.
+   * @param paginationDto - Thông tin phân trang (page, limit).
+   * @param filterDto - Thông tin lọc (semesterId, status, groupNumber).
+   * @returns Promise<{ data: ClassGroupEntity[]; meta: MetaDataInterface }> - Danh sách nhóm lớp và metadata phân trang.
+   */
   async findAll({
     filterDto,
     paginationDto,

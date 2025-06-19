@@ -9,7 +9,14 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere, Not, In, DataSource } from 'typeorm';
+import {
+  Repository,
+  FindOptionsWhere,
+  Not,
+  In,
+  DataSource,
+  FindOptionsOrder,
+} from 'typeorm';
 import { CreateStudyPlanDto } from './dtos/createStudyPlan.dto';
 import { UpdateStudyPlanDto } from './dtos/updateStudyPlan.dto';
 import { StudyPlanEntity } from './entities/study_plan.entity';
@@ -381,11 +388,18 @@ export class StudyPlanService {
    * @param currentUser - Thông tin người dùng hiện tại.
    * @returns Promise<{ data: StudyPlanEntity[]; meta: MetaDataInterface }> - Danh sách và metadata.
    */
-  async findAll(
-    currentUser: UserEntity,
-    filterDto: FilterStudyPlanDto,
-    paginationDto: PaginationDto = DEFAULT_PAGINATION,
-  ): Promise<{ data: StudyPlanEntity[]; meta: MetaDataInterface }> {
+  async findAll({
+    currentUser,
+    filterDto,
+    paginationDto,
+    order,
+  }: {
+    currentUser: UserEntity;
+    filterDto: FilterStudyPlanDto;
+    paginationDto?: PaginationDto;
+    order?: FindOptionsOrder<StudentEntity>;
+  }): Promise<{ data: StudyPlanEntity[]; meta: MetaDataInterface }> {
+    paginationDto = paginationDto ?? DEFAULT_PAGINATION;
     const { page = 1, limit = 10 } = paginationDto;
     const { semesterId, courseId, status } = filterDto;
     const { studentId } = filterDto;
@@ -420,7 +434,14 @@ export class StudyPlanService {
       relations: ['course'],
       skip: (page - 1) * limit,
       take: limit,
-      order: { studentId: 'ASC', semesterId: 'ASC', course: { name: 'ASC' } },
+      order: order
+        ? order
+        : {
+            studentId: 'ASC',
+            semesterId: 'ASC',
+            course: { name: 'ASC' },
+            updatedAt: 'ASC',
+          },
     });
 
     const meta = generatePaginationMeta(total, page, limit);
