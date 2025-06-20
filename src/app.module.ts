@@ -32,8 +32,8 @@ import { PaymentTransactionModule } from './modules/payment_transaction/payment_
 import { PaymentModule } from './modules/payment/payment.module';
 import { SettingModule } from './modules/setting/setting.module';
 import { NotificationModule } from './modules/notification/notification.module';
-import { NotificationAudienceRuleModule } from './modules/notification_audience_rule/notification_audience_rule.module';
 import { NotificationRecipientModule } from './modules/notification_recipient/notification_recipient.module';
+import { NotificationRuleModule } from './modules/notification_audience_rule/notification_audience_rule.module';
 
 @Module({
   imports: [
@@ -66,7 +66,7 @@ import { NotificationRecipientModule } from './modules/notification_recipient/no
     PaymentModule,
     SettingModule,
     NotificationModule,
-    NotificationAudienceRuleModule,
+    NotificationRuleModule,
     NotificationRecipientModule,
   ],
   controllers: [AppController],

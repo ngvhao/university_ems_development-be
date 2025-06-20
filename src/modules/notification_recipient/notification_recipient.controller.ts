@@ -25,16 +25,16 @@ import {
 import { SuccessResponse } from 'src/utils/response';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserNotificationQueryDto } from './dtos/queryNotificationRecipient.dto';
-import { NotificationRecipientsService } from './notification_recipient.service';
+import { NotificationRecipientService } from './notification_recipient.service';
 import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
 
 @ApiTags('Thông báo Người dùng (User Notifications)')
 @ApiBearerAuth('token')
 @UseGuards(JwtAuthGuard)
 @Controller('notifications')
-export class NotificationRecipientsController {
+export class NotificationRecipientController {
   constructor(
-    private readonly recipientsService: NotificationRecipientsService,
+    private readonly recipientsService: NotificationRecipientService,
   ) {}
 
   @Get()

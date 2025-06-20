@@ -83,7 +83,7 @@ export class SemesterEntity extends IEntity {
   tuitions: TuitionEntity[];
 
   @ApiProperty({
-    type: () => [Notification],
+    type: () => [NotificationEntity],
     required: false,
   })
   @OneToMany(() => NotificationEntity, (notification) => notification.semester)
