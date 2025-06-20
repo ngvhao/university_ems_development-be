@@ -30,15 +30,15 @@ import { SuccessResponse } from 'src/utils/response';
 import { CreateNotificationDto } from './dtos/createNotification.dto';
 import { NotificationQueryDto } from './dtos/notificationQuery.dto';
 import { UpdateNotificationDto } from './dtos/updateNotification.dto';
-import { NotificationsService } from './notification.service';
+import { NotificationService } from './notification.service';
 import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
 
 @ApiTags('Quản lý Thông báo (Notifications)')
 @ApiBearerAuth('token')
 @UseGuards(JwtAuthGuard)
 @Controller('notifications')
-export class NotificationsController {
-  constructor(private readonly notificationsService: NotificationsService) {}
+export class NotificationController {
+  constructor(private readonly notificationsService: NotificationService) {}
 
   @Post()
   @UseGuards(RolesGuard)

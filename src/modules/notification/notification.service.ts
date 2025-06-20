@@ -8,7 +8,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { NotificationEntity } from './entities/notification.entity';
 import { NotificationAudienceRuleEntity } from '../notification_audience_rule/entities/notification_audience_rule.entity';
-import { NotificationRecipientEntity } from '../notification_recipient/entities/notification_recipient.entity';
 import { ENotificationStatus } from 'src/utils/enums/notification.enum';
 import { CreateNotificationDto } from './dtos/createNotification.dto';
 import { NotificationQueryDto } from './dtos/notificationQuery.dto';
@@ -17,14 +16,12 @@ import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 
 @Injectable()
-export class NotificationsService {
-  private readonly logger = new Logger(NotificationsService.name);
+export class NotificationService {
+  private readonly logger = new Logger(NotificationService.name);
 
   constructor(
     @InjectRepository(NotificationEntity)
     private readonly notificationRepository: Repository<NotificationEntity>,
-    @InjectRepository(NotificationRecipientEntity)
-    private readonly recipientRepository: Repository<NotificationRecipientEntity>,
     private readonly dataSource: DataSource,
   ) {}
 

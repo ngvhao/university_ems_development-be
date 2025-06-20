@@ -11,24 +11,22 @@ import { NotificationEntity } from '../notification/entities/notification.entity
 import { CreateNotificationAudienceRuleDto } from './dtos/createNotificationAudienceRule.dto';
 import { UpdateNotificationAudienceRuleDto } from './dtos/updateNotificationAudienceRule.dto';
 import { NotificationAudienceRuleEntity } from './entities/notification_audience_rule.entity';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
-export class NotificationRulesService {
-  private readonly logger = new Logger(NotificationRulesService.name);
+export class NotificationRuleService {
+  private readonly logger = new Logger(NotificationRuleService.name);
 
   constructor(
-    @InjectRepository(NotificationEntity)
-    private readonly notificationRepository: Repository<NotificationEntity>,
     @InjectRepository(NotificationAudienceRuleEntity)
     private readonly ruleRepository: Repository<NotificationAudienceRuleEntity>,
+    private readonly notificationService: NotificationService,
   ) {}
 
   private async _getNotificationOrFail(
     notificationId: number,
   ): Promise<NotificationEntity> {
-    const notification = await this.notificationRepository.findOneBy({
-      id: notificationId,
-    });
+    const notification = await this.notificationService.findOne(notificationId);
     if (!notification) {
       throw new NotFoundException(
         `Không tìm thấy thông báo với ID ${notificationId}.`,

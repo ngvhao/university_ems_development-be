@@ -13,17 +13,17 @@ import { ERecipientStatus } from 'src/utils/enums/notification.enum';
 import { UserNotificationQueryDto } from './dtos/queryNotificationRecipient.dto';
 import { NotificationRecipientEntity } from './entities/notification_recipient.entity';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
-import { NotificationsService } from '../notification/notification.service';
+import { NotificationService } from '../notification/notification.service';
 import { CreateNotificationRecipientDto } from './dtos/createNotificationRecipient.dto';
 
 @Injectable()
-export class NotificationRecipientsService {
-  private readonly logger = new Logger(NotificationRecipientsService.name);
+export class NotificationRecipientService {
+  private readonly logger = new Logger(NotificationRecipientService.name);
 
   constructor(
     @InjectRepository(NotificationRecipientEntity)
     private readonly recipientRepository: Repository<NotificationRecipientEntity>,
-    private readonly notificationService: NotificationsService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async findUserNotifications(

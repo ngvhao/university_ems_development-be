@@ -28,15 +28,15 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreateNotificationAudienceRuleDto } from './dtos/createNotificationAudienceRule.dto';
 import { UpdateNotificationAudienceRuleDto } from './dtos/updateNotificationAudienceRule.dto';
-import { NotificationRulesService } from './notification_audience_rule.service';
+import { NotificationRuleService } from './notification_audience_rule.service';
 
 @ApiTags('Quy tắc Thông báo (Audience Rules)')
 @ApiBearerAuth('token')
 @UseGuards(JwtAuthGuard)
 @Controller('notifications_rules')
-export class NotificationRulesController {
+export class NotificationRuleController {
   constructor(
-    private readonly notificationRulesService: NotificationRulesService,
+    private readonly notificationRulesService: NotificationRuleService,
   ) {}
 
   @Post()
