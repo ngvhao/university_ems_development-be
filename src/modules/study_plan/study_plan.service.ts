@@ -16,6 +16,7 @@ import {
   In,
   DataSource,
   FindOptionsOrder,
+  Between,
 } from 'typeorm';
 import { CreateStudyPlanDto } from './dtos/createStudyPlan.dto';
 import { UpdateStudyPlanDto } from './dtos/updateStudyPlan.dto';
@@ -451,12 +452,27 @@ export class StudyPlanService {
   async findCourseRegistrations(
     semesterId: number,
     courseIds: number[],
+    isExtraClassGroup?: boolean,
+    isRegisterFromDate?: Date,
+    isRegisterToDate?: Date,
   ): Promise<CourseSchedulingInfoDTO[]> {
+    const whereClause: FindOptionsWhere<StudyPlanEntity> = {
+      courseId: In(courseIds),
+      semesterId,
+    };
+
+    if (isExtraClassGroup) {
+      if (isRegisterFromDate && isRegisterToDate) {
+        whereClause.updatedAt = Between(isRegisterFromDate, isRegisterToDate);
+      } else {
+        throw new BadRequestException(
+          'Cần cung cấp ngày đăng ký và ngày kết thúc đăng ký nhóm lớp bổ sung',
+        );
+      }
+    }
+
     const studyPlans = await this.studyPlanRepository.find({
-      where: {
-        courseId: In(courseIds),
-        semesterId,
-      },
+      where: whereClause,
       relations: ['course'],
     });
 

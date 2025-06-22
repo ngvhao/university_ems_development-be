@@ -12,6 +12,8 @@ import {
   ParseIntPipe,
   Put,
   HttpStatus,
+  ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ClassGroupService } from './class_group.service';
@@ -114,12 +116,38 @@ export class ClassGroupController {
       occupiedSlots,
       groupSizeTarget,
       maxSessionsPerWeekAllowed,
+      isExtraClassGroup,
+      isRegisterFromDate,
+      isRegisterToDate,
     } = classGroupInputDto;
     const classGroupsNeedScheduling =
       await this.studyPlanService.findCourseRegistrations(
         semesterId,
         courseIds,
+        isExtraClassGroup,
+        isRegisterFromDate ? new Date(isRegisterFromDate) : undefined,
+        isRegisterToDate ? new Date(isRegisterToDate) : undefined,
       );
+    if (!isExtraClassGroup) {
+      const results = await Promise.all(
+        courseIds.map((courseId) => {
+          return this.classGroupService.getOne({ courseId: courseId });
+        }),
+      );
+      results.forEach((classGroup) => {
+        if (classGroup != null) {
+          throw new ConflictException(
+            `Nhóm lớp số ${classGroup.groupNumber} đã tồn tại cho Học phần - Học kỳ ID ${semesterId} của môn ${classGroup.course.name}.`,
+          );
+        }
+      });
+    }
+    if (classGroupsNeedScheduling.length == 0) {
+      throw new BadRequestException(
+        'Không tồn tại môn nào hợp lệ để lập nhóm lớp',
+      );
+    }
+
     const semester = await this.semesterService.findOne(semesterId);
     const { data: timeSlots } = await this.timeSlotService.findAll();
     const lecturers = await this.lecturerService.findAllLecturersId();
@@ -140,30 +168,38 @@ export class ClassGroupController {
       groupSizeTarget: groupSizeTarget,
       maxSessionsPerWeekAllowed: maxSessionsPerWeekAllowed,
     });
-    const classGroups = await axios.post(
-      'http://localhost:8000/schedules/calculating',
-      {
-        coursesToSchedule: classGroupsNeedScheduling,
-        semesterId: semester.id,
-        semesterStartDate: semester.startDate,
-        semesterEndDate: semester.endDate,
-        daysOfWeek: dateOfWeeks,
-        timeSlots: timeSlots,
-        lecturers: lecturers,
-        rooms: rooms,
-        exceptionDates: exceptionDates,
-        occupiedSlots: occupiedSlots,
-        groupSizeTarget: groupSizeTarget,
-        maxSessionsPerWeekAllowed: maxSessionsPerWeekAllowed,
-      },
-    );
-    console.log('getClassGroupSchedule@@classGroups.data', classGroups.data);
-    const savedClassGroups =
-      await this.classGroupService.createWithWeeklySchedule(classGroups.data);
-    return new SuccessResponse({
-      message: 'Lấy nhóm lớp thành công',
-      data: savedClassGroups,
-    }).send(res);
+    try {
+      const classGroups = await axios.post(
+        'http://localhost:8000/schedules/calculating',
+        {
+          coursesToSchedule: classGroupsNeedScheduling,
+          semesterId: semester.id,
+          semesterStartDate: semester.startDate,
+          semesterEndDate: semester.endDate,
+          daysOfWeek: dateOfWeeks,
+          timeSlots: timeSlots,
+          lecturers: lecturers,
+          rooms: rooms,
+          exceptionDates: exceptionDates,
+          occupiedSlots: occupiedSlots,
+          groupSizeTarget: groupSizeTarget,
+          maxSessionsPerWeekAllowed: maxSessionsPerWeekAllowed,
+        },
+      );
+      console.log('getClassGroupSchedule@@classGroups.data', classGroups.data);
+      const savedClassGroups =
+        await this.classGroupService.createWithWeeklySchedule(
+          classGroups.data,
+          isExtraClassGroup,
+        );
+      return new SuccessResponse({
+        message: 'Lấy nhóm lớp thành công',
+        data: savedClassGroups,
+      }).send(res);
+    } catch (error) {
+      console.log('error:', error.response.data.detail);
+      throw new BadRequestException(error.response.data.detail);
+    }
   }
 
   @Get('/me/for-registration')

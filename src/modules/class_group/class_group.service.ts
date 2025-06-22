@@ -103,6 +103,7 @@ export class ClassGroupService {
    */
   async createWithWeeklySchedule(
     createDto: GenerateScheduleResponseDto,
+    isExtraClassGroup?: boolean,
   ): Promise<ClassGroupEntity[]> {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -127,22 +128,26 @@ export class ClassGroupService {
             {
               where: {
                 semesterId,
-                groupNumber: scheduleClassGroup.groupNumber,
                 courseId: courseSchedule.courseId,
               },
-              select: ['id'],
+              select: ['id', 'groupNumber'],
               relations: {
                 course: true,
               },
+              order: { groupNumber: 'DESC' },
             },
           );
           if (existingGroup) {
-            console.log(existingGroup);
-            throw new ConflictException(
-              `Nhóm lớp số ${scheduleClassGroup.groupNumber} đã tồn tại cho Học phần-Học kỳ ID ${semesterId} của môn ${existingGroup.course.name}.`,
-            );
+            console.log('existingGroup:', existingGroup);
+            if (isExtraClassGroup) {
+              scheduleClassGroup.groupNumber = existingGroup.groupNumber + 1;
+            } else {
+              console.log(existingGroup);
+              throw new ConflictException(
+                `Nhóm lớp số ${scheduleClassGroup.groupNumber} đã tồn tại cho Học phần-Học kỳ ID ${semesterId} của môn ${existingGroup.course.name}.`,
+              );
+            }
           }
-
           const newClassGroup = queryRunner.manager.create(ClassGroupEntity, {
             groupNumber: scheduleClassGroup.groupNumber,
             courseId: courseSchedule.courseId,
@@ -377,6 +382,19 @@ export class ClassGroupService {
 
     const meta = generatePaginationMeta(total, page, limit);
     return { data, meta };
+  }
+
+  async getOne(
+    condition: FindOptionsWhere<ClassGroupEntity>,
+  ): Promise<ClassGroupEntity> {
+    const classGroup = await this.classGroupRepository.findOne({
+      where: condition,
+      relations: {
+        course: true,
+      },
+    });
+
+    return classGroup;
   }
 
   /**

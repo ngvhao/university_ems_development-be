@@ -160,7 +160,8 @@ export class StudyPlanController {
       paginationDto,
     });
     return new SuccessResponse({
-      ...result,
+      data: result.data,
+      metadata: result.meta,
       message: 'Lấy danh sách kế hoạch học tập thành công',
     }).send(res);
   }

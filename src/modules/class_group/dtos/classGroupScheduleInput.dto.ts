@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsArray,
+  IsBoolean,
   IsDateString,
   IsInt,
   IsNotEmpty,
@@ -68,7 +69,7 @@ export class ClassGroupScheduleInputDto {
 
   @ApiProperty({
     description: 'Tối đa số ca trong tuần',
-    example: 30,
+    example: 4,
     minimum: 1,
     maximum: 4,
   })
@@ -77,4 +78,38 @@ export class ClassGroupScheduleInputDto {
   @Min(1)
   @Max(4)
   maxSessionsPerWeekAllowed: number = 4;
+
+  @ApiProperty({
+    description: 'Là nhóm lớp bổ sung hay không',
+    example: false,
+    required: false,
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isExtraClassGroup: boolean = false;
+
+  @ApiProperty({
+    description: 'Ngày bắt đầu cho phép đăng ký nhóm lớp này',
+    example: '2025-08-01',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString(
+    {},
+    { message: 'Ngày bắt đầu đăng ký phải đúng định dạng ISO (yyyy-MM-dd)' },
+  )
+  isRegisterFromDate: string;
+
+  @ApiProperty({
+    description: 'Ngày kết thúc cho phép đăng ký nhóm lớp này',
+    example: '2025-08-15',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString(
+    {},
+    { message: 'Ngày kết thúc đăng ký phải đúng định dạng ISO (yyyy-MM-dd)' },
+  )
+  isRegisterToDate: string;
 }
