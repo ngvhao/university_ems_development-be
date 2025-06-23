@@ -162,14 +162,14 @@ export class TuitionController {
     description: 'Chưa xác thực.',
   })
   async getMyTuition(
-    @Query('semesterId') semesterId: number,
+    @Query('semesterCode') semesterCode: string,
     @Req() req: RequestHasStudentDto & Request,
     @Res() res: Response,
   ) {
     const student = req.student;
     const result = await this.tuitionService.getTuitionsByStudent(
       student.id,
-      semesterId,
+      semesterCode,
     );
     return new SuccessResponse({
       data: result,
@@ -251,14 +251,13 @@ export class TuitionController {
     description: 'Không tìm thấy sinh viên.',
   })
   async getTuitionsByStudent(
-    @Query('semesterId', ParseIntPipe) semesterId: number,
+    @Query('semesterCode') semesterCode: string,
     @Param('studentId', ParseIntPipe) studentId: number,
-    @Req() req: Request,
     @Res() res: Response,
   ) {
     const result = await this.tuitionService.getTuitionsByStudent(
       studentId,
-      semesterId,
+      semesterCode,
     );
     return new SuccessResponse({
       data: result,

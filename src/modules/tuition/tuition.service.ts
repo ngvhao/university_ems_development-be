@@ -496,12 +496,17 @@ export class TuitionService {
 
   async getTuitionsByStudent(
     studentId: number,
-    semesterId: number,
+    semesterCode: string,
   ): Promise<TuitionEntity[]> {
     await this.studentService.getOne({ id: studentId });
 
     const data = await this.tuitionRepository.find({
-      where: { studentId, semesterId },
+      where: {
+        studentId,
+        semester: {
+          semesterCode: semesterCode,
+        },
+      },
       relations: {
         details: {
           enrollment: {

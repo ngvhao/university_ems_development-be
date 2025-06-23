@@ -22,8 +22,6 @@ export class PaymentController {
   @Post('/momo/callback')
   @HttpCode(HttpStatus.OK)
   async handleMomoIpn(@Body() momoIpnDto: MomoIpnDto, @Res() res: Response) {
-    console.log('handleMomoIpn@@momoIpnDto::', JSON.stringify(momoIpnDto));
-    console.log('handleMomoIpn@@signature::', momoIpnDto.signature);
     try {
       await this.paymentService.processPayment(
         momoIpnDto.resultCode.toString(),
