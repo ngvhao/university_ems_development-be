@@ -54,7 +54,7 @@ export class TuitionEntity extends IEntity {
     type: 'string',
     format: 'date',
   })
-  @Column({ type: 'date' })
+  @Column({ type: 'timestamp with time zone' })
   issueDate: Date;
 
   @ApiProperty({
@@ -104,7 +104,7 @@ export class TuitionEntity extends IEntity {
     type: 'string',
     format: 'date',
   })
-  @Column({ type: 'date' })
+  @Column({ type: 'timestamp with time zone' })
   dueDate: Date;
 
   @ApiPropertyOptional({

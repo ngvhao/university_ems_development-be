@@ -22,6 +22,8 @@ import { EnrollmentCourseEntity } from '../enrollment_course/entities/enrollment
 import { TuitionDetailEntity } from '../tuition_detail/entities/tuition_detail.entity';
 import { CreateTuitionBatchDto } from './dto/createTuitionBatch.dto';
 import { PaymentTransactionService } from '../payment_transaction/payment_transaction.service';
+import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
+import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 
 interface GroupedEnrollments {
   [studentId: number]: EnrollmentCourseEntity[];
@@ -494,26 +496,26 @@ export class TuitionService {
 
   async getTuitionsByStudent(
     studentId: number,
-    paginationDto: PaginationDto,
-  ): Promise<{
-    data: TuitionEntity[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
+    semesterId: number,
+  ): Promise<TuitionEntity[]> {
     await this.studentService.getOne({ id: studentId });
-    const { page = 1, limit = 10 } = paginationDto;
-    const skip = (page - 1) * limit;
 
-    const [data, total] = await this.tuitionRepository.findAndCount({
-      where: { studentId },
-      relations: ['semester'],
-      skip,
-      take: limit,
+    const data = await this.tuitionRepository.find({
+      where: { studentId, semesterId },
+      relations: {
+        details: {
+          enrollment: {
+            classGroup: {
+              course: true,
+            },
+          },
+        },
+        paymentTransactions: true,
+      },
       order: { createdAt: 'DESC' },
     });
 
-    return { data, total, page, limit };
+    return data;
   }
 
   async getTuitionsBySemester(
@@ -521,9 +523,7 @@ export class TuitionService {
     paginationDto: PaginationDto,
   ): Promise<{
     data: TuitionEntity[];
-    total: number;
-    page: number;
-    limit: number;
+    metadata: MetaDataInterface;
   }> {
     const semester = await this.semesterService.getOne({ id: semesterId });
     if (!semester) {
@@ -541,7 +541,9 @@ export class TuitionService {
       order: { createdAt: 'DESC' },
     });
 
-    return { data, total, page, limit };
+    const metadata = generatePaginationMeta(total, page, limit);
+
+    return { data, metadata };
   }
 
   /**

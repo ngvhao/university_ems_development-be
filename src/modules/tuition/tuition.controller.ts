@@ -12,6 +12,7 @@ import {
   ParseIntPipe,
   HttpStatus,
   Req,
+  UseInterceptors,
 } from '@nestjs/common';
 import { TuitionService } from './tuition.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -36,6 +37,8 @@ import { UpdateTuitionDto } from './dto/updateTuition.dto';
 import { PaymentProcessDto } from './dto/processPayment.dto';
 import { CreateTuitionBatchDto } from './dto/createTuitionBatch.dto';
 import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
+import { StudentInterceptor } from 'src/interceptors/get-student.interceptor';
+import { RequestHasStudentDto } from 'src/utils/request-has-student-dto';
 
 @ApiTags('Quản lý Học phí (Tuitions)')
 @ApiBearerAuth('token')
@@ -144,6 +147,36 @@ export class TuitionController {
     }).send(res);
   }
 
+  @Get('me')
+  @Roles([EUserRole.STUDENT])
+  @UseInterceptors(StudentInterceptor)
+  @ApiOperation({
+    summary: 'Lấy danh sách học phí (có phân trang và tìm kiếm)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách học phí thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  async getMyTuition(
+    @Query('semesterId') semesterId: number,
+    @Req() req: RequestHasStudentDto & Request,
+    @Res() res: Response,
+  ) {
+    const student = req.student;
+    const result = await this.tuitionService.getTuitionsByStudent(
+      student.id,
+      semesterId,
+    );
+    return new SuccessResponse({
+      data: result,
+      message: 'Lấy danh sách học phí thành công',
+    }).send(res);
+  }
+
   @Get()
   @ApiOperation({
     summary: 'Lấy danh sách học phí (có phân trang và tìm kiếm)',
@@ -184,6 +217,7 @@ export class TuitionController {
   }
 
   @Get('student/:studentId')
+  @Roles([EUserRole.LECTURER, EUserRole.ADMINISTRATOR])
   @ApiOperation({
     summary: 'Lấy danh sách học phí của một sinh viên (có phân trang)',
   })
@@ -217,17 +251,18 @@ export class TuitionController {
     description: 'Không tìm thấy sinh viên.',
   })
   async getTuitionsByStudent(
+    @Query('semesterId', ParseIntPipe) semesterId: number,
     @Param('studentId', ParseIntPipe) studentId: number,
-    @Query() paginationDto: PaginationDto,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
     const result = await this.tuitionService.getTuitionsByStudent(
       studentId,
-      paginationDto,
+      semesterId,
     );
     return new SuccessResponse({
-      ...result,
-      message: `Lấy danh sách học phí cho sinh viên ID ${studentId} thành công`,
+      data: result,
+      message: `Lấy danh sách học phí thành công`,
     }).send(res);
   }
 
