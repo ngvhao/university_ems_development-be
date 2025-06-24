@@ -397,7 +397,7 @@ export class TuitionService {
     id: number,
     updateTuitionDto: UpdateTuitionDto,
   ): Promise<TuitionEntity> {
-    const tuition = await this.findOne(id); // Kiểm tra sự tồn tại và lấy thông tin cũ
+    const tuition = await this.findOne(id);
 
     const {
       studentId,
@@ -517,7 +517,7 @@ export class TuitionService {
         },
         paymentTransactions: true,
       },
-      order: { createdAt: 'DESC' },
+      order: { createdAt: 'DESC', paymentTransactions: { createdAt: 'DESC' } },
     });
 
     return data;
