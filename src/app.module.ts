@@ -32,6 +32,9 @@ import { TuitionDetailModule } from './modules/tuition_detail/tuition_detail.mod
 import { PaymentTransactionModule } from './modules/payment_transaction/payment_transaction.module';
 import { PaymentModule } from './modules/payment/payment.module';
 import { SettingModule } from './modules/setting/setting.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { NotificationRecipientModule } from './modules/notification_recipient/notification_recipient.module';
+import { NotificationRuleModule } from './modules/notification_audience_rule/notification_audience_rule.module';
 
 @Module({
   imports: [
@@ -66,6 +69,9 @@ import { SettingModule } from './modules/setting/setting.module';
     PaymentTransactionModule,
     PaymentModule,
     SettingModule,
+    NotificationModule,
+    NotificationRuleModule,
+    NotificationRecipientModule,
   ],
   controllers: [AppController],
   providers: [AppService],
