@@ -2,15 +2,14 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
-  Logger,
-  BadRequestException,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOptionsWhere } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { ERecipientStatus } from 'src/utils/enums/notification.enum';
-import { UserNotificationQueryDto } from './dtos/queryNotificationRecipient.dto';
 import { NotificationRecipientEntity } from './entities/notification_recipient.entity';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { NotificationService } from '../notification/notification.service';
@@ -18,54 +17,12 @@ import { CreateNotificationRecipientDto } from './dtos/createNotificationRecipie
 
 @Injectable()
 export class NotificationRecipientService {
-  private readonly logger = new Logger(NotificationRecipientService.name);
-
   constructor(
     @InjectRepository(NotificationRecipientEntity)
     private readonly recipientRepository: Repository<NotificationRecipientEntity>,
+    @Inject(forwardRef(() => NotificationService))
     private readonly notificationService: NotificationService,
   ) {}
-
-  async findUserNotifications(
-    userId: number,
-    queryDto: UserNotificationQueryDto,
-  ): Promise<{ data: NotificationRecipientEntity[]; meta: MetaDataInterface }> {
-    const { page = 1, limit = 10, status, isPinned } = queryDto;
-    const skip = (page - 1) * limit;
-
-    const whereConditions: FindOptionsWhere<NotificationRecipientEntity> = {
-      recipientUserId: userId,
-    };
-
-    if (status) {
-      whereConditions.status = status;
-    }
-    if (typeof isPinned === 'boolean') {
-      whereConditions.isPinned = isPinned;
-    }
-
-    const [data, total] = await this.recipientRepository.findAndCount({
-      where: whereConditions,
-      relations: ['notification', 'notification.audienceRules'],
-      order: { isPinned: 'DESC', receivedAt: 'DESC' },
-      skip,
-      take: limit,
-    });
-
-    const totalPages = Math.ceil(total / limit);
-
-    return {
-      data,
-      meta: {
-        total,
-        currentPage: Number(page),
-        pageSize: Number(limit),
-        totalPage: totalPages,
-        nextPage: page < totalPages ? Number(page) + 1 : null,
-        prevPage: page > 1 ? Number(page) - 1 : null,
-      },
-    };
-  }
 
   async getUnreadCount(userId: number): Promise<number> {
     return this.recipientRepository.count({
@@ -74,6 +31,12 @@ export class NotificationRecipientService {
         status: ERecipientStatus.UNREAD,
       },
     });
+  }
+
+  async findOne(
+    condition: FindOptionsWhere<NotificationRecipientEntity>,
+  ): Promise<NotificationRecipientEntity | null> {
+    return this.recipientRepository.findOneBy(condition);
   }
 
   async findOneRecipientEntry(
@@ -99,17 +62,15 @@ export class NotificationRecipientService {
   }
 
   async markAsRead(notificationId: number, userId: number): Promise<void> {
-    const recipientEntry = await this.findOneRecipientEntry(
-      notificationId,
-      userId,
-    );
-    if (recipientEntry.status == ERecipientStatus.READ) {
+    const recipientEntry = await this.recipientRepository.findOne({
+      where: { notificationId: notificationId },
+      relations: ['notification'],
+    });
+    if (recipientEntry && recipientEntry.status != ERecipientStatus.UNREAD) {
       return;
     }
     const notification = await this.notificationService.findOne(notificationId);
-    if (!notification) {
-      throw new BadRequestException('Notification not found');
-    }
+
     const newRecipient: CreateNotificationRecipientDto = {
       notificationId: notification.id,
       status: ERecipientStatus.READ,
@@ -122,24 +83,6 @@ export class NotificationRecipientService {
     const recipient = this.recipientRepository.create(newRecipient);
     await this.recipientRepository.save(recipient);
     return;
-  }
-
-  async markAsDismissed(
-    recipientId: number,
-    userId: number,
-  ): Promise<NotificationRecipientEntity> {
-    const recipientEntry = await this.findOneRecipientEntry(
-      recipientId,
-      userId,
-    );
-
-    if (recipientEntry.status === ERecipientStatus.DISMISSED) {
-      return recipientEntry;
-    }
-
-    recipientEntry.status = ERecipientStatus.DISMISSED;
-    recipientEntry.dismissedAt = new Date();
-    return this.recipientRepository.save(recipientEntry);
   }
 
   async getRecipientsOfNotification(

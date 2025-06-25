@@ -27,13 +27,14 @@ export class NotificationEntity extends IEntity {
 
   @Index()
   @Column({
-    name: 'notificationType',
     type: 'varchar',
     length: 50,
     enum: ENotificationType,
     nullable: true,
+    comment:
+      'ACADEMIC = 0, EVENT = 1, SURVEY = 2, SYSTEM = 3, FEE = 4, EXAM = 5, GENERAL = 6',
   })
-  notificationType: ENotificationType | null;
+  notificationType: ENotificationType;
 
   @Index()
   @Column({
@@ -41,23 +42,24 @@ export class NotificationEntity extends IEntity {
     length: 50,
     enum: ENotificationPriority,
     default: ENotificationPriority.MEDIUM,
+    comment: 'HIGH = 0, MEDIUM = 1, LOW = 2',
   })
   priority: ENotificationPriority;
 
-  @Column({ name: 'created_by_user_id', type: 'int', nullable: true })
-  createdByUserId: number | null;
+  @Column({ name: 'createdByUserId', type: 'int', nullable: true })
+  createdByUserId: number;
 
   @ManyToOne(
     () => UserEntity,
     (user: UserEntity) => user.createdNotifications,
     { eager: false, nullable: true, onDelete: 'SET NULL', onUpdate: 'CASCADE' },
   )
-  @JoinColumn({ name: 'created_by_user_id' })
-  createdByUser: UserEntity | null;
+  @JoinColumn({ name: 'createdByUserId' })
+  createdByUser: UserEntity;
 
   @Index()
   @Column({ type: 'int', nullable: true })
-  semesterId: number | null;
+  semesterId: number;
 
   @ManyToOne(
     () => SemesterEntity,
@@ -65,22 +67,10 @@ export class NotificationEntity extends IEntity {
     { eager: false, nullable: true, onDelete: 'SET NULL', onUpdate: 'CASCADE' },
   )
   @JoinColumn()
-  semester: SemesterEntity | null;
+  semester: SemesterEntity;
 
-  @Index()
-  @Column({
-    name: 'published_at',
-    type: 'timestamp with time zone',
-    nullable: true,
-  })
-  publishedAt: Date | null;
-
-  @Column({
-    name: 'expires_at',
-    type: 'timestamp with time zone',
-    nullable: true,
-  })
-  expiresAt: Date | null;
+  @Column('text', { array: true, nullable: true })
+  attachments: string[];
 
   @Index()
   @Column({
@@ -88,6 +78,7 @@ export class NotificationEntity extends IEntity {
     length: 50,
     enum: ENotificationStatus,
     default: ENotificationStatus.DRAFT,
+    comment: 'DRAFT = 0, SCHEDULED = 1, SENT = 2, ARCHIVED_BY_ADMIN = 3',
   })
   status: ENotificationStatus;
 

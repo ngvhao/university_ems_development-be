@@ -3,10 +3,12 @@ import {
   NotFoundException,
   InternalServerErrorException,
   Logger,
+  forwardRef,
+  Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ENotificationStatus } from 'src/utils/enums/notification.enum';
-import { Repository } from 'typeorm';
+import { FindManyOptions, Repository } from 'typeorm';
 import { NotificationEntity } from '../notification/entities/notification.entity';
 import { CreateNotificationAudienceRuleDto } from './dtos/createNotificationAudienceRule.dto';
 import { UpdateNotificationAudienceRuleDto } from './dtos/updateNotificationAudienceRule.dto';
@@ -20,6 +22,7 @@ export class NotificationRuleService {
   constructor(
     @InjectRepository(NotificationAudienceRuleEntity)
     private readonly ruleRepository: Repository<NotificationAudienceRuleEntity>,
+    @Inject(forwardRef(() => NotificationService))
     private readonly notificationService: NotificationService,
   ) {}
 
@@ -36,10 +39,7 @@ export class NotificationRuleService {
   }
 
   private _checkNotificationStatus(notification: NotificationEntity): void {
-    if (
-      notification.status === ENotificationStatus.SENT ||
-      notification.status === ENotificationStatus.SENDING
-    ) {
+    if (notification.status === ENotificationStatus.SENT) {
       this.logger.warn(
         `Attempted to modify rules for a sent/sending notification (ID: ${notification.id})`,
       );
@@ -77,6 +77,16 @@ export class NotificationRuleService {
       where: { notificationId },
       order: { id: 'ASC' },
     });
+  }
+
+  async find(
+    condition: FindManyOptions<NotificationAudienceRuleEntity>,
+  ): Promise<NotificationAudienceRuleEntity[]> {
+    const rule = await this.ruleRepository.find(condition);
+    if (!rule) {
+      throw new NotFoundException('Không tìm thấy quy tắc cho thông báo');
+    }
+    return rule;
   }
 
   async findOneRule(

@@ -19,8 +19,6 @@ export enum ENotificationStatus {
   SCHEDULED = 1,
   SENT = 2,
   ARCHIVED_BY_ADMIN = 3,
-  SENDING,
-  ERROR,
 }
 
 export enum EAudienceType {

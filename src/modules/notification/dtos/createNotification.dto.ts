@@ -5,7 +5,6 @@ import {
   IsEnum,
   IsOptional,
   IsInt,
-  IsDateString,
   ValidateNested,
   IsArray,
   ArrayMinSize,
@@ -60,22 +59,15 @@ export class CreateNotificationDto {
   @IsOptional()
   @IsInt({ message: 'ID học kỳ phải là số nguyên' })
   semesterId?: number;
-
   @ApiPropertyOptional({
-    description: 'Thời gian dự kiến công bố (ISO 8601 format)',
-    example: '2024-08-01T10:00:00.000Z',
+    description: 'Danh sách đính kèm (mảng các URL hoặc tên tệp)',
+    type: [String],
+    example: ['https://example.com/file1.pdf', 'https://example.com/file2.pdf'],
   })
   @IsOptional()
-  @IsDateString({}, { message: 'Thời gian công bố không hợp lệ' })
-  publishedAt?: Date;
-
-  @ApiPropertyOptional({
-    description: 'Thời gian hết hạn thông báo (ISO 8601 format)',
-    example: '2024-08-15T23:59:59.000Z',
-  })
-  @IsOptional()
-  @IsDateString({}, { message: 'Thời gian hết hạn không hợp lệ' })
-  expiresAt?: Date;
+  @IsArray({ message: 'Danh sách đính kèm phải là một mảng' })
+  @IsString({ each: true, message: 'Mỗi phần tử phải là chuỗi' })
+  attachments: string[];
 
   @ApiProperty({
     description: 'Danh sách các quy tắc đối tượng nhận thông báo',

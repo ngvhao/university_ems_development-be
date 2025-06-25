@@ -47,6 +47,7 @@ export class NotificationRecipientEntity extends IEntity {
     length: 50,
     enum: ERecipientStatus,
     default: ERecipientStatus.UNREAD,
+    comment: 'UNREAD = 0, READ = 1, DISMISSED = 3, ARCHIVED_BY_USER = 4',
   })
   status: ERecipientStatus;
 

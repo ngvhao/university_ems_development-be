@@ -1,4 +1,3 @@
-// src/modules/enrollment_course/entities/enrollment_course.entity.ts
 import {
   Entity,
   Column,

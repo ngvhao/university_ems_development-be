@@ -25,6 +25,8 @@ export class NotificationAudienceRuleEntity extends IEntity {
     type: 'varchar',
     length: 100,
     enum: EAudienceType,
+    comment:
+      'ALL_USERS = 0, USER_LIST = 1, ROLE = 2, MAJOR = 3, DEPARTMENT = 4, COURSE_SECTION = 5',
   })
   audienceType: EAudienceType;
 
@@ -34,7 +36,7 @@ export class NotificationAudienceRuleEntity extends IEntity {
     length: 500,
     nullable: true,
   })
-  audienceValue: string | null;
+  audienceValue: string;
 
   @Column({
     name: 'conditionLogic',

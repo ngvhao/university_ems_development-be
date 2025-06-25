@@ -24,44 +24,17 @@ import {
 } from '@nestjs/swagger';
 import { SuccessResponse } from 'src/utils/response';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { UserNotificationQueryDto } from './dtos/queryNotificationRecipient.dto';
 import { NotificationRecipientService } from './notification_recipient.service';
 import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
 
 @ApiTags('Thông báo Người dùng (User Notifications)')
 @ApiBearerAuth('token')
 @UseGuards(JwtAuthGuard)
-@Controller('notifications')
+@Controller('notification-recipients')
 export class NotificationRecipientController {
   constructor(
     private readonly recipientsService: NotificationRecipientService,
   ) {}
-
-  @Get()
-  @ApiOperation({
-    summary:
-      'Lấy danh sách thông báo đã nhận của người dùng hiện tại (phân trang)',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Lấy danh sách thông báo thành công.',
-  })
-  async findMyNotifications(
-    @Req() req: RequestHasUserDto & Request,
-    @Query() queryDto: UserNotificationQueryDto,
-    @Res() res: Response,
-  ) {
-    const userId = req.user.id;
-    const { data, meta } = await this.recipientsService.findUserNotifications(
-      userId,
-      queryDto,
-    );
-    new SuccessResponse({
-      data,
-      metadata: meta,
-      message: 'Lấy danh sách thông báo thành công.',
-    }).send(res);
-  }
 
   @Get('unread-count')
   @ApiOperation({
