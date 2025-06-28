@@ -2,12 +2,11 @@ import {
   Injectable,
   NotFoundException,
   InternalServerErrorException,
-  Logger,
   forwardRef,
   Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, Brackets, In } from 'typeorm';
+import { Repository, DataSource, Brackets } from 'typeorm';
 import { NotificationEntity } from './entities/notification.entity';
 import { NotificationAudienceRuleEntity } from '../notification_audience_rule/entities/notification_audience_rule.entity';
 import {
@@ -23,19 +22,19 @@ import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { UserEntity } from '../user/entities/user.entity';
 import { UserNotificationQueryDto } from '../notification_recipient/dtos/queryNotificationRecipient.dto';
-import { NotificationRuleService } from '../notification_audience_rule/notification_audience_rule.service';
 import { NotificationRecipientService } from '../notification_recipient/notification_recipient.service';
+import { INotificationResponse } from 'src/utils/interfaces/notification.interface';
 
 @Injectable()
 export class NotificationService {
-  private readonly logger = new Logger(NotificationService.name);
-
   constructor(
     @InjectRepository(NotificationEntity)
     private readonly notificationRepository: Repository<NotificationEntity>,
+    @InjectRepository(NotificationAudienceRuleEntity)
+    private readonly ruleRepository: Repository<NotificationAudienceRuleEntity>,
     private readonly dataSource: DataSource,
-    @Inject(forwardRef(() => NotificationRuleService))
-    private readonly ruleService: NotificationRuleService,
+    // @Inject(forwardRef(() => NotificationRuleService))
+    // private readonly ruleService: NotificationRuleService,
     @Inject(forwardRef(() => NotificationRecipientService))
     private readonly recipientService: NotificationRecipientService,
   ) {}
@@ -76,7 +75,7 @@ export class NotificationService {
       return this.findOne(savedNotification.id, true);
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      this.logger.error(
+      console.error(
         `Failed to create notification: ${error.message}`,
         error.stack,
       );
@@ -148,10 +147,63 @@ export class NotificationService {
     };
   }
 
+  _buildCaseWhenCondition = (currentUser: UserEntity) => {
+    const conditions: string[] = [];
+    const params: { [key: string]: string | number | EAudienceType } = {};
+
+    conditions.push(`(rule.audienceType = :caseAllType)`);
+    params.caseAllType = EAudienceType.ALL_USERS;
+
+    // 2. ROLE
+    if (currentUser.role) {
+      conditions.push(
+        `(rule.audienceType = :caseRoleType AND rule.audienceValue = :caseUserRole)`,
+      );
+      params.caseRoleType = EAudienceType.ROLE;
+      params.caseUserRole = currentUser.role;
+    }
+
+    // 3. MAJOR
+    if (currentUser.student?.majorId) {
+      conditions.push(
+        `(rule.audienceType = :caseMajorType AND rule.audienceValue = :caseUserMajor)`,
+      );
+      params.caseMajorType = EAudienceType.MAJOR;
+      params.caseUserMajor = currentUser.student.majorId.toString();
+    }
+
+    // 4. DEPARTMENT
+    if (currentUser.lecturer?.departmentId) {
+      conditions.push(
+        `(rule.audienceType = :caseDeptType AND rule.audienceValue = :caseUserDept)`,
+      );
+      params.caseDeptType = EAudienceType.DEPARTMENT;
+      params.caseUserDept = currentUser.lecturer.departmentId.toString();
+    }
+
+    // 5. USER_LIST
+    conditions.push(`(
+        rule.audienceType = :caseUserListType AND (
+            rule.audienceValue = :caseUserIdStr OR
+            rule.audienceValue LIKE :caseUserIdStart OR
+            rule.audienceValue LIKE :caseUserIdMiddle OR
+            rule.audienceValue LIKE :caseUserIdEnd
+        )
+    )`);
+    params.caseUserListType = EAudienceType.USER_LIST;
+    params.caseUserIdStr = currentUser.id.toString();
+    params.caseUserIdStart = `${currentUser.id},%`;
+    params.caseUserIdMiddle = `%,${currentUser.id},%`;
+    params.caseUserIdEnd = `%,${currentUser.id}`;
+
+    const fullConditionString = conditions.join(' OR ');
+    return { conditionString: fullConditionString, params };
+  };
+
   async findUserNotifications(
     currentUser: UserEntity,
     queryDto: UserNotificationQueryDto,
-  ): Promise<{ data: NotificationEntity[]; meta: MetaDataInterface }> {
+  ): Promise<{ data: INotificationResponse[]; meta: MetaDataInterface }> {
     const {
       page = 1,
       limit = 10,
@@ -162,9 +214,22 @@ export class NotificationService {
     } = queryDto;
     const skip = (page - 1) * limit;
 
-    const potentialNotificationsQb = this.notificationRepository
+    const { conditionString, params: caseParams } =
+      this._buildCaseWhenCondition(currentUser);
+    const validNotificationIdsSubQuery = this.ruleRepository
+      .createQueryBuilder('rule')
+      .select('rule.notificationId')
+      .where('rule.conditionLogic = :includeLogic', {
+        includeLogic: EConditionLogic.INCLUDE,
+      })
+      .groupBy('rule.notificationId')
+      .having(
+        `COUNT(rule.id) = SUM(CASE WHEN ${conditionString} THEN 1 ELSE 0 END)`,
+      )
+      .setParameters(caseParams);
+
+    const mainQb = this.notificationRepository
       .createQueryBuilder('notification')
-      .innerJoin('notification.audienceRules', 'rule')
       .leftJoinAndSelect('notification.semester', 'semester')
       .leftJoinAndSelect(
         'notification.recipients',
@@ -172,192 +237,70 @@ export class NotificationService {
         'recipient.recipientUserId = :currentUserId',
         { currentUserId: currentUser.id },
       )
-      .where('notification.status = :sentStatus', {
+      .where(`notification.id IN (${validNotificationIdsSubQuery.getQuery()})`)
+      .setParameters(validNotificationIdsSubQuery.getParameters())
+      .andWhere('notification.status = :sentStatus', {
         sentStatus: ENotificationStatus.SENT,
-      })
-      .andWhere(
-        new Brackets((qb) => {
-          if (search) {
-            qb.andWhere(
-              new Brackets((sqb) => {
-                sqb
-                  .where('notification.title LIKE :search', {
-                    search: `%${search}%`,
-                  })
-                  .orWhere('notification.content LIKE :search', {
-                    search: `%${search}%`,
-                  });
-              }),
-            );
-          }
-          if (notificationType) {
-            qb.andWhere('notification.notificationType = :notificationType', {
-              notificationType,
+      });
+
+    if (search) {
+      mainQb.andWhere(
+        new Brackets((sqb) => {
+          sqb
+            .where('notification.title ILIKE :search', {
+              search: `%${search}%`,
+            })
+            .orWhere('notification.content ILIKE :search', {
+              search: `%${search}%`,
             });
-          }
-          if (priority) {
-            qb.andWhere('notification.priority = :priority', { priority });
-          }
         }),
-      )
-      .andWhere(
-        new Brackets((mainQb) => {
-          mainQb.where(
-            new Brackets((qb) => {
-              qb.where(
-                'rule.audienceType = :allType AND rule.conditionLogic = :includeLogic',
-                {
-                  allType: EAudienceType.ALL_USERS,
-                  includeLogic: EConditionLogic.INCLUDE,
-                },
-              );
-            }),
-          );
-          if (currentUser.role) {
-            mainQb.orWhere(
-              new Brackets((qb) => {
-                qb.where(
-                  'rule.audienceType = :roleType AND rule.audienceValue = :userRole AND rule.conditionLogic = :includeLogic',
-                  {
-                    roleType: EAudienceType.ROLE,
-                    userRole: currentUser.role,
-                    includeLogic: EConditionLogic.INCLUDE,
-                  },
-                );
-              }),
-            );
-          }
-          if (currentUser.student?.majorId) {
-            mainQb.orWhere(
-              new Brackets((qb) => {
-                qb.where(
-                  'rule.audienceType = :majorType AND rule.audienceValue = :userMajorValue AND rule.conditionLogic = :includeLogic',
-                  {
-                    majorType: EAudienceType.MAJOR,
-                    userMajorValue: currentUser.student.majorId.toString(),
-                    includeLogic: EConditionLogic.INCLUDE,
-                  },
-                );
-              }),
-            );
-          }
-          if (currentUser.lecturer?.departmentId) {
-            mainQb.orWhere(
-              new Brackets((qb) => {
-                qb.where(
-                  'rule.audienceType = :deptType AND rule.audienceValue = :userDeptValue AND rule.conditionLogic = :includeLogic',
-                  {
-                    deptType: EAudienceType.DEPARTMENT,
-                    userDeptValue: currentUser.lecturer.departmentId.toString(),
-                    includeLogic: EConditionLogic.INCLUDE,
-                  },
-                );
-              }),
-            );
-          }
-          mainQb.orWhere(
-            new Brackets((qb) => {
-              qb.where(
-                'rule.audienceType = :userListType AND rule.conditionLogic = :includeLogic AND (rule.audienceValue = :userIdStr OR rule.audienceValue LIKE :userIdStart OR rule.audienceValue LIKE :userIdMiddle OR rule.audienceValue LIKE :userIdEnd)',
-                {
-                  userListType: EAudienceType.USER_LIST,
-                  includeLogic: EConditionLogic.INCLUDE,
-                  userIdStr: currentUser.id.toString(),
-                  userIdStart: `${currentUser.id},%`,
-                  userIdMiddle: `%,${currentUser.id},%`,
-                  userIdEnd: `%,${currentUser.id}`,
-                },
-              );
-            }),
-          );
-        }),
-      )
-      // .select([
-      //   'notification.id',
-      //   'notification.title',
-      //   'notification.content',
-      //   'notification.notificationType',
-      //   'notification.priority',
-      //   'notification.createdAt',
-      //   'semester.id',
-      //   'recipient.id',
-      //   'recipient.status',
-      //   'recipient.readAt',
-      //   'recipient.dismissedAt',
-      //   'recipient.isPinned',
-      // ])
-      .groupBy('notification.id')
-      .addGroupBy('semester.id')
-      .addGroupBy('recipient.id')
-      .orderBy('notification.createdAt', 'DESC')
-      .skip(skip)
-      .take(limit);
-
-    const [candidateNotifications, totalCandidates] =
-      await potentialNotificationsQb.getManyAndCount();
-
-    const finalNotificationsData = [];
-
-    if (candidateNotifications.length > 0) {
-      const candidateNotificationIdsOnPage = candidateNotifications.map(
-        (n) => n.id,
       );
-      const allRulesForCandidatesOnPage = await this.ruleService.find({
-        where: {
-          notificationId: In(candidateNotificationIdsOnPage),
-          conditionLogic: EConditionLogic.INCLUDE,
-        },
+    }
+    if (notificationType) {
+      mainQb.andWhere('notification.notificationType = :notificationType', {
+        notificationType,
       });
-
-      const rulesByNotificationId = new Map<
-        number,
-        NotificationAudienceRuleEntity[]
-      >();
-      allRulesForCandidatesOnPage.forEach((r) => {
-        if (!rulesByNotificationId.has(r.notificationId)) {
-          rulesByNotificationId.set(r.notificationId, []);
-        }
-        rulesByNotificationId.get(r.notificationId).push(r);
-      });
-
-      for (const notification of candidateNotifications) {
-        const rules = rulesByNotificationId.get(notification.id) || [];
-
-        if (this._checkUserMatchesAllIncludeRules(currentUser, rules)) {
-          const recipientEntry =
-            notification.recipients && notification.recipients.length > 0
-              ? notification.recipients[0]
-              : null;
-
-          const currentStatus = recipientEntry
-            ? recipientEntry.status
-            : ERecipientStatus.UNREAD;
-          const isPinned = recipientEntry ? recipientEntry.isPinned : false;
-          const readAt = recipientEntry ? recipientEntry.readAt : null;
-          const dismissedAt = recipientEntry
-            ? recipientEntry.dismissedAt
-            : null;
-
-          if (filterRecipientStatus && currentStatus !== filterRecipientStatus)
-            continue;
-
-          finalNotificationsData.push({
-            id: notification.id,
-            title: notification.title,
-            notificationType: notification.notificationType,
-            priority: notification.priority,
-            createdAt: notification.createdAt,
-            semester: notification.semester,
-            recepientStatus: currentStatus,
-            readAt: readAt,
-            dismissedAt: dismissedAt,
-            isPinned: isPinned,
-          });
-        }
-      }
+    }
+    if (priority) {
+      mainQb.andWhere('notification.priority = :priority', { priority });
     }
 
-    const meta = generatePaginationMeta(totalCandidates, page, limit);
+    if (filterRecipientStatus) {
+      if (filterRecipientStatus === ERecipientStatus.UNREAD) {
+        mainQb.andWhere('recipient.id IS NULL');
+      } else {
+        mainQb.andWhere('recipient.status = :filterRecipientStatus', {
+          filterRecipientStatus,
+        });
+      }
+    }
+    mainQb.orderBy('notification.createdAt', 'DESC').skip(skip).take(limit);
+    const [notifications, total] = await mainQb.getManyAndCount();
+
+    const finalNotificationsData: INotificationResponse[] = notifications.map(
+      (notification) => {
+        const recipientEntry =
+          notification.recipients && notification.recipients.length > 0
+            ? notification.recipients[0]
+            : null;
+        return {
+          id: notification.id,
+          title: notification.title,
+          notificationType: notification.notificationType,
+          priority: notification.priority,
+          createdAt: notification.createdAt,
+          semester: notification.semester,
+          recepientStatus: recipientEntry
+            ? recipientEntry.status
+            : ERecipientStatus.UNREAD,
+          readAt: recipientEntry?.readAt || null,
+          dismissedAt: recipientEntry?.dismissedAt || null,
+          isPinned: recipientEntry?.isPinned || false,
+        };
+      },
+    );
+
+    const meta = generatePaginationMeta(total, page, limit);
 
     return {
       data: finalNotificationsData,
@@ -386,21 +329,6 @@ export class NotificationService {
       default:
         return false;
     }
-  }
-
-  private _checkUserMatchesAllIncludeRules(
-    user: UserEntity,
-    rules: NotificationAudienceRuleEntity[],
-  ): boolean {
-    if (!rules || rules.length === 0) return false;
-    const includeRules = rules.filter(
-      (r) => r.conditionLogic === EConditionLogic.INCLUDE,
-    );
-    if (includeRules.length === 0) return false;
-    for (const rule of includeRules) {
-      if (!this._checkUserMatchesSingleRule(user, rule)) return false;
-    }
-    return true;
   }
 
   async findOne(
@@ -477,7 +405,7 @@ export class NotificationService {
       return this.findOne(id, true);
     } catch (error) {
       await queryRunner.rollbackTransaction();
-      this.logger.error(
+      console.error(
         `Failed to update notification ${id}: ${error.message}`,
         error.stack,
       );

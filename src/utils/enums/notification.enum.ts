@@ -36,7 +36,7 @@ export enum EConditionLogic {
 }
 
 export enum ERecipientStatus {
-  UNREAD = 0,
+  UNREAD = 5,
   READ = 1,
   DISMISSED = 3,
   ARCHIVED_BY_USER = 4,
