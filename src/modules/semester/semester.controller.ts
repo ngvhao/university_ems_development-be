@@ -4,13 +4,13 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
   Query,
   Res,
   UseGuards,
   ParseIntPipe,
   HttpStatus,
+  Put,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { SemesterService } from './semester.service';
@@ -146,7 +146,7 @@ export class SemesterController {
     }).send(res);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseGuards(RolesGuard)
   @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
   @ApiOperation({ summary: 'Cập nhật thông tin học kỳ' })

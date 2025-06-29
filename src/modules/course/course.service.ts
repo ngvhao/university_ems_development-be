@@ -102,7 +102,6 @@ export class CourseService {
   ): Promise<{ data: CourseEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
     const [data, total] = await this.courseRepository.findAndCount({
-      relations: ['courseMajors', 'courseMajors.major'],
       skip: (page - 1) * limit,
       take: limit,
       order: { courseCode: 'ASC' },

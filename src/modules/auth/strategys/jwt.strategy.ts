@@ -25,13 +25,12 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async validate(payload: any): Promise<LoggedInterface> {
     try {
-      console.log('payload', payload);
       const user = await this.userService.getUserById(payload.id);
-      console.log('JwtStrategy.validate@@user:', user);
       if (!user) {
         throw new UnauthorizedException();
       }
-      return _.omit(user, ['password', 'refreshToken']) as LoggedInterface;
+      const result = _.omit(user, ['password']) as unknown as LoggedInterface;
+      return result;
     } catch (error) {
       this.logger.error(`JWT validation failed: ${error.message}`);
       throw new UnauthorizedException();

@@ -4,13 +4,13 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
   UseGuards,
   Query,
   ParseIntPipe,
   Res,
   HttpStatus,
+  Put,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -122,7 +122,7 @@ export class RoomController {
     }).send(res);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseGuards(RolesGuard)
   @Roles([EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER])
   @ApiOperation({ summary: 'Cập nhật thông tin phòng học' })
@@ -189,6 +189,22 @@ export class RoomController {
     await this.roomService.remove(id);
     new SuccessResponse({
       message: 'Xóa phòng thành công.',
+    }).send(res);
+  }
+
+  @Get('test-role')
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER])
+  @ApiOperation({ summary: 'Test endpoint để debug role' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Test role thành công.',
+  })
+  async testRole(@Res() res: Response) {
+    console.log('RoomController.testRole - Endpoint accessed successfully');
+    new SuccessResponse({
+      data: { message: 'Role test successful' },
+      message: 'Test role thành công.',
     }).send(res);
   }
 }

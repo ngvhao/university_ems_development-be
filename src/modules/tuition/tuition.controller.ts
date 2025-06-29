@@ -211,7 +211,8 @@ export class TuitionController {
   async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
     const result = await this.tuitionService.findAll(paginationDto);
     return new SuccessResponse({
-      ...result,
+      data: result.data,
+      metadata: result.meta,
       message: 'Lấy danh sách học phí thành công',
     }).send(res);
   }

@@ -1,5 +1,5 @@
 export enum ENotificationType {
-  ACADEMIC = 0,
+  ACADEMIC = 7,
   EVENT = 1,
   SURVEY = 2,
   SYSTEM = 3,
@@ -9,20 +9,20 @@ export enum ENotificationType {
 }
 
 export enum ENotificationPriority {
-  HIGH = 0,
+  HIGH = 3,
   MEDIUM = 1,
   LOW = 2,
 }
 
 export enum ENotificationStatus {
-  DRAFT = 0,
+  DRAFT = 4,
   SCHEDULED = 1,
   SENT = 2,
   ARCHIVED_BY_ADMIN = 3,
 }
 
 export enum EAudienceType {
-  ALL_USERS = 0,
+  ALL_USERS = 6,
   USER_LIST = 1,
   ROLE = 2,
   MAJOR = 3,

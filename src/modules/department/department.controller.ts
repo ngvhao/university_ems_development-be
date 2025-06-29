@@ -4,13 +4,13 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
   Query,
   Res,
   UseGuards,
   ParseIntPipe,
   HttpStatus,
+  Put,
 } from '@nestjs/common';
 import { DepartmentService } from './department.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -136,7 +136,7 @@ export class DepartmentController {
     }).send(res);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseGuards(RolesGuard)
   @Roles([EUserRole.ADMINISTRATOR])
   @ApiOperation({ summary: 'Cập nhật thông tin một Bộ môn' })

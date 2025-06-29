@@ -364,9 +364,7 @@ export class TuitionService {
 
   async findAll(paginationDto: PaginationDto): Promise<{
     data: TuitionEntity[];
-    total: number;
-    page: number;
-    limit: number;
+    meta: MetaDataInterface;
   }> {
     const { page = 1, limit = 10 } = paginationDto;
     const skip = (page - 1) * limit;
@@ -378,7 +376,9 @@ export class TuitionService {
       take: limit,
     });
 
-    return { data, total, page, limit };
+    const meta = generatePaginationMeta(total, page, limit);
+
+    return { data, meta };
   }
 
   async findOne(id: number): Promise<TuitionEntity> {

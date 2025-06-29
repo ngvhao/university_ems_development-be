@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
   UseGuards,
   Res,
@@ -13,6 +12,7 @@ import {
   Req,
   HttpStatus,
   UseInterceptors,
+  Put,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -119,7 +119,8 @@ export class LecturerController {
   async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
     const result = await this.lecturerService.findAll(paginationDto);
     return new SuccessResponse({
-      ...result,
+      data: result.data,
+      metadata: result.meta,
       message: 'Lấy danh sách Giảng viên thành công',
     }).send(res);
   }
@@ -226,7 +227,7 @@ export class LecturerController {
     }).send(res);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseGuards(RolesGuard)
   @Roles([EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER])
   @ApiOperation({ summary: 'Cập nhật thông tin hồ sơ Giảng viên' })

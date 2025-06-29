@@ -13,6 +13,7 @@ import { StudentModule } from './modules/student/student.module';
 import { UserModule } from './modules/user/user.module';
 import { SemesterModule } from './modules/semester/semester.module';
 import { CourseModule } from './modules/course/course.module';
+import { CourseFacultyModule } from './modules/course_faculty/course_faculty.module';
 import { DepartmentModule } from './modules/department/department.module';
 import { FacultyModule } from './modules/faculty/faculty.module';
 import { EnrollmentCourseModule } from './modules/enrollment_course/enrollment_course.module';
@@ -51,6 +52,7 @@ import { NotificationRuleModule } from './modules/notification_audience_rule/not
     ClassModule,
     SemesterModule,
     CourseModule,
+    CourseFacultyModule,
     EnrollmentCourseModule,
     DepartmentModule,
     CurriculumModule,

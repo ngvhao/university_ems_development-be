@@ -225,62 +225,80 @@ export class StudentService {
     } = filterDto;
     const skip = (page - 1) * limit;
 
-    const queryBuilder = this.studentRepository.createQueryBuilder('student');
-
-    queryBuilder
-      .innerJoin('student.user', 'user')
-      .innerJoin('student.class', 'class')
-      .innerJoin('student.major', 'major')
-      .select([
-        'student.id',
-        'student.studentCode',
-        'student.academicYear',
-        'student.gpa',
-        'student.enrollmentDate',
-        'student.expectedGraduationDate',
-        'user.id',
-        'user.firstName',
-        'user.lastName',
-        'user.userCode',
-        'user.universityEmail',
-        'user.personalEmail',
-        'user.avatarUrl',
-        'user.status',
-        'user.phoneNumber',
-        'class.id',
-        'class.name',
-        'major.id',
-        'major.name',
-      ]);
+    // Build base query for filtering
+    const baseQuery = this.studentRepository
+      .createQueryBuilder('student')
+      .leftJoin('student.user', 'user')
+      .leftJoin('student.class', 'class')
+      .leftJoin('student.major', 'major');
 
     if (search) {
       const searchTerm = `%${search.toLowerCase()}%`;
-      queryBuilder.andWhere(
+      baseQuery.andWhere(
         '(LOWER(user.firstName) LIKE :search OR LOWER(user.lastName) LIKE :search OR LOWER(user.userCode) LIKE :search OR LOWER(user.universityEmail) LIKE :search OR LOWER(user.personalEmail) LIKE :search OR LOWER(student.studentCode) LIKE :search)',
         { search: searchTerm },
       );
     }
     if (classId) {
-      queryBuilder.andWhere('student.classId = :classId', { classId });
+      baseQuery.andWhere('student.classId = :classId', { classId });
     }
     if (majorId) {
-      queryBuilder.andWhere('student.majorId = :majorId', { majorId });
+      baseQuery.andWhere('student.majorId = :majorId', { majorId });
     }
     if (academicYear) {
-      queryBuilder.andWhere('student.academicYear = :academicYear', {
+      baseQuery.andWhere('student.academicYear = :academicYear', {
         academicYear,
       });
     }
 
-    queryBuilder
-      .orderBy('user.lastName', 'ASC')
-      .addOrderBy('user.firstName', 'ASC');
-    queryBuilder.skip(skip).take(limit);
+    // Get total count
+    const total = await baseQuery.getCount();
 
-    const [data, total] = await queryBuilder.getManyAndCount();
+    // Build query for data with relations
+    const dataQuery = this.studentRepository
+      .createQueryBuilder('student')
+      .leftJoinAndSelect('student.user', 'user')
+      .leftJoinAndSelect('student.class', 'class')
+      .leftJoinAndSelect('student.major', 'major');
+
+    // Apply same filters
+    if (search) {
+      const searchTerm = `%${search.toLowerCase()}%`;
+      dataQuery.andWhere(
+        '(LOWER(user.firstName) LIKE :search OR LOWER(user.lastName) LIKE :search OR LOWER(user.userCode) LIKE :search OR LOWER(user.universityEmail) LIKE :search OR LOWER(user.personalEmail) LIKE :search OR LOWER(student.studentCode) LIKE :search)',
+        { search: searchTerm },
+      );
+    }
+    if (classId) {
+      dataQuery.andWhere('student.classId = :classId', { classId });
+    }
+    if (majorId) {
+      dataQuery.andWhere('student.majorId = :majorId', { majorId });
+    }
+    if (academicYear) {
+      dataQuery.andWhere('student.academicYear = :academicYear', {
+        academicYear,
+      });
+    }
+
+    // Apply pagination and ordering
+    dataQuery
+      .orderBy('user.lastName', 'ASC')
+      .addOrderBy('user.firstName', 'ASC')
+      .skip(skip)
+      .take(limit);
+
+    const data = await dataQuery.getMany();
+
+    // Remove password from user data
+    const sanitizedData = data.map((student) => ({
+      ...student,
+      user: student.user ? _.omit(student.user, ['password']) : null,
+    })) as StudentEntity[];
+
     const meta = generatePaginationMeta(total, page, limit);
 
-    return { data, meta };
+    return { data: sanitizedData, meta };
   }
 
   /**

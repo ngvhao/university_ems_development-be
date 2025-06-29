@@ -6,6 +6,7 @@ import { ECourseType } from 'src/utils/enums/course-type.enum';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { LecturerCourseEntity } from 'src/modules/lecturer_course/entities/lecturer_course.entity';
 import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.entity';
+import { CourseFacultyEntity } from 'src/modules/course_faculty/entities/course_faculty.entity';
 
 @Entity('courses')
 export class CourseEntity extends IEntity {
@@ -67,4 +68,11 @@ export class CourseEntity extends IEntity {
 
   @OneToMany(() => ClassGroupEntity, (classGroup) => classGroup.course)
   classGroups: ClassGroupEntity[];
+
+  @ApiPropertyOptional({
+    type: () => [CourseFacultyEntity],
+    description: 'Các khoa có liên quan đến môn học này',
+  })
+  @OneToMany(() => CourseFacultyEntity, (courseFaculty) => courseFaculty.course)
+  courseFaculties: CourseFacultyEntity[];
 }

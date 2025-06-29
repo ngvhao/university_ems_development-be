@@ -43,7 +43,7 @@ export class FilterClassGroupDto {
   })
   @IsOptional()
   @Type(() => Number)
-  majorId: number;
+  majorId?: number;
 
   @ApiPropertyOptional({
     name: 'yearAdmission',
@@ -51,6 +51,7 @@ export class FilterClassGroupDto {
     type: Number,
     description: 'Năm nhập học hoặc năm của chương trình',
   })
+  @IsOptional()
   @IsNumber()
-  yearAdmission: number;
+  yearAdmission?: number;
 }

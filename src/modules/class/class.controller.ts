@@ -5,13 +5,13 @@ import {
   Get,
   Param,
   ParseIntPipe,
-  Patch,
   Post,
   Query,
   UseGuards,
   HttpCode,
   HttpStatus,
   Res,
+  Put,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ClassService } from './class.service';
@@ -132,7 +132,7 @@ export class ClassController {
     }).send(res);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseGuards(RolesGuard)
   @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
   @ApiOperation({ summary: 'Cập nhật thông tin một lớp học' })

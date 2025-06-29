@@ -14,7 +14,6 @@ import {
   LessThanOrEqual,
   MoreThanOrEqual,
   In,
-  FindOptionsRelations,
   FindOptionsSelect,
 } from 'typeorm';
 import { ClassGroupEntity } from './entities/class_group.entity';
@@ -335,12 +334,12 @@ export class ClassGroupService {
   async findAll({
     filterDto,
     paginationDto,
-    relations,
+    // relations,
     // select,
   }: {
     filterDto: FilterClassGroupDto;
     paginationDto: PaginationDto;
-    relations?: FindOptionsRelations<ClassGroupEntity>;
+    // relations?: FindOptionsRelations<ClassGroupEntity>;
     select?: FindOptionsSelect<ClassGroupEntity>;
   }): Promise<{ data: ClassGroupEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
@@ -367,16 +366,15 @@ export class ClassGroupService {
 
     const [data, total] = await this.classGroupRepository.findAndCount({
       where,
-      relations: relations ? relations : ['course', 'semester'],
-      skip: (page - 1) * limit,
-      take: limit,
-      select: {
+      relations: {
+        course: true,
+        semester: true,
         schedules: {
-          room: true,
           timeSlot: true,
         },
-        course: true,
       },
+      skip: (page - 1) * limit,
+      take: limit,
       order: { semesterId: 'ASC', groupNumber: 'ASC' },
     });
 

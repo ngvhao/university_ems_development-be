@@ -27,12 +27,25 @@ export class UserService {
    * @throws NotFoundException - Nếu không tìm thấy người dùng.
    */
   async getUserById(id: number): Promise<UserEntity> {
+    console.log('UserService.getUserById - Looking for user with ID:', id);
+    
     const user = await this.userRepository.findOne({
       where: { id },
+      select: ['id', 'universityEmail', 'personalEmail', 'firstName', 'lastName', 'role', 'isActive', 'avatarUrl', 'phoneNumber', 'identityCardNumber', 'dateOfBirth', 'gender', 'hometown', 'permanentAddress', 'temporaryAddress', 'nationality', 'ethnicity', 'createdAt', 'updatedAt']
     });
+    
     if (!user) {
+      console.log('UserService.getUserById - User not found for ID:', id);
       throw new NotFoundException(`Không tìm thấy người dùng với ID ${id}.`);
     }
+    
+    console.log('UserService.getUserById - User found:', {
+      id: user.id,
+      role: user.role,
+      roleType: typeof user.role,
+      email: user.universityEmail
+    });
+    
     return user;
   }
 

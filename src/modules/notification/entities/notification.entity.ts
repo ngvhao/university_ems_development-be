@@ -27,22 +27,19 @@ export class NotificationEntity extends IEntity {
 
   @Index()
   @Column({
-    type: 'varchar',
-    length: 50,
+    type: 'enum',
     enum: ENotificationType,
-    nullable: true,
     comment:
-      'ACADEMIC = 0, EVENT = 1, SURVEY = 2, SYSTEM = 3, FEE = 4, EXAM = 5, GENERAL = 6',
+      'ACADEMIC = 7, EVENT = 1, SURVEY = 2, SYSTEM = 3, FEE = 4, EXAM = 5, GENERAL = 6',
   })
   notificationType: ENotificationType;
 
   @Index()
   @Column({
-    type: 'varchar',
-    length: 50,
+    type: 'enum',
     enum: ENotificationPriority,
     default: ENotificationPriority.MEDIUM,
-    comment: 'HIGH = 0, MEDIUM = 1, LOW = 2',
+    comment: 'HIGH = 3, MEDIUM = 1, LOW = 2',
   })
   priority: ENotificationPriority;
 
@@ -78,7 +75,7 @@ export class NotificationEntity extends IEntity {
     length: 50,
     enum: ENotificationStatus,
     default: ENotificationStatus.DRAFT,
-    comment: 'DRAFT = 0, SCHEDULED = 1, SENT = 2, ARCHIVED_BY_ADMIN = 3',
+    comment: 'DRAFT = 4, SCHEDULED = 1, SENT = 2, ARCHIVED_BY_ADMIN = 3',
   })
   status: ENotificationStatus;
 

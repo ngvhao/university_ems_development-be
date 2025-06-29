@@ -1,5 +1,6 @@
 import { DepartmentEntity } from 'src/modules/department/entities/department.entity';
 import { FacultyRegistrationScheduleEntity } from 'src/modules/faculty_registration_schedule/entities/faculty_registration_schedule.entity';
+import { CourseFacultyEntity } from 'src/modules/course_faculty/entities/course_faculty.entity';
 import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { Entity, Column, OneToMany, Index } from 'typeorm';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -44,4 +45,11 @@ export class FacultyEntity extends IEntity {
     { cascade: true },
   )
   registrationSchedules: FacultyRegistrationScheduleEntity[];
+
+  @ApiPropertyOptional({
+    type: () => [CourseFacultyEntity],
+    description: 'Các môn học liên quan đến khoa này',
+  })
+  @OneToMany(() => CourseFacultyEntity, (courseFaculty) => courseFaculty.faculty)
+  courseFaculties: CourseFacultyEntity[];
 }
