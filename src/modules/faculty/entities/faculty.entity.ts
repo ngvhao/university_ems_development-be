@@ -50,6 +50,9 @@ export class FacultyEntity extends IEntity {
     type: () => [CourseFacultyEntity],
     description: 'Các môn học liên quan đến khoa này',
   })
-  @OneToMany(() => CourseFacultyEntity, (courseFaculty) => courseFaculty.faculty)
+  @OneToMany(
+    () => CourseFacultyEntity,
+    (courseFaculty) => courseFaculty.faculty,
+  )
   courseFaculties: CourseFacultyEntity[];
 }
