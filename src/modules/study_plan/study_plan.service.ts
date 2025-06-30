@@ -432,7 +432,13 @@ export class StudyPlanService {
 
     const [data, total] = await this.studyPlanRepository.findAndCount({
       where,
-      relations: ['course'],
+      relations: {
+        course: true,
+        student: {
+          user: true,
+        },
+        semester: true,
+      },
       skip: (page - 1) * limit,
       take: limit,
       order: order
