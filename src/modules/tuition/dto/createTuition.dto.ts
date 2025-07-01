@@ -8,7 +8,7 @@ import {
   IsString,
   Min,
 } from 'class-validator';
-import { ETuitionStatus } from 'src/utils/enums/tuition.enum';
+import { ETuitionStatus, ETuitionType } from 'src/utils/enums/tuition.enum';
 
 export class CreateTuitionDto {
   @ApiProperty({ example: 101, description: 'ID của sinh viên' })
@@ -21,13 +21,50 @@ export class CreateTuitionDto {
   @IsNumber({}, { message: 'ID học kỳ phải là một số' })
   semesterId: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
+    example: ETuitionType.REGULAR,
+    enum: ETuitionType,
+    description: 'Loại học phí (mặc định là REGULAR)',
+    default: ETuitionType.REGULAR,
+  })
+  @IsOptional()
+  @IsEnum(ETuitionType, { message: 'Loại học phí không hợp lệ' })
+  tuitionType?: ETuitionType;
+
+  @ApiPropertyOptional({
+    example: 'Học phí khóa học',
+    description: 'Mô tả học phí',
+  })
+  @IsOptional()
+  @IsString({ message: 'Mô tả phải là một chuỗi' })
+  description?: string;
+
+  @ApiPropertyOptional({
+    example: 700000,
+    description: 'Giá tiền mỗi tín chỉ (mặc định là 700000 VND)',
+    type: 'number',
+    format: 'float',
+    default: 700000,
+  })
+  @IsOptional()
+  @IsNumber(
+    { maxDecimalPlaces: 2 },
+    {
+      message:
+        'Giá tiền mỗi tín chỉ phải là một số với tối đa 2 chữ số thập phân',
+    },
+  )
+  @Min(0, { message: 'Giá tiền mỗi tín chỉ không được âm' })
+  pricePerCredit?: number;
+
+  @ApiPropertyOptional({
     example: 5000000,
-    description: 'Tổng số tiền phải đóng',
+    description:
+      'Tổng số tiền phải đóng (sẽ được tính tự động nếu không cung cấp)',
     type: 'number',
     format: 'float',
   })
-  @IsNotEmpty({ message: 'Tổng số tiền phải đóng không được để trống' })
+  @IsOptional()
   @IsNumber(
     { maxDecimalPlaces: 2 },
     {
@@ -36,7 +73,7 @@ export class CreateTuitionDto {
     },
   )
   @Min(0, { message: 'Tổng số tiền phải đóng không được âm' })
-  totalAmountDue: number;
+  totalAmountDue?: number;
 
   @ApiPropertyOptional({
     example: 0,
@@ -77,7 +114,20 @@ export class CreateTuitionDto {
     {},
     { message: 'Ngày đến hạn phải là một ngày hợp lệ (YYYY-MM-DD)' },
   )
-  dueDate: Date;
+  dueDate: string;
+
+  @ApiPropertyOptional({
+    example: '2024-01-01',
+    description: 'Ngày phát hành (mặc định là ngày hiện tại)',
+    type: 'string',
+    format: 'date',
+  })
+  @IsOptional()
+  @IsDateString(
+    {},
+    { message: 'Ngày phát hành phải là một ngày hợp lệ (YYYY-MM-DD)' },
+  )
+  issueDate?: Date;
 
   @ApiPropertyOptional({
     example: 'Ghi chú thêm về khoản học phí',

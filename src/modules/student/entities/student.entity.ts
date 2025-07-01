@@ -16,6 +16,7 @@ import { EnrollmentCourseEntity } from 'src/modules/enrollment_course/entities/e
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EStudentStatus } from 'src/utils/enums/user.enum';
 import { TuitionEntity } from 'src/modules/tuition/entities/tuition.entity';
+import { GradeDetailEntity } from 'src/modules/grade_detail/entities/grade_detail.entity';
 
 @Entity('students')
 @Index(['studentCode'], { unique: true })
@@ -120,4 +121,10 @@ export class StudentEntity extends IEntity {
     eager: false,
   })
   tuitions: TuitionEntity[];
+
+  @ApiPropertyOptional({ type: () => [GradeDetailEntity] })
+  @OneToMany(() => GradeDetailEntity, (gradeDetail) => gradeDetail.student, {
+    eager: false,
+  })
+  gradeDetails: GradeDetailEntity[];
 }

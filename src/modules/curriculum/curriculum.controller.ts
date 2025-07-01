@@ -114,7 +114,8 @@ export class CurriculumController {
   async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
     const result = await this.curriculumService.findAll(paginationDto);
     return new SuccessResponse({
-      ...result,
+      data: result.data,
+      metadata: result.meta,
       message: 'Lấy danh sách chương trình đào tạo thành công',
     }).send(res);
   }
@@ -167,6 +168,8 @@ export class CurriculumController {
   }
 
   @Get(':id')
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
   @ApiOperation({
     summary: 'Lấy thông tin chi tiết một chương trình đào tạo bằng ID',
   })

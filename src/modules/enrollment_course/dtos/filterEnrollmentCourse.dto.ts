@@ -32,4 +32,14 @@ export class FilterEnrollmentCourseDto {
   @IsOptional()
   @IsEnum(EEnrollmentStatus, { message: 'Trạng thái đăng ký không hợp lệ' })
   status?: EEnrollmentStatus;
+
+  @ApiPropertyOptional({
+    description: 'Lọc theo ID học kỳ',
+    example: 1,
+    type: Number,
+  })
+  @IsOptional()
+  @IsPositive({ message: 'ID học kỳ phải là số dương' })
+  @Type(() => Number)
+  semesterId?: number;
 }

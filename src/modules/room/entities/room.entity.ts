@@ -1,7 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ERoomType } from 'src/utils/enums/room.enum';
 import { IEntity } from 'src/utils/interfaces/entity.interface';
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, OneToMany } from 'typeorm';
+import { ExamScheduleEntity } from 'src/modules/exam_schedule/entities/exam_schedule.entity';
 
 @Entity('rooms')
 export class RoomEntity extends IEntity {
@@ -37,4 +38,11 @@ export class RoomEntity extends IEntity {
   })
   @Column()
   capacity: number;
+
+  @ApiPropertyOptional({
+    type: () => [ExamScheduleEntity],
+    description: 'Danh sách lịch thi tại phòng này',
+  })
+  @OneToMany(() => ExamScheduleEntity, (examSchedule) => examSchedule.room)
+  examSchedules: ExamScheduleEntity[];
 }

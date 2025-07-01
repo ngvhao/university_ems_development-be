@@ -82,6 +82,12 @@ export class EnrollmentCourseController {
     enum: EEnrollmentStatus,
     description: 'Lọc theo trạng thái đăng ký',
   })
+  @ApiQuery({
+    name: 'semesterId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID học kỳ',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Lấy danh sách thành công.',
@@ -122,13 +128,14 @@ export class EnrollmentCourseController {
       }
     }
 
-    const result = await this.enrollmentService.findAll(
+    const { data, meta } = await this.enrollmentService.findAll(
       paginationDto,
       filterDto,
       currentUser,
     );
     return new SuccessResponse({
-      ...result,
+      data,
+      metadata: meta,
       message: 'Lấy danh sách đăng ký thành công.',
     }).send(res);
   }

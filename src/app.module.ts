@@ -36,6 +36,8 @@ import { SettingModule } from './modules/setting/setting.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { NotificationRecipientModule } from './modules/notification_recipient/notification_recipient.module';
 import { NotificationRuleModule } from './modules/notification_audience_rule/notification_audience_rule.module';
+import { ExamScheduleModule } from './modules/exam_schedule/exam_schedule.module';
+import { GradeDetailModule } from './modules/grade_detail/grade_detail.module';
 
 @Module({
   imports: [
@@ -74,6 +76,8 @@ import { NotificationRuleModule } from './modules/notification_audience_rule/not
     NotificationModule,
     NotificationRuleModule,
     NotificationRecipientModule,
+    ExamScheduleModule,
+    GradeDetailModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -281,7 +281,7 @@ export class EnrollmentCourseService {
     currentUser: UserEntity,
   ): Promise<{ data: EnrollmentCourseEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
-    const { classGroupId, status } = filterDto;
+    const { classGroupId, status, semesterId } = filterDto;
     let { studentId } = filterDto;
 
     const where: FindOptionsWhere<EnrollmentCourseEntity> = {};
@@ -320,17 +320,20 @@ export class EnrollmentCourseService {
     if (status) {
       where.status = status;
     }
-
+    if (semesterId) {
+      where.classGroup = {
+        semesterId: semesterId,
+      };
+    }
     // Query dữ liệu
     const [data, total] = await this.enrollmentRepository.findAndCount({
       where,
-      relations: [
-        'student',
-        'classGroup',
-        'classGroup.courseSemester',
-        'classGroup.courseSemester.course',
-        'classGroup.courseSemester.semester',
-      ],
+      relations: {
+        classGroup: {
+          course: true,
+          semester: true,
+        },
+      },
       skip: (page - 1) * limit,
       take: limit,
       order: { enrollmentDate: 'DESC' },

@@ -134,7 +134,8 @@ export class CurriculumCourseController {
   async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
     const result = await this.curriculumCourseService.findAll(paginationDto);
     return new SuccessResponse({
-      ...result,
+      data: result.data,
+      metadata: result.meta,
       message: 'Lấy danh sách môn học trong CTĐT thành công',
     }).send(res);
   }
@@ -163,12 +164,16 @@ export class CurriculumCourseController {
   })
   async findByCurriculum(
     @Param('curriculumId', ParseIntPipe) curriculumId: number,
+    @Query() paginationDto: PaginationDto,
     @Res() res: Response,
   ) {
-    const data =
-      await this.curriculumCourseService.findByCurriculum(curriculumId);
+    const result = await this.curriculumCourseService.findByCurriculum(
+      curriculumId,
+      paginationDto,
+    );
     return new SuccessResponse({
-      data,
+      data: result.data,
+      metadata: result.meta,
       message: `Lấy danh sách môn học của CTĐT ID ${curriculumId} thành công.`,
     }).send(res);
   }

@@ -12,6 +12,8 @@ import { EnrollmentCourseService } from '../enrollment_course/enrollment_course.
 import { TuitionService } from '../tuition/tuition.service';
 import { CreateTuitionDetailDto } from './dto/createTuitionDetail.dto';
 import { UpdateTuitionDetailDto } from './dto/updateTutionDetail.dto';
+import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
+import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 
 @Injectable()
 export class TuitionDetailService {
@@ -81,23 +83,28 @@ export class TuitionDetailService {
     paginationDto: PaginationDto,
   ): Promise<{
     data: TuitionDetailEntity[];
-    total: number;
-    page: number;
-    limit: number;
+    meta: MetaDataInterface;
   }> {
-    await this.tuitionService.findOne(tuitionId); // Validate tuition exists
+    await this.tuitionService.findOne(tuitionId);
 
     const { page = 1, limit = 10 } = paginationDto;
     const skip = (page - 1) * limit;
 
     const [data, total] = await this.tuitionDetailRepository.findAndCount({
       where: { tuitionId },
-      relations: ['enrollment', 'enrollment.course'], // Load thêm thông tin môn học nếu cần
+      relations: {
+        enrollment: {
+          classGroup: {
+            course: true,
+          },
+        },
+      },
       skip,
       take: limit,
       order: { createdAt: 'ASC' },
     });
-    return { data, total, page, limit };
+    const meta = generatePaginationMeta(total, page, limit);
+    return { data, meta };
   }
 
   async findOne(id: number): Promise<TuitionDetailEntity> {

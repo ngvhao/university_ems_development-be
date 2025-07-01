@@ -14,6 +14,8 @@ import {
   Index,
   OneToMany,
 } from 'typeorm';
+import { ExamScheduleEntity } from 'src/modules/exam_schedule/entities/exam_schedule.entity';
+import { GradeDetailEntity } from 'src/modules/grade_detail/entities/grade_detail.entity';
 
 @Entity('class_groups')
 @Index(['courseId', 'groupNumber', 'semesterId'], { unique: true })
@@ -109,4 +111,21 @@ export class ClassGroupEntity extends IEntity {
     (classWeeklySchedule) => classWeeklySchedule.classGroup,
   )
   schedules: ClassWeeklyScheduleEntity[];
+
+  @ApiPropertyOptional({
+    type: () => [ExamScheduleEntity],
+    description: 'Danh sách lịch thi của nhóm lớp',
+  })
+  @OneToMany(
+    () => ExamScheduleEntity,
+    (examSchedule) => examSchedule.classGroup,
+  )
+  examSchedules: ExamScheduleEntity[];
+
+  @ApiPropertyOptional({
+    type: () => [GradeDetailEntity],
+    description: 'Danh sách điểm chi tiết của nhóm lớp',
+  })
+  @OneToMany(() => GradeDetailEntity, (gradeDetail) => gradeDetail.classGroup)
+  gradeDetails: GradeDetailEntity[];
 }

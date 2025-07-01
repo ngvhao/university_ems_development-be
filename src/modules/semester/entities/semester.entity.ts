@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.entity';
 import { CurriculumCourseEntity } from 'src/modules/curriculum_course/entities/curriculum_course.entity';
 import { FacultyRegistrationScheduleEntity } from 'src/modules/faculty_registration_schedule/entities/faculty_registration_schedule.entity';
@@ -7,6 +7,7 @@ import { StudyPlanEntity } from 'src/modules/study_plan/entities/study_plan.enti
 import { TuitionEntity } from 'src/modules/tuition/entities/tuition.entity';
 import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { Entity, Column, OneToMany } from 'typeorm';
+import { ExamScheduleEntity } from 'src/modules/exam_schedule/entities/exam_schedule.entity';
 
 @Entity('semesters')
 export class SemesterEntity extends IEntity {
@@ -88,4 +89,11 @@ export class SemesterEntity extends IEntity {
   })
   @OneToMany(() => NotificationEntity, (notification) => notification.semester)
   notifications: NotificationEntity[];
+
+  @ApiPropertyOptional({
+    type: () => [ExamScheduleEntity],
+    description: 'Danh sách lịch thi trong học kỳ',
+  })
+  @OneToMany(() => ExamScheduleEntity, (examSchedule) => examSchedule.semester)
+  examSchedules: ExamScheduleEntity[];
 }

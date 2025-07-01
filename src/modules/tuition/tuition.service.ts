@@ -10,7 +10,11 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOneOptions, In, Not, DataSource } from 'typeorm';
 import { TuitionEntity } from './entities/tuition.entity';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
-import { EPaymentMethod, ETuitionStatus } from 'src/utils/enums/tuition.enum';
+import {
+  EPaymentMethod,
+  ETuitionStatus,
+  ETuitionType,
+} from 'src/utils/enums/tuition.enum';
 import { StudentService } from '../student/student.service';
 import { SemesterService } from '../semester/semester.service';
 import { CreateTuitionDto } from './dto/createTuition.dto';
@@ -158,8 +162,12 @@ export class TuitionService {
     const {
       studentId,
       semesterId,
-      totalAmountDue,
+      totalAmountDue: providedTotalAmountDue,
       amountPaid = 0,
+      pricePerCredit = 700000,
+      tuitionType = ETuitionType.REGULAR,
+      description = 'Học phí khóa học',
+      issueDate = new Date(),
       status: DtoStatus,
       ...rest
     } = createTuitionDto;
@@ -168,36 +176,138 @@ export class TuitionService {
 
     // Kiểm tra xem đã tồn tại bản ghi học phí cho sinh viên và học kỳ này chưa
     const existingTuition = await this.tuitionRepository.findOne({
-      where: { studentId, semesterId },
+      where: { studentId, semesterId, tuitionType },
     });
     if (existingTuition) {
       throw new ConflictException(
-        `Học phí cho sinh viên ID ${studentId} và học kỳ ID ${semesterId} đã tồn tại.`,
+        `Học phí loại ${tuitionType} cho sinh viên ID ${studentId} và học kỳ ID ${semesterId} đã tồn tại.`,
       );
     }
 
-    if (amountPaid > totalAmountDue) {
-      throw new BadRequestException(
-        'Số tiền đã thanh toán không thể lớn hơn tổng số tiền phải đóng.',
-      );
-    }
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    const calculated = await this._calculateBalanceAndStatus(
-      totalAmountDue,
-      amountPaid,
+    console.log(
+      `Transaction CREATED for single tuition creation - Student: ${studentId}, Semester: ${semesterId}, Type: ${tuitionType}`,
     );
 
-    const newTuition = this.tuitionRepository.create({
-      ...rest,
-      studentId,
-      semesterId,
-      totalAmountDue,
-      amountPaid,
-      balance: calculated.balance,
-      status: DtoStatus !== undefined ? DtoStatus : calculated.status,
-    });
+    try {
+      // Tìm các enrollments của sinh viên trong học kỳ này
+      const enrollmentsList = await queryRunner.manager.find(
+        EnrollmentCourseEntity,
+        {
+          where: {
+            studentId: studentId,
+            classGroup: {
+              semesterId: semesterId,
+            },
+          },
+          relations: ['student', 'classGroup', 'classGroup.course'],
+        },
+      );
 
-    return await this.tuitionRepository.save(newTuition);
+      // Tạo tuition entity
+      let tuition = new TuitionEntity();
+      tuition.studentId = studentId;
+      tuition.semesterId = semesterId;
+      tuition.tuitionType = tuitionType;
+      tuition.description = description;
+      tuition.issueDate = new Date(issueDate);
+      tuition.dueDate = new Date(rest.dueDate);
+      tuition.notes = rest.notes;
+      tuition.status = ETuitionStatus.PENDING;
+      tuition.totalAmountDue = 0;
+      tuition.amountPaid = amountPaid;
+      tuition.balance = 0;
+
+      tuition = await queryRunner.manager.save(TuitionEntity, tuition);
+      console.log(
+        `CREATED new Tuition (ID: ${tuition.id}) for student ID: ${studentId}`,
+      );
+
+      let calculatedTotalAmountDue = 0;
+
+      // Tạo tuition details từ enrollments nếu có
+      if (enrollmentsList.length > 0) {
+        for (const enrollment of enrollmentsList) {
+          const existingTuitionDetail = await queryRunner.manager.findOne(
+            TuitionDetailEntity,
+            {
+              where: {
+                tuitionId: tuition.id,
+                enrollmentId: enrollment.id,
+              },
+            },
+          );
+
+          if (existingTuitionDetail) {
+            console.log(
+              `SKIPPED: TuitionDetail for enrollment ID ${enrollment.id} already exists in Tuition ID ${tuition.id}.`,
+            );
+            continue;
+          }
+
+          const tuitionDetail = new TuitionDetailEntity();
+          tuitionDetail.tuition = tuition;
+          tuitionDetail.enrollmentId = enrollment.id;
+
+          const course = enrollment.classGroup?.course;
+          const feeForThisCourse = pricePerCredit * (course?.credit || 0);
+
+          tuitionDetail.amount = feeForThisCourse;
+          tuitionDetail.numberOfCredits = course?.credit || 0;
+          tuitionDetail.pricePerCredit = pricePerCredit;
+
+          await queryRunner.manager.save(TuitionDetailEntity, tuitionDetail);
+          console.log(
+            `CREATED TuitionDetail for enrollment ID ${enrollment.id} (Tuition ID: ${tuition.id}), Amount: ${feeForThisCourse}`,
+          );
+          calculatedTotalAmountDue += feeForThisCourse;
+        }
+      }
+
+      // Sử dụng totalAmountDue được cung cấp hoặc tính toán từ enrollments
+      const finalTotalAmountDue =
+        providedTotalAmountDue !== undefined
+          ? providedTotalAmountDue
+          : calculatedTotalAmountDue;
+
+      if (amountPaid > finalTotalAmountDue) {
+        throw new BadRequestException(
+          'Số tiền đã thanh toán không thể lớn hơn tổng số tiền phải đóng.',
+        );
+      }
+
+      const calculated = await this._calculateBalanceAndStatus(
+        finalTotalAmountDue,
+        amountPaid,
+      );
+
+      // Cập nhật tuition với thông tin tài chính
+      tuition.totalAmountDue = finalTotalAmountDue;
+      tuition.balance = calculated.balance;
+      tuition.status = DtoStatus !== undefined ? DtoStatus : calculated.status;
+
+      tuition = await queryRunner.manager.save(TuitionEntity, tuition);
+      console.log(
+        `UPDATED Tuition (ID: ${tuition.id}) for student ID: ${studentId} with totalAmountDue: ${tuition.totalAmountDue}`,
+      );
+
+      await queryRunner.commitTransaction();
+      console.log(
+        'Transaction COMMITTED successfully for single tuition creation.',
+      );
+
+      return tuition;
+    } catch (error) {
+      console.error('Transaction FAILED for single tuition creation:', error);
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      console.log('Transaction RELEASED for single tuition creation.');
+      await queryRunner.release();
+    }
   }
 
   async createTuitionsForStudentBatch(
@@ -370,7 +480,14 @@ export class TuitionService {
     const skip = (page - 1) * limit;
 
     const [data, total] = await this.tuitionRepository.findAndCount({
-      relations: ['student', 'semester', 'details', 'paymentTransactions'],
+      relations: {
+        student: {
+          user: true,
+        },
+        semester: true,
+        details: true,
+        paymentTransactions: true,
+      },
       order: { createdAt: 'DESC' },
       skip,
       take: limit,
@@ -384,7 +501,14 @@ export class TuitionService {
   async findOne(id: number): Promise<TuitionEntity> {
     const options: FindOneOptions<TuitionEntity> = {
       where: { id },
-      relations: ['student', 'semester', 'details', 'paymentTransactions'],
+      relations: {
+        student: {
+          user: true,
+        },
+        semester: true,
+        details: true,
+        paymentTransactions: true,
+      },
     };
     const tuition = await this.tuitionRepository.findOne(options);
     if (!tuition) {

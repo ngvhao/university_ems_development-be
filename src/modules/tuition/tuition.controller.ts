@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
   Query,
   Res,
@@ -13,6 +12,7 @@ import {
   HttpStatus,
   Req,
   UseInterceptors,
+  Put,
 } from '@nestjs/common';
 import { TuitionService } from './tuition.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -336,7 +336,7 @@ export class TuitionController {
     }).send(res);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseGuards(RolesGuard)
   @Roles([EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER])
   @ApiOperation({ summary: 'Cập nhật thông tin một bản ghi học phí' })

@@ -238,7 +238,14 @@ export class CurriculumService {
 
     const [data, total] = await this.curriculumRepository.findAndCount({
       where,
-      relations: ['major'],
+      relations: {
+        major: true,
+        curriculumCourses: {
+          course: true,
+          semester: true,
+          prerequisiteCourse: true,
+        },
+      },
       skip: (page - 1) * limit,
       take: limit,
       order: { majorId: 'ASC', startAcademicYear: 'DESC' },
@@ -259,6 +266,8 @@ export class CurriculumService {
       'major',
       'curriculumCourses',
       'curriculumCourses.course',
+      'curriculumCourses.semester',
+      'curriculumCourses.prerequisiteCourse',
     ]);
   }
 

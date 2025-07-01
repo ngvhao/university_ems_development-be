@@ -12,12 +12,12 @@ import { MajorEntity } from './entities/major.entity';
 import { CreateMajorDto } from './dtos/createMajor.dto';
 import { UpdateMajorDto } from './dtos/updateMajor.dto';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
-import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { DepartmentService } from '../department/department.service';
 import { StudentService } from '../student/student.service';
 import { ClassService } from '../class/class.service';
 import { CurriculumService } from '../curriculum/curriculum.service';
+import { FilterMajorDto } from './dtos/filterMajor.dto';
 
 @Injectable()
 export class MajorService {
@@ -109,18 +109,22 @@ export class MajorService {
    * @returns Promise<{ data: MajorEntity[]; meta: MetaDataInterface }> - Danh sách và metadata.
    */
   async findAll(
-    paginationDto: PaginationDto,
+    filterDto: FilterMajorDto,
   ): Promise<{ data: MajorEntity[]; meta: MetaDataInterface }> {
-    const { page = 1, limit = 10 } = paginationDto;
+    const { page = 1, limit = 10, facultyId } = filterDto;
     // const where: FindOptionsWhere<MajorEntity> = {};
 
     const [data, total] = await this.majorRepository.findAndCount({
-      // where,
-      relations: ['department'],
+      where: {
+        department: facultyId ? { facultyId } : undefined,
+      },
+      relations: {
+        department: true,
+      },
 
       skip: (page - 1) * limit,
       take: limit,
-      order: { departmentId: 'ASC', name: 'ASC' },
+      order: { name: 'ASC' },
     });
 
     const meta = generatePaginationMeta(total, page, limit);

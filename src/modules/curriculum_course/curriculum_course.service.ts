@@ -245,13 +245,19 @@ export class CurriculumCourseService {
    */
   async findByCurriculum(
     curriculumId: number,
-  ): Promise<CurriculumCourseEntity[]> {
+    paginationDto: PaginationDto,
+  ): Promise<{ data: CurriculumCourseEntity[]; meta: MetaDataInterface }> {
+    const { page = 1, limit = 10 } = paginationDto;
     await this.curriculumService.findOne(curriculumId);
-    return this.curriculumCourseRepository.find({
+    const [data, total] = await this.curriculumCourseRepository.findAndCount({
       where: { curriculumId },
       relations: ['course', 'semester', 'prerequisiteCourse'], // Load tiên quyết
       order: { semesterId: 'ASC', course: { courseCode: 'ASC' } },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    const meta = generatePaginationMeta(total, page, limit);
+    return { data, meta };
   }
 
   /**

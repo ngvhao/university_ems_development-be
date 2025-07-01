@@ -123,12 +123,13 @@ export class TuitionDetailController {
     @Query() paginationDto: PaginationDto,
     @Res() res: Response,
   ) {
-    const result = await this.tuitionDetailService.findAllByTuitionId(
+    const { data, meta } = await this.tuitionDetailService.findAllByTuitionId(
       tuitionId,
       paginationDto,
     );
     return new SuccessResponse({
-      ...result,
+      data,
+      metadata: meta,
       message: `Lấy danh sách chi tiết cho học phí ID ${tuitionId} thành công`,
     }).send(res);
   }

@@ -21,7 +21,6 @@ import { CreateMajorDto } from './dtos/createMajor.dto';
 import { UpdateMajorDto } from './dtos/updateMajor.dto';
 import { SuccessResponse } from 'src/utils/response';
 import { Response } from 'express';
-import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -32,6 +31,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { MajorEntity } from './entities/major.entity';
+import { FilterMajorDto } from './dtos/filterMajor.dto';
 
 @ApiTags('Quản lý Ngành học (Majors)')
 @ApiBearerAuth('token')
@@ -101,10 +101,11 @@ export class MajorController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Chưa xác thực.',
   })
-  async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
-    const result = await this.majorService.findAll(paginationDto);
+  async findAll(@Query() filterDto: FilterMajorDto, @Res() res: Response) {
+    const { data, meta } = await this.majorService.findAll(filterDto);
     return new SuccessResponse({
-      ...result,
+      data,
+      metadata: meta,
       message: 'Lấy danh sách Ngành học thành công',
     }).send(res);
   }
