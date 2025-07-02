@@ -308,29 +308,6 @@ export class NotificationService {
     };
   }
 
-  private _checkUserMatchesSingleRule(
-    user: UserEntity,
-    rule: NotificationAudienceRuleEntity,
-  ): boolean {
-    switch (Number(rule.audienceType)) {
-      case EAudienceType.ALL_USERS:
-        return true;
-      case EAudienceType.ROLE:
-        return user.role.toString() === rule.audienceValue;
-      case EAudienceType.MAJOR:
-        return user.student?.majorId?.toString() === rule.audienceValue;
-      case EAudienceType.DEPARTMENT:
-        return user.lecturer?.departmentId?.toString() === rule.audienceValue;
-      case EAudienceType.USER_LIST:
-        const userListIds = rule.audienceValue
-          ?.split(',')
-          .map((id) => id.trim());
-        return userListIds?.includes(user.id.toString());
-      default:
-        return false;
-    }
-  }
-
   async findOne(
     id: number,
     loadRelations: boolean = true,
@@ -368,6 +345,7 @@ export class NotificationService {
     await this.findOne(id, false);
 
     const { audienceRules, ...notificationData } = updateNotificationDto;
+    console.log('audienceRules', audienceRules);
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -382,16 +360,16 @@ export class NotificationService {
         await queryRunner.manager.delete(NotificationAudienceRuleEntity, {
           notificationId: id,
         });
-        const rulesToSave = audienceRules.map((ruleDto) =>
-          queryRunner.manager.create(NotificationAudienceRuleEntity, {
-            ...ruleDto,
-            notificationId: id,
-          }),
-        );
+        console.log('delete success');
+        const rulesToSave = audienceRules.map((ruleDto) => ({
+          ...ruleDto,
+          notificationId: id,
+        }));
         await queryRunner.manager.save(
           NotificationAudienceRuleEntity,
           rulesToSave,
         );
+        console.log('audienceRules', audienceRules);
       } else if (
         audienceRules === null ||
         (Array.isArray(audienceRules) && audienceRules.length === 0)

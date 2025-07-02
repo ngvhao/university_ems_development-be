@@ -58,7 +58,7 @@ export class CreateNotificationDto {
   @ApiPropertyOptional({ description: 'ID học kỳ (nếu có)', example: 1 })
   @IsOptional()
   @IsInt({ message: 'ID học kỳ phải là số nguyên' })
-  semesterId?: number;
+  semesterId?: number | null;
   @ApiPropertyOptional({
     description: 'Danh sách đính kèm (mảng các URL hoặc tên tệp)',
     type: [String],

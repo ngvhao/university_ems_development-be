@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
   UseGuards,
   Query,
@@ -13,6 +12,7 @@ import {
   HttpStatus,
   Req,
   UseInterceptors,
+  Put,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -142,7 +142,7 @@ export class NotificationController {
     }).send(res);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseGuards(RolesGuard)
   @Roles([EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER])
   @ApiOperation({ summary: 'Cập nhật thông tin thông báo' })

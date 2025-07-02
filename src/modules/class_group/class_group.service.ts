@@ -371,6 +371,7 @@ export class ClassGroupService {
         semester: true,
         schedules: {
           timeSlot: true,
+          room: true,
         },
       },
       skip: (page - 1) * limit,

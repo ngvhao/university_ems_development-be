@@ -5,6 +5,7 @@ import _ from 'lodash';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UserService } from 'src/modules/user/user.service';
 import { jwtConstants } from 'src/utils/constants';
+import { EUserRole } from 'src/utils/enums/user.enum';
 import { LoggedInterface } from 'src/utils/interfaces/logged.interface';
 
 @Injectable()
@@ -23,7 +24,11 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  async validate(payload: any): Promise<LoggedInterface> {
+  async validate(payload: {
+    id: number;
+    sub: string;
+    role: EUserRole;
+  }): Promise<LoggedInterface> {
     try {
       const user = await this.userService.getUserById(payload.id);
       if (!user) {
