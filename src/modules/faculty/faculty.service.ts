@@ -108,7 +108,9 @@ export class FacultyService {
 
     const [data, total] = await this.facultyRepository.findAndCount({
       where,
-      loadRelationIds: { relations: ['departments'] },
+      relations: {
+        departments: true,
+      },
       skip: (page - 1) * limit,
       take: limit,
       order: { name: 'ASC' },

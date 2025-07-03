@@ -172,7 +172,7 @@ export class StudentService {
 
       const studentToCreate: Partial<StudentEntity> = {
         studentCode: studentCode,
-        status: EStudentStatus.ENROLLED,
+        status: EStudentStatus.STUDYING,
         userId: savedUser.id,
         majorId: majorId,
         classId: classId,
@@ -529,6 +529,12 @@ export class StudentService {
     }
   }
 
+  async getOneByUserId(userId: number): Promise<StudentEntity> {
+    return this.studentRepository.findOne({
+      where: { userId },
+    });
+  }
+
   /**
    * Lấy một sinh viên dựa trên điều kiện tùy chỉnh.
    * @param condition - Điều kiện tìm kiếm.
@@ -599,97 +605,4 @@ export class StudentService {
       user: s.user ? (_.omit(s.user, ['password']) as UserEntity) : null,
     }));
   }
-
-  // /**
-  //  * Tạo mã sinh viên duy nhất sử dụng giao dịch để đảm bảo tính đồng thời.
-  //  * @param facultyCode - Mã khoa (ví dụ: CNTT).
-  //  * @param academicYear - Khóa học (ví dụ: 2024).
-  //  * @param majorId - ID chuyên ngành.
-  //  * @returns Promise<string> - Mã sinh viên được tạo.
-  //  * @throws InternalServerErrorException - Nếu không thể tạo mã duy nhất.
-  //  */
-  // async generateStudentCode(
-  //   facultyCode: string,
-  //   academicYear: number,
-  //   majorId: number,
-  // ): Promise<string> {
-  //   const seqName = `student_code_seq_${academicYear}_${majorId}`;
-
-  //   await this.ensureSequenceExists(academicYear, majorId);
-
-  //   try {
-  //     const result = await this.studentRepository.query(
-  //       `SELECT nextval('${this.quoteIdentifier(seqName)}') as seq`,
-  //     );
-
-  //     const seqNumber = result[0]?.seq;
-  //     if (!seqNumber) {
-  //       throw new InternalServerErrorException(
-  //         'Không thể lấy giá trị từ sequence.',
-  //       );
-  //     }
-
-  //     const yearCode = academicYear.toString().slice(-2);
-  //     const indexStr = seqNumber.toString().padStart(5, '0');
-
-  //     return `${EFacultyCode[facultyCode]}${yearCode}${indexStr}`;
-  //   } catch (error) {
-  //     console.error(`Lỗi khi lấy giá trị sequence: ${error.message}`);
-  //     throw new InternalServerErrorException(
-  //       `Không thể tạo mã sinh viên cho năm học ${academicYear} và chuyên ngành ${majorId}.`,
-  //     );
-  //   }
-  // }
-
-  // /**
-  //  * Đảm bảo sequence tồn tại cho mỗi năm và mỗi ngành.
-  //  * @param year - Năm học (ví dụ: 2024).
-  //  * @param majorId - ID chuyên ngành.
-  //  * @throws InternalServerErrorException - Nếu không thể tạo sequence.
-  //  */
-  // async ensureSequenceExists(year: number, majorId: number): Promise<void> {
-  //   if (!Number.isInteger(year) || year < 2000 || year > 3000) {
-  //     throw new InternalServerErrorException(`Năm học không hợp lệ: ${year}`);
-  //   }
-  //   if (!Number.isInteger(majorId) || majorId <= 0) {
-  //     throw new InternalServerErrorException(
-  //       `ID chuyên ngành không hợp lệ: ${majorId}`,
-  //     );
-  //   }
-
-  //   const seqName = `student_code_seq_${year}_${majorId}`;
-
-  //   try {
-  //     const query = `
-  //     CREATE SEQUENCE IF NOT EXISTS ${this.quoteIdentifier(seqName)}
-  //     START WITH 1
-  //     INCREMENT BY 1
-  //     MINVALUE 1
-  //     NO CYCLE;
-  //   `;
-  //     await this.studentRepository.query(query);
-  //     console.log(`Sequence ${seqName} đã được đảm bảo tồn tại.`);
-  //   } catch (error) {
-  //     console.error(
-  //       `Không thể tạo sequence ${seqName} cho năm học ${year}, chuyên ngành ${majorId}: ${error.message}`,
-  //     );
-  //     throw new InternalServerErrorException(
-  //       `Không thể tạo sequence cho năm học ${year}, chuyên ngành ${majorId}.`,
-  //     );
-  //   }
-  // }
-
-  // /**
-  //  * Hàm trợ giúp để đảm bảo tên định danh SQL an toàn.
-  //  * @param identifier - Tên định danh (ví dụ: tên sequence).
-  //  * @returns Tên định danh đã được quote an toàn.
-  //  */
-  // private quoteIdentifier(identifier: string): string {
-  //   if (identifier.length > 63) {
-  //     throw new InternalServerErrorException(
-  //       `Tên sequence quá dài: ${identifier}`,
-  //     );
-  //   }
-  //   return `"${identifier.replace(/"/g, '""')}"`;
-  // }
 }

@@ -15,6 +15,16 @@ export class FilterStudyPlanDto {
   studentId?: number;
 
   @ApiPropertyOptional({
+    description: 'Lọc theo ID Khoa',
+    example: 1,
+    type: Number,
+  })
+  @IsOptional()
+  @IsPositive({ message: 'ID Khoa phải là số dương' })
+  @Type(() => Number)
+  facultyId?: number;
+
+  @ApiPropertyOptional({
     description: 'Lọc theo mã học kỳ',
     example: 5,
     type: Number,

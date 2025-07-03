@@ -420,6 +420,7 @@ export class StudyPlanService {
       )
     ) {
       if (studentId) where.studentId = studentId;
+      // if (facultyId) where.course = { courseFaculties: { facultyId } };
     } else {
       return { data: [], meta: generatePaginationMeta(0, page, limit) };
     }

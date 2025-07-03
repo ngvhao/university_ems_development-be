@@ -31,7 +31,12 @@ export class LecturerEntity extends IEntity {
     example: EAcademicRank.MASTER,
     enum: EAcademicRank,
   })
-  @Column({ nullable: true, enum: EAcademicRank })
+  @Column({
+    nullable: true,
+    type: 'enum',
+    enum: EAcademicRank,
+    comment: 'MASTER = 4, DOCTOR = 1, ASSOCIATE_PROFESSOR = 2, PROFESSOR = 3',
+  })
   academicRank: EAcademicRank;
 
   @ApiPropertyOptional({

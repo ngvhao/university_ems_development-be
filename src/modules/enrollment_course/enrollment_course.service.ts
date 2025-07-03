@@ -287,7 +287,7 @@ export class EnrollmentCourseService {
     const where: FindOptionsWhere<EnrollmentCourseEntity> = {};
 
     if (currentUser.role === EUserRole.STUDENT) {
-      const studentProfile = await this.studentService.findOneById(
+      const studentProfile = await this.studentService.getOneByUserId(
         currentUser.id,
       );
       if (!studentProfile) {
@@ -332,6 +332,10 @@ export class EnrollmentCourseService {
         classGroup: {
           course: true,
           semester: true,
+        },
+        gradeDetails: true,
+        student: {
+          user: true,
         },
       },
       skip: (page - 1) * limit,

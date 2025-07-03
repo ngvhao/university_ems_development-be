@@ -97,17 +97,20 @@ export class ClassService {
     paginationDto: PaginationDto,
   ): Promise<{ data: ClassEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
-    const queryBuilder = this.classRepository.createQueryBuilder('class');
+    const [data, total] = await this.classRepository.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      order: {
+        createdAt: 'DESC',
+      },
+      relations: {
+        major: true,
+        lecturer: {
+          user: true,
+        },
+      },
+    });
 
-    queryBuilder
-      .leftJoinAndSelect('class.major', 'major')
-      .leftJoinAndSelect('class.lecturer', 'lecturer')
-      .loadRelationCountAndMap('class.studentCount', 'class.students')
-      .skip((page - 1) * limit)
-      .take(limit)
-      .orderBy('class.createdAt', 'DESC');
-
-    const [data, total] = await queryBuilder.getManyAndCount();
     const meta = generatePaginationMeta(total, page, limit);
 
     return { data, meta };

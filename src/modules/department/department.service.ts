@@ -130,8 +130,13 @@ export class DepartmentService {
 
     const [data, total] = await this.departmentRepository.findAndCount({
       where,
-      relations: ['faculty'],
-      loadRelationIds: { relations: ['lecturers', 'majors'] },
+      relations: {
+        faculty: true,
+        lecturers: {
+          user: true,
+        },
+        majors: true,
+      },
       skip: (page - 1) * limit,
       take: limit,
       order: { facultyId: 'ASC', name: 'ASC' },

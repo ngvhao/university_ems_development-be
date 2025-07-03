@@ -139,7 +139,7 @@ export async function createStudent(
 
     const studentToCreate: Partial<StudentEntity> = {
       studentCode: studentCode,
-      status: EStudentStatus.ENROLLED,
+      status: EStudentStatus.STUDYING,
       userId: savedUser.id,
       majorId: majorId,
       classId: classId,

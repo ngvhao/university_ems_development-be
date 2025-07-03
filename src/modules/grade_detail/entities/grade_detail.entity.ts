@@ -4,6 +4,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { StudentEntity } from 'src/modules/student/entities/student.entity';
 import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.entity';
 import { EGradeType } from 'src/utils/enums/grade.enum';
+import { EnrollmentCourseEntity } from 'src/modules/enrollment_course/entities/enrollment_course.entity';
 
 @Entity('grade_details')
 @Index(['studentId', 'classGroupId', 'gradeType'], { unique: true })
@@ -89,4 +90,26 @@ export class GradeDetailEntity extends IEntity {
   })
   @JoinColumn({ name: 'classGroupId' })
   classGroup: ClassGroupEntity;
+
+  @ApiProperty({
+    description: 'ID của đăng ký học',
+    example: 1,
+  })
+  @Column({ nullable: false })
+  enrollmentId: number;
+
+  @ApiProperty({
+    type: () => EnrollmentCourseEntity,
+    description: 'Đăng ký học',
+  })
+  @ManyToOne(
+    () => EnrollmentCourseEntity,
+    (enrollment) => enrollment.gradeDetails,
+    {
+      nullable: false,
+      onDelete: 'CASCADE',
+    },
+  )
+  @JoinColumn({ name: 'enrollmentId' })
+  enrollment: EnrollmentCourseEntity;
 }
