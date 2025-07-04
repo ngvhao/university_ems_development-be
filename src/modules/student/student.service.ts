@@ -31,6 +31,7 @@ import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { Helpers } from 'src/utils/helpers';
 import { UserService } from '../user/user.service';
 import { StudentHelper } from 'src/utils/helpers/student.helper';
+import { StudentChatbotDataDto } from './dtos/studentChatbotData.dto';
 
 @Injectable()
 export class StudentService {
@@ -604,5 +605,386 @@ export class StudentService {
       ...s,
       user: s.user ? (_.omit(s.user, ['password']) as UserEntity) : null,
     }));
+  }
+
+  /**
+   * Lấy toàn bộ dữ liệu sinh viên cho chatbot.
+   * Bao gồm: thông tin cơ bản, lịch học, lịch thi, học phí, thông báo, điểm số.
+   * @param studentId - ID của sinh viên.
+   * @returns Promise<StudentChatbotDataDto> - Dữ liệu tổng hợp cho chatbot.
+   */
+  async getChatbotData(studentId: number): Promise<StudentChatbotDataDto> {
+    const student = await this.studentRepository.findOne({
+      where: { id: studentId },
+      relations: [
+        'user',
+        'class',
+        'class.major',
+        'class.major.department',
+        'class.major.department.faculty',
+        'major',
+      ],
+    });
+
+    if (!student) {
+      throw new NotFoundException(
+        `Không tìm thấy sinh viên với ID ${studentId}`,
+      );
+    }
+
+    const currentSemester = await this.dataSource
+      .getRepository('SemesterEntity')
+      .createQueryBuilder('semester')
+      .where('semester.startDate <= :now', { now: new Date() })
+      .andWhere('semester.endDate >= :now', { now: new Date() })
+      .getOne();
+
+    if (!currentSemester) {
+      throw new NotFoundException('Không tìm thấy học kỳ hiện tại');
+    }
+
+    const nextSemester = await this.dataSource
+      .getRepository('SemesterEntity')
+      .createQueryBuilder('semester')
+      .where('semester.startDate > :currentEndDate', {
+        currentEndDate: currentSemester.endDate,
+      })
+      .orderBy('semester.startDate', 'ASC')
+      .getOne();
+
+    const weeklySchedule = await this.dataSource
+      .getRepository('ClassWeeklyScheduleEntity')
+      .createQueryBuilder('schedule')
+      .leftJoinAndSelect('schedule.classGroup', 'classGroup')
+      .leftJoinAndSelect('classGroup.course', 'course')
+      .leftJoinAndSelect('classGroup.lecturer', 'lecturer')
+      .leftJoinAndSelect('lecturer.user', 'lecturerUser')
+      .leftJoinAndSelect('schedule.room', 'room')
+      .leftJoinAndSelect('schedule.timeSlot', 'timeSlot')
+      .leftJoin(
+        'EnrollmentCourseEntity',
+        'enrollment',
+        'enrollment.classGroupId = classGroup.id',
+      )
+      .where('enrollment.studentId = :studentId', { studentId })
+      .andWhere('classGroup.semesterId = :semesterId', {
+        semesterId: currentSemester.id,
+      })
+      .getMany();
+
+    const upcomingExams = await this.dataSource
+      .getRepository('ExamScheduleEntity')
+      .createQueryBuilder('exam')
+      .leftJoinAndSelect('exam.classGroup', 'classGroup')
+      .leftJoinAndSelect('classGroup.course', 'course')
+      .leftJoinAndSelect('exam.room', 'room')
+      .leftJoin(
+        'EnrollmentCourseEntity',
+        'enrollment',
+        'enrollment.classGroupId = classGroup.id',
+      )
+      .where('enrollment.studentId = :studentId', { studentId })
+      .andWhere('exam.examDate >= :now', { now: new Date() })
+      .orderBy('exam.examDate', 'ASC')
+      .limit(10)
+      .getMany();
+
+    const tuitionInfo = await this.dataSource
+      .getRepository('TuitionEntity')
+      .createQueryBuilder('tuition')
+      .leftJoinAndSelect('tuition.details', 'details')
+      .leftJoinAndSelect('details.enrollment', 'enrollment')
+      .leftJoinAndSelect('enrollment.classGroup', 'classGroup')
+      .leftJoinAndSelect('classGroup.course', 'course')
+      .where('tuition.studentId = :studentId', { studentId })
+      .andWhere('tuition.semesterId = :semesterId', {
+        semesterId: currentSemester.id,
+      })
+      .getMany();
+
+    const recentNotifications = await this.dataSource
+      .getRepository('NotificationEntity')
+      .createQueryBuilder('notification')
+      .leftJoinAndSelect(
+        'notification.recipients',
+        'recipient',
+        'recipient.recipientUserId = :userId',
+        {
+          userId: student.userId,
+        },
+      )
+      .where('notification.status = :status', { status: 'SENT' })
+      .orderBy('notification.createdAt', 'DESC')
+      .limit(20)
+      .getMany();
+
+    const currentGrades = await this.dataSource
+      .getRepository('GradeDetailEntity')
+      .createQueryBuilder('grade')
+      .leftJoinAndSelect('grade.enrollment', 'enrollment')
+      .leftJoinAndSelect('enrollment.classGroup', 'classGroup')
+      .leftJoinAndSelect('classGroup.course', 'course')
+      .where('enrollment.studentId = :studentId', { studentId })
+      .andWhere('classGroup.semesterId = :semesterId', {
+        semesterId: currentSemester.id,
+      })
+      .getMany();
+
+    const scheduleAdjustments = await this.dataSource
+      .getRepository('ClassAdjustmentScheduleEntity')
+      .createQueryBuilder('adjustment')
+      .leftJoinAndSelect('adjustment.classGroup', 'classGroup')
+      .leftJoinAndSelect('classGroup.course', 'course')
+      .leftJoin(
+        'EnrollmentCourseEntity',
+        'enrollment',
+        'enrollment.classGroupId = classGroup.id',
+      )
+      .where('enrollment.studentId = :studentId', { studentId })
+      .andWhere('adjustment.adjustmentDate >= :now', { now: new Date() })
+      .orderBy('adjustment.adjustmentDate', 'ASC')
+      .getMany();
+
+    const enrollments = await this.dataSource
+      .getRepository('EnrollmentCourseEntity')
+      .createQueryBuilder('enrollment')
+      .leftJoinAndSelect('enrollment.classGroup', 'classGroup')
+      .leftJoinAndSelect('classGroup.course', 'course')
+      .where('enrollment.studentId = :studentId', { studentId })
+      .getMany();
+
+    const currentSemesterEnrollments = enrollments.filter(
+      (e) => e.classGroup.semesterId === currentSemester.id,
+    );
+
+    const totalCreditsRegistered = enrollments.reduce(
+      (sum, e) => sum + (e.classGroup.course?.credit || 0),
+      0,
+    );
+    const currentSemesterCredits = currentSemesterEnrollments.reduce(
+      (sum, e) => sum + (e.classGroup.course?.credit || 0),
+      0,
+    );
+
+    let nextSemesterData = null;
+    if (nextSemester) {
+      const registrationSchedule = await this.dataSource
+        .getRepository('FacultyRegistrationScheduleEntity')
+        .createQueryBuilder('schedule')
+        .where('schedule.semesterId = :semesterId', {
+          semesterId: nextSemester.id,
+        })
+        .andWhere('schedule.facultyId = :facultyId', {
+          facultyId: student.class.major.department.faculty.id,
+        })
+        .getMany();
+
+      const availableCourses = await this.dataSource
+        .getRepository('CurriculumCourseEntity')
+        .createQueryBuilder('curriculumCourse')
+        .leftJoinAndSelect('curriculumCourse.course', 'course')
+        .leftJoin(
+          'CurriculumEntity',
+          'curriculum',
+          'curriculum.id = curriculumCourse.curriculumId',
+        )
+        .where('curriculum.majorId = :majorId', { majorId: student.majorId })
+        .getMany();
+
+      const estimatedTuition = {
+        pricePerCredit: 700000,
+        estimatedMinCredits: 15,
+        estimatedMaxCredits: 25,
+        estimatedMinAmount: 15 * 700000,
+        estimatedMaxAmount: 25 * 700000,
+      };
+
+      nextSemesterData = {
+        semesterInfo: nextSemester
+          ? {
+              id: nextSemester.id,
+              semesterCode: nextSemester.semesterCode,
+              semesterName: nextSemester.semesterName,
+              startDate: nextSemester.startDate,
+              endDate: nextSemester.endDate,
+              isCurrentSemester: false,
+            }
+          : null,
+        registrationSchedule: registrationSchedule.map((schedule) => ({
+          startDate: schedule.registrationStartDate,
+          endDate: schedule.registrationEndDate,
+          description: schedule.description || 'Đăng ký môn học',
+          isActive:
+            new Date() >= schedule.registrationStartDate &&
+            new Date() <= schedule.registrationEndDate,
+        })),
+        availableCourses: availableCourses.map((curriculumCourse) => ({
+          courseCode: curriculumCourse.course.courseCode,
+          courseName: curriculumCourse.course.name,
+          credit: curriculumCourse.course.credit,
+          prerequisiteCourses: [],
+          maxStudents: 50,
+          registeredStudents: 0,
+          isAvailable: true,
+        })),
+        estimatedTuition,
+      };
+    } else {
+      nextSemesterData = {
+        semesterInfo: null,
+        registrationSchedule: [],
+        availableCourses: [],
+        estimatedTuition: {
+          pricePerCredit: 700000,
+          estimatedMinCredits: 0,
+          estimatedMaxCredits: 0,
+          estimatedMinAmount: 0,
+          estimatedMaxAmount: 0,
+        },
+      };
+    }
+
+    const result: StudentChatbotDataDto = {
+      basicInfo: {
+        id: student.id,
+        studentCode: student.studentCode,
+        fullName: `${student.user.firstName} ${student.user.lastName}`,
+        personalEmail: student.user.personalEmail,
+        universityEmail: student.user.universityEmail,
+        phoneNumber: student.user.phoneNumber,
+        academicYear: student.academicYear,
+        status: student.status,
+        enrollmentDate: student.enrollmentDate,
+        expectedGraduationDate: student.expectedGraduationDate,
+      },
+      classInfo: {
+        id: student.class.id,
+        classCode: student.class.classCode,
+        className: student.class.classCode,
+        major: {
+          id: student.class.major.id,
+          majorCode: student.class.major.majorCode,
+          majorName: student.class.major.name,
+          department: {
+            id: student.class.major.department.id,
+            departmentCode: student.class.major.department.departmentCode,
+            departmentName: student.class.major.department.name,
+            faculty: {
+              id: student.class.major.department.faculty.id,
+              facultyCode: student.class.major.department.faculty.facultyCode,
+              facultyName: student.class.major.department.faculty.name,
+            },
+          },
+        },
+      },
+      currentSemester: {
+        id: currentSemester.id,
+        semesterCode: currentSemester.semesterCode,
+        semesterName: currentSemester.semesterName,
+        startDate: currentSemester.startDate,
+        endDate: currentSemester.endDate,
+        isCurrentSemester: true,
+      },
+      weeklySchedule: weeklySchedule.map((schedule) => ({
+        id: schedule.id,
+        course: {
+          courseCode: schedule.classGroup.course.courseCode,
+          courseName: schedule.classGroup.course.courseName,
+          credit: schedule.classGroup.course.credit,
+        },
+        lecturer: {
+          fullName: `${schedule.classGroup.lecturer.user.firstName} ${schedule.classGroup.lecturer.user.lastName}`,
+          email: schedule.classGroup.lecturer.user.universityEmail,
+        },
+        room: {
+          roomCode: schedule.room.roomCode,
+          roomName: schedule.room.roomName,
+          capacity: schedule.room.capacity,
+        },
+        timeSlot: {
+          startTime: schedule.timeSlot.startTime,
+          endTime: schedule.timeSlot.endTime,
+          dayOfWeek: schedule.timeSlot.dayOfWeek,
+        },
+        weekNumbers: schedule.weekNumbers,
+      })),
+      upcomingExams: upcomingExams.map((exam) => ({
+        id: exam.id,
+        course: {
+          courseCode: exam.classGroup.course.courseCode,
+          courseName: exam.classGroup.course.courseName,
+          credit: exam.classGroup.course.credit,
+        },
+        examDate: exam.examDate,
+        startTime: exam.startTime,
+        endTime: exam.endTime,
+        room: {
+          roomCode: exam.room.roomCode,
+          roomName: exam.room.roomName,
+        },
+        notes: exam.notes,
+      })),
+      tuitionInfo: tuitionInfo.map((tuition) => ({
+        id: tuition.id,
+        description: tuition.description,
+        totalAmountDue: tuition.totalAmountDue,
+        amountPaid: tuition.amountPaid,
+        balance: tuition.balance,
+        status: tuition.status,
+        dueDate: tuition.dueDate,
+        details: tuition.details.map((detail) => ({
+          courseCode: detail.enrollment.classGroup.course.courseCode,
+          courseName: detail.enrollment.classGroup.course.courseName,
+          credit: detail.numberOfCredits,
+          amount: detail.amount,
+          pricePerCredit: detail.pricePerCredit,
+        })),
+      })),
+      recentNotifications: recentNotifications.map((notification) => ({
+        id: notification.id,
+        title: notification.title,
+        content: notification.content,
+        notificationType: notification.notificationType,
+        priority: notification.priority,
+        createdAt: notification.createdAt,
+        isRead: notification.recipients.length > 0,
+      })),
+      currentGrades: currentGrades.map((grade) => ({
+        course: {
+          courseCode: grade.enrollment.classGroup.course.courseCode,
+          courseName: grade.enrollment.classGroup.course.courseName,
+          credit: grade.enrollment.classGroup.course.credit,
+        },
+        processScore: grade.processScore,
+        finalScore: grade.finalScore,
+        totalScore: grade.totalScore,
+        letterGrade: grade.letterGrade,
+        isPassed: grade.isPassed,
+      })),
+      academicSummary: {
+        totalCreditsRegistered,
+        totalCreditsPassed: currentGrades
+          .filter((g) => g.isPassed)
+          .reduce(
+            (sum, g) => sum + (g.enrollment.classGroup.course?.credit || 0),
+            0,
+          ),
+        currentGPA: student.gpa || 0,
+        cumulativeGPA: student.gpa || 0,
+        currentSemesterCredits,
+      },
+      scheduleAdjustments: scheduleAdjustments.map((adjustment) => ({
+        originalDate: adjustment.originalDate,
+        newDate: adjustment.newDate,
+        course: {
+          courseCode: adjustment.classGroup.course.courseCode,
+          courseName: adjustment.classGroup.course.courseName,
+        },
+        reason: adjustment.reason,
+      })),
+      nextSemester: nextSemesterData,
+    };
+
+    return result;
   }
 }

@@ -13,9 +13,10 @@ import {
   UseGuards,
   Req,
   ForbiddenException,
+  UseInterceptors,
 } from '@nestjs/common';
 import { StudentService } from './student.service';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { CreateStudentDto } from './dtos/createStudent.dto';
 import { SuccessResponse } from 'src/utils/response';
 import { Roles } from 'src/decorators/roles.decorator';
@@ -34,6 +35,9 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
+import { StudentChatbotDataDto } from './dtos/studentChatbotData.dto';
+import { RequestHasStudentDto } from 'src/utils/request-has-student-dto';
+import { StudentInterceptor } from 'src/interceptors/get-student.interceptor';
 
 @ApiTags('Sinh viên (Students)')
 @ApiBearerAuth('token')
@@ -113,6 +117,43 @@ export class StudentController {
       message: 'Lấy danh sách sinh viên thành công',
       data,
       metadata: meta,
+    }).send(res);
+  }
+  @Get('chatbot-data')
+  @Roles([EUserRole.STUDENT])
+  @UseInterceptors(StudentInterceptor)
+  @ApiOperation({
+    summary: 'Lấy toàn bộ dữ liệu sinh viên cho chatbot',
+    description:
+      'API tổng hợp tất cả thông tin cần thiết của sinh viên: lịch học, lịch thi, học phí, thông báo, điểm số, v.v.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy dữ liệu chatbot thành công.',
+    type: StudentChatbotDataDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy sinh viên hoặc học kỳ hiện tại.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực hoặc token không hợp lệ.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền xem thông tin sinh viên này.',
+  })
+  async getChatbotData(
+    @Req() req: RequestHasStudentDto & Request,
+    @Res() res: Response,
+  ) {
+    const chatbotData = await this.studentService.getChatbotData(
+      req.student.id,
+    );
+    return new SuccessResponse({
+      message: 'Lấy dữ liệu chatbot thành công',
+      data: chatbotData,
     }).send(res);
   }
 
