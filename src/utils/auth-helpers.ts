@@ -47,15 +47,18 @@ export class AuthHelpers {
   }
 
   static setExpireTokens(res: Response): void {
+    const isProduction = process.env.NODE_ENV === 'production';
     res.cookie('accessToken', '', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: 0,
     });
 
     res.cookie('refreshToken', '', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: 0,
     });
   }
