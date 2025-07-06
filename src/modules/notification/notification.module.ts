@@ -4,6 +4,7 @@ import { NotificationService } from './notification.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { NotificationEntity } from './entities/notification.entity';
 import { StudentModule } from '../student/student.module';
+import { LecturerModule } from '../lecturer/lecturer.module';
 import { NotificationRecipientModule } from '../notification_recipient/notification_recipient.module';
 import { NotificationAudienceRuleEntity } from '../notification_audience_rule/entities/notification_audience_rule.entity';
 
@@ -15,6 +16,7 @@ import { NotificationAudienceRuleEntity } from '../notification_audience_rule/en
     ]),
     forwardRef(() => NotificationRecipientModule),
     StudentModule,
+    LecturerModule,
   ],
   controllers: [NotificationController],
   providers: [NotificationService],

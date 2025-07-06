@@ -19,11 +19,11 @@ export class LecturerInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest();
     const user = request.user;
 
-    const student = await this.lecturerService.getOne({
+    const lecturer = await this.lecturerService.getOne({
       user: { id: user.id },
     });
 
-    request.student = student;
+    request.lecturer = lecturer;
 
     return next.handle();
   }

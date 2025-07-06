@@ -55,7 +55,7 @@ export const JWT_EXPIRED_TIME_UPDATE_TOKEN = '15h';
 export const JWT_REFRESH_EXPIRED_TIME_UPDATE_TOKEN = '7d';
 
 export const tokenConstants = {
-  accessTokenMaxAge: 15 * 60 * 1000,
+  accessTokenMaxAge: 30 * 60 * 1000,
   refreshTokenMaxAge: 7 * 24 * 60 * 60 * 1000,
 };
 

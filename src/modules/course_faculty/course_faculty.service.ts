@@ -118,12 +118,12 @@ export class CourseFacultyService {
   async findAll(
     filterDto: FilterCourseFacultyDto,
   ): Promise<{ data: CourseFacultyEntity[]; meta: MetaDataInterface }> {
-    const { page = 1, limit = 10, courseId, facultyId, isPrimary } = filterDto;
+    const { page = 1, limit = 10, courseId, facultyId, isActive } = filterDto;
 
     const where: FindOptionsWhere<CourseFacultyEntity> = {};
     if (courseId) where.courseId = courseId;
     if (facultyId) where.facultyId = facultyId;
-    if (isPrimary !== undefined) where.isPrimary = isPrimary;
+    if (isActive !== undefined) where.isActive = isActive;
 
     const [data, total] = await this.courseFacultyRepository.findAndCount({
       where,

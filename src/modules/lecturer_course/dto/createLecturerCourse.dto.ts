@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsPositive } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsPositive } from 'class-validator';
 
 export class CreateLecturerCourseDto {
   @ApiProperty({
@@ -9,8 +9,8 @@ export class CreateLecturerCourseDto {
   })
   @IsInt({ message: 'ID Giảng viên phải là số nguyên' })
   @IsPositive({ message: 'ID Giảng viên phải là số dương' })
-  @IsNotEmpty({ message: 'ID Giảng viên là bắt buộc' })
-  lecturerId: number;
+  @IsOptional()
+  lecturerId?: number;
 
   @ApiProperty({
     description: 'ID của Học phần',

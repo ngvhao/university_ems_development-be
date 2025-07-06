@@ -36,6 +36,8 @@ import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
 import { RequestHasStudentDto } from 'src/utils/request-has-student-dto';
 import { StudentInterceptor } from 'src/interceptors/get-student.interceptor';
 import { UserNotificationQueryDto } from '../notification_recipient/dtos/queryNotificationRecipient.dto';
+import { LecturerInterceptor } from 'src/interceptors/get-lecturer.interceptor';
+import { RequestHasLecturerDto } from 'src/utils/request-has-lecturer-dto';
 
 @ApiTags('Quản lý Thông báo (Notifications)')
 @ApiBearerAuth('token')
@@ -90,6 +92,31 @@ export class NotificationController {
     const user = req.user;
     const student = req.student;
     user.student = student;
+    const { data, meta } =
+      await this.notificationsService.findUserNotifications(user, queryDto);
+    new SuccessResponse({
+      data,
+      metadata: meta,
+      message: 'Lấy danh sách thông báo thành công.',
+    }).send(res);
+  }
+
+  @Get('lecturers/me')
+  @Roles([EUserRole.LECTURER])
+  @UseInterceptors(LecturerInterceptor)
+  @ApiOperation({ summary: 'Lấy danh sách thông báo (phân trang và lọc)' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách thông báo thành công.',
+  })
+  async findMyNotificationLecturer(
+    @Req() req: RequestHasLecturerDto & RequestHasUserDto & Request,
+    @Query() queryDto: UserNotificationQueryDto,
+    @Res() res: Response,
+  ) {
+    const user = req.user;
+    const lecturer = req.lecturer;
+    user.lecturer = lecturer;
     const { data, meta } =
       await this.notificationsService.findUserNotifications(user, queryDto);
     new SuccessResponse({

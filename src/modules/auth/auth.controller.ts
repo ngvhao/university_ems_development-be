@@ -20,6 +20,7 @@ import { ApiBody, ApiTags } from '@nestjs/swagger';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { EUserRole } from 'src/utils/enums/user.enum';
 import { StudentService } from '../student/student.service';
+import { LecturerService } from '../lecturer/lecturer.service';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -27,6 +28,7 @@ export class AuthController {
   constructor(
     private readonly jwtService: JwtService,
     private readonly studentService: StudentService,
+    private readonly lecturerService: LecturerService,
     // private readonly authService: AuthService,
   ) {}
 
@@ -105,6 +107,17 @@ export class AuthController {
         {
           major: true,
           class: true,
+        },
+      );
+    } else if (user.role == EUserRole.LECTURER) {
+      user.lecturer = await this.lecturerService.getOne(
+        {
+          userId: user.id,
+        },
+        {
+          department: {
+            faculty: true,
+          },
         },
       );
     }

@@ -52,26 +52,31 @@ export class LecturerCourseService {
       courseId,
     });
     if (existingAssignment) {
-      throw new ConflictException(
-        `Giảng viên (ID: ${lecturerId}) đã được phân công cho Học phần (ID: ${courseId}) này rồi.`,
-      );
-    }
-
-    const newAssignment = this.lecturerCourseRepository.create({
-      lecturerId,
-      courseId,
-    });
-
-    try {
-      return await this.lecturerCourseRepository.save(newAssignment);
-    } catch (error) {
-      if (error.code === '23505') {
+      if (existingAssignment.isActive) {
         throw new ConflictException(
-          `Phân công này đã tồn tại (lỗi ràng buộc duy nhất).`,
+          `Giảng viên (ID: ${lecturerId}) đã được phân công cho Học phần (ID: ${courseId}) này rồi.`,
         );
+      } else {
+        existingAssignment.isActive = true;
+        return await this.lecturerCourseRepository.save(existingAssignment);
       }
-      console.error('Lỗi khi lưu phân công giảng dạy:', error);
-      throw new BadRequestException('Không thể tạo phân công giảng dạy.');
+    } else {
+      const newAssignment = this.lecturerCourseRepository.create({
+        lecturerId,
+        courseId,
+      });
+
+      try {
+        return await this.lecturerCourseRepository.save(newAssignment);
+      } catch (error) {
+        if (error.code === '23505') {
+          throw new ConflictException(
+            `Phân công này đã tồn tại (lỗi ràng buộc duy nhất).`,
+          );
+        }
+        console.error('Lỗi khi lưu phân công giảng dạy:', error);
+        throw new BadRequestException('Không thể tạo phân công giảng dạy.');
+      }
     }
   }
 
@@ -88,49 +93,28 @@ export class LecturerCourseService {
     const skip = (page - 1) * limit;
 
     const where: FindOptionsWhere<LecturerCourseEntity> = {};
+    where.isActive = true;
     if (lecturerId) {
       where.lecturerId = lecturerId;
     }
     if (courseId) {
       where.courseId = courseId;
     }
-
-    const queryBuilder = this.lecturerCourseRepository
-      .createQueryBuilder('lc')
-      .leftJoin('lc.lecturer', 'lecturer')
-      .leftJoin('lecturer.user', 'user')
-      .leftJoinAndSelect('lc.course', 'course')
-      .select([
-        'lc.id',
-        'lc.lecturerId',
-        'lc.courseId',
-        'lc.createdAt',
-        'lecturer.id',
-        'lecturer.lecturerCode',
-        'user.id',
-        'user.firstName',
-        'user.lastName',
-        'user.universityEmail',
-        'course.id',
-        'course.courseCode',
-        'course.name',
-        'course.credits',
-      ])
-      .where(where);
-
-    queryBuilder.orderBy('lc.createdAt', 'DESC');
-
-    const [data, total] = await queryBuilder
-      .skip(skip)
-      .take(limit)
-      .getManyAndCount();
+    const [data, total] = await this.lecturerCourseRepository.findAndCount({
+      where,
+      skip,
+      take: limit,
+      relations: {
+        course: true,
+      },
+    });
     const meta = generatePaginationMeta(total, page, limit);
     return { data, meta };
   }
 
   async findLecturersByCourseId(courseId: number): Promise<number[]> {
     const lecturerCourses = await this.lecturerCourseRepository.find({
-      where: { courseId },
+      where: { courseId, isActive: true },
       select: ['lecturerId'],
     });
 
@@ -188,5 +172,19 @@ export class LecturerCourseService {
       );
     }
     await this.lecturerCourseRepository.delete(id);
+  }
+
+  async updateStatus(
+    id: number,
+    isActive: boolean,
+  ): Promise<LecturerCourseEntity> {
+    const assignment = await this.lecturerCourseRepository.findOneBy({ id });
+    if (!assignment) {
+      throw new NotFoundException(
+        `Không tìm thấy phân công với ID ${id} để cập nhật trạng thái.`,
+      );
+    }
+    assignment.isActive = isActive;
+    return await this.lecturerCourseRepository.save(assignment);
   }
 }

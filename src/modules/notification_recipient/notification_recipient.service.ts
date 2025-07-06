@@ -63,9 +63,10 @@ export class NotificationRecipientService {
 
   async markAsRead(notificationId: number, userId: number): Promise<void> {
     const recipientEntry = await this.recipientRepository.findOne({
-      where: { notificationId: notificationId },
+      where: { notificationId: notificationId, recipientUserId: userId },
       relations: ['notification'],
     });
+    console.log('markAsRead@recipientEntry:', recipientEntry);
     if (recipientEntry && recipientEntry.status != ERecipientStatus.UNREAD) {
       return;
     }

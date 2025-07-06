@@ -33,6 +33,6 @@ export class FilterCourseFacultyDto extends PaginationDto {
   })
   @IsOptional()
   @Type(() => Boolean)
-  @IsBoolean({ message: 'isPrimary phải là boolean' })
-  isPrimary?: boolean;
+  @IsBoolean({ message: 'isActive phải là boolean' })
+  isActive?: boolean;
 }

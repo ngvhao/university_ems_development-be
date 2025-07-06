@@ -43,11 +43,10 @@ export class NotificationRecipientEntity extends IEntity {
   receivedAt: Date;
 
   @Column({
-    type: 'varchar',
-    length: 50,
+    type: 'enum',
     enum: ERecipientStatus,
     default: ERecipientStatus.UNREAD,
-    comment: 'UNREAD = 0, READ = 1, DISMISSED = 3, ARCHIVED_BY_USER = 4',
+    comment: 'UNREAD = 5, READ = 1, DISMISSED = 3, ARCHIVED_BY_USER = 4',
   })
   status: ERecipientStatus;
 

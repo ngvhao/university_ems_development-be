@@ -157,6 +157,76 @@ export class LecturerController {
     }).send(res);
   }
 
+  @Get('me/teaching-classes')
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.LECTURER])
+  @ApiOperation({
+    summary: '[Giảng viên] Lấy danh sách nhóm lớp đang giảng dạy',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách nhóm lớp giảng dạy thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không phải giảng viên hoặc chưa có hồ sơ.',
+  })
+  @UseInterceptors(LecturerInterceptor)
+  async getMyTeachingClasses(
+    @Req() req: RequestHasLecturerDto & Request,
+    @Query() paginationDto: PaginationDto,
+    @Res() res: Response,
+  ) {
+    const currentLecturer = req.lecturer;
+    const { data, meta } = await this.lecturerService.getTeachingClasses(
+      currentLecturer.id,
+      paginationDto,
+    );
+    return new SuccessResponse({
+      data,
+      metadata: meta,
+      message: 'Lấy danh sách nhóm lớp giảng dạy thành công.',
+    }).send(res);
+  }
+
+  @Get('me/advisory-classes')
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.LECTURER])
+  @ApiOperation({ summary: '[Giảng viên] Lấy danh sách lớp cố vấn' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách lớp cố vấn thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không phải giảng viên hoặc chưa có hồ sơ.',
+  })
+  @UseInterceptors(LecturerInterceptor)
+  async getMyAdvisoryClasses(
+    @Req() req: RequestHasLecturerDto & Request,
+    @Query() paginationDto: PaginationDto,
+    @Res() res: Response,
+  ) {
+    const currentLecturer = req.lecturer;
+    const { data, meta } = await this.lecturerService.getAdvisoryClasses(
+      currentLecturer.id,
+      paginationDto,
+    );
+    return new SuccessResponse({
+      data,
+      metadata: meta,
+      message: 'Lấy danh sách lớp cố vấn thành công.',
+    }).send(res);
+  }
+
   // @Post('my-schedule/complaints')
   // @UseGuards(RolesGuard)
   // @Roles([EUserRole.LECTURER])

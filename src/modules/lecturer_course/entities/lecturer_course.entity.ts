@@ -43,4 +43,8 @@ export class LecturerCourseEntity extends IEntity {
   })
   @JoinColumn({ name: 'courseId' })
   course: CourseEntity;
+
+  @ApiProperty({ description: 'Trạng thái phân công', example: true })
+  @Column({ default: true })
+  isActive: boolean;
 }

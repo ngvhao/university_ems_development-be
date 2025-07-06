@@ -25,6 +25,8 @@ import { UserEntity } from '../user/entities/user.entity';
 import { EAccountStatus, EUserRole } from 'src/utils/enums/user.enum';
 import _ from 'lodash';
 import { DEFAULT_PAGINATION } from 'src/utils/constants';
+import { ClassEntity } from '../class/entities/class.entity';
+import { ClassGroupEntity } from '../class_group/entities/class_group.entity';
 
 @Injectable()
 export class LecturerService {
@@ -222,5 +224,72 @@ export class LecturerService {
       where: { departmentId: departmentId },
     });
     return lecturerCount;
+  }
+
+  /**
+   * Lấy danh sách lớp cố vấn của giảng viên
+   * @param lecturerId - ID của giảng viên
+   * @param paginationDto - Tham số phân trang
+   * @returns Danh sách lớp cố vấn và thông tin phân trang
+   */
+  async getAdvisoryClasses(
+    lecturerId: number,
+    paginationDto: PaginationDto = DEFAULT_PAGINATION,
+  ): Promise<{ data: ClassEntity[]; meta: MetaDataInterface }> {
+    const { page = 1, limit = 10 } = paginationDto;
+
+    const queryBuilder = this.dataSource
+      .getRepository(ClassEntity)
+      .createQueryBuilder('class')
+      .leftJoinAndSelect('class.major', 'major')
+      .leftJoinAndSelect('major.department', 'department')
+      .leftJoinAndSelect('class.students', 'students')
+      .leftJoinAndSelect('students.user', 'user')
+      .where('class.homeroomLecturerId = :lecturerId', { lecturerId });
+
+    const total = await queryBuilder.getCount();
+    const data = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .orderBy('class.createdAt', 'DESC')
+      .getMany();
+
+    const meta = generatePaginationMeta(total, page, limit);
+
+    return { data, meta };
+  }
+
+  /**
+   * Lấy danh sách nhóm lớp đang giảng dạy của giảng viên
+   * @param lecturerId - ID của giảng viên
+   * @param paginationDto - Tham số phân trang
+   * @returns Danh sách nhóm lớp đang giảng dạy và thông tin phân trang
+   */
+  async getTeachingClasses(
+    lecturerId: number,
+    paginationDto: PaginationDto = DEFAULT_PAGINATION,
+  ): Promise<{ data: ClassGroupEntity[]; meta: MetaDataInterface }> {
+    const { page = 1, limit = 10 } = paginationDto;
+
+    const queryBuilder = this.dataSource
+      .getRepository(ClassGroupEntity)
+      .createQueryBuilder('classGroup')
+      .leftJoinAndSelect('classGroup.course', 'course')
+      .leftJoinAndSelect('classGroup.semester', 'semester')
+      .leftJoinAndSelect('classGroup.enrollments', 'enrollments')
+      .leftJoinAndSelect('enrollments.student', 'student')
+      .leftJoinAndSelect('student.user', 'studentUser')
+      .where('classGroup.lecturerId = :lecturerId', { lecturerId });
+
+    const total = await queryBuilder.getCount();
+    const data = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .orderBy('classGroup.createdAt', 'DESC')
+      .getMany();
+
+    const meta = generatePaginationMeta(total, page, limit);
+
+    return { data, meta };
   }
 }

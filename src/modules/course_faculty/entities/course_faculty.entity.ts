@@ -28,13 +28,9 @@ export class CourseFacultyEntity extends IEntity {
   @Column({ type: 'text', nullable: true })
   description?: string;
 
-  @ApiPropertyOptional({
-    description: 'Có phải môn học chính của khoa hay không',
-    example: true,
-    default: false,
-  })
-  @Column({ type: 'boolean', default: false })
-  isPrimary: boolean;
+  @ApiProperty({ description: 'Trạng thái môn học', example: true })
+  @Column({ default: true })
+  isActive: boolean;
 
   @ApiProperty({
     type: () => CourseEntity,
