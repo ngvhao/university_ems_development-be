@@ -8,11 +8,13 @@ import { ClassGroupModule } from '../class_group/class_group.module';
 import { RoomModule } from '../room/room.module';
 import { TimeSlotModule } from '../time_slot/time_slot.module';
 import { EnrollmentCourseModule } from '../enrollment_course/enrollment_course.module';
+import { LecturerModule } from '../lecturer/lecturer.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ClassWeeklyScheduleEntity]),
     StudentModule,
+    LecturerModule,
     forwardRef(() => ClassGroupModule),
     forwardRef(() => RoomModule),
     forwardRef(() => TimeSlotModule),

@@ -37,6 +37,9 @@ import { RequestHasStudentDto } from 'src/utils/request-has-student-dto';
 import { ClassWeeklyScheduleService } from './class_weekly_schedule.service';
 import { ClassWeeklyScheduleEntity } from './entities/class_weekly_schedule.entity';
 import { EnrollmentCourseService } from '../enrollment_course/enrollment_course.service';
+import { LecturerInterceptor } from 'src/interceptors/get-lecturer.interceptor';
+import { RequestHasLecturerDto } from 'src/utils/request-has-lecturer-dto';
+import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
 
 @ApiTags('Quản lý Lịch học Hàng tuần (Class Weekly Schedules)')
 @ApiBearerAuth('token')
@@ -191,6 +194,41 @@ export class ClassWeeklyScheduleController {
     const data = await this.classWeeklyScheduleService.getScheduleByStudentId(
       student.id,
       semesterCode,
+    );
+    return new SuccessResponse({
+      data,
+      message: 'Lấy lịch học cá nhân theo tuần thành công',
+    }).send(res);
+  }
+
+  @Get('lecturer/my-schedule')
+  @Roles([EUserRole.LECTURER])
+  @UseInterceptors(LecturerInterceptor)
+  @ApiOperation({ summary: '[Lecturer] Lấy lịch học cá nhân' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy lịch học cá nhân thành công.',
+    type: [ClassWeeklyScheduleEntity],
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực hoặc không phải sinh viên.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền (ví dụ: không phải là sinh viên).',
+  })
+  async getMyScheduleLecturer(
+    @Query() query: { semesterCode: string; classGroupIds?: number[] },
+    @Req() req: RequestHasLecturerDto & RequestHasUserDto & Request,
+    @Res() res: Response,
+  ) {
+    const { semesterCode, classGroupIds } = query;
+    const lecturer = req.lecturer!;
+    const data = await this.classWeeklyScheduleService.getScheduleByLecturerId(
+      lecturer.id,
+      semesterCode,
+      classGroupIds,
     );
     return new SuccessResponse({
       data,

@@ -12,6 +12,7 @@ import {
   FindOptionsWhere,
   Not,
   FindOptionsRelations,
+  In,
 } from 'typeorm';
 import { ClassWeeklyScheduleEntity } from './entities/class_weekly_schedule.entity';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
@@ -269,6 +270,46 @@ export class ClassWeeklyScheduleService {
     }
     const schedules = await queryBuilder.getMany();
 
+    return schedules;
+  }
+
+  /**
+   * Lấy lịch học hàng tuần của một sinh viên dựa trên các nhóm lớp sinh viên đó đã đăng ký.
+   * @param studentId - ID của sinh viên.
+   * @returns Danh sách các lịch học của sinh viên.
+   * @throws NotFoundException nếu sinh viên không tồn tại.
+   */
+  async getScheduleByLecturerId(
+    lecturerId: number,
+    semesterCode?: string,
+    classGroupIds?: number[],
+  ): Promise<ClassWeeklyScheduleEntity[]> {
+    const whereCondition: FindOptionsWhere<ClassWeeklyScheduleEntity> = {
+      classGroup: {
+        lecturerId,
+      },
+    };
+    if (semesterCode) {
+      whereCondition.classGroup = {
+        semester: {
+          semesterCode,
+        },
+      };
+    }
+    if (classGroupIds) {
+      whereCondition.classGroupId = In(classGroupIds);
+    }
+    const schedules = await this.classWeeklyScheduleRepository.find({
+      where: whereCondition,
+      relations: {
+        classGroup: {
+          course: true,
+          semester: true,
+        },
+        room: true,
+        timeSlot: true,
+      },
+    });
     return schedules;
   }
 
