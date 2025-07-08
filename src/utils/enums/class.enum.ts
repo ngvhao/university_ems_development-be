@@ -5,3 +5,10 @@ export enum EClassGroupStatus {
   CANCELLED = 3,
   IN_PROGRESS = 4,
 }
+
+export enum EClassAdjustmentScheduleStatus {
+  REQUESTED = 1,
+  APPROVED = 2,
+  REJECTED = 3,
+  CANCELLED = 4,
+}

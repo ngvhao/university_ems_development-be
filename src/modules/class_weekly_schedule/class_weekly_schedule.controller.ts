@@ -40,6 +40,7 @@ import { EnrollmentCourseService } from '../enrollment_course/enrollment_course.
 import { LecturerInterceptor } from 'src/interceptors/get-lecturer.interceptor';
 import { RequestHasLecturerDto } from 'src/utils/request-has-lecturer-dto';
 import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
+import { FilterClassWeeklySchduleDto } from './dtos/filterClassWeeklySchdule.dto';
 
 @ApiTags('Quản lý Lịch học Hàng tuần (Class Weekly Schedules)')
 @ApiBearerAuth('token')
@@ -93,38 +94,6 @@ export class ClassWeeklyScheduleController {
     }).send(res);
   }
 
-  @Get()
-  @ApiOperation({ summary: 'Lấy danh sách lịch học hàng tuần (có phân trang)' })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    type: Number,
-    description: 'Số trang',
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    type: Number,
-    description: 'Số lượng kết quả mỗi trang',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Lấy danh sách lịch học thành công.',
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Chưa xác thực.',
-  })
-  async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
-    const { data, meta } =
-      await this.classWeeklyScheduleService.findAll(paginationDto);
-    return new SuccessResponse({
-      data,
-      metadata: meta,
-      message: 'Lấy danh sách lịch học hàng tuần thành công',
-    }).send(res);
-  }
-
   @Get('student/my-general-info')
   @Roles([EUserRole.STUDENT])
   @UseInterceptors(StudentInterceptor)
@@ -167,7 +136,7 @@ export class ClassWeeklyScheduleController {
     }).send(res);
   }
 
-  @Get('student/my-schedule')
+  @Get('students/my-schedule')
   @Roles([EUserRole.STUDENT])
   @UseInterceptors(StudentInterceptor)
   @ApiOperation({ summary: '[Student] Lấy lịch học cá nhân' })
@@ -201,7 +170,7 @@ export class ClassWeeklyScheduleController {
     }).send(res);
   }
 
-  @Get('lecturer/my-schedule')
+  @Get('lecturers/my-schedule')
   @Roles([EUserRole.LECTURER])
   @UseInterceptors(LecturerInterceptor)
   @ApiOperation({ summary: '[Lecturer] Lấy lịch học cá nhân' })
@@ -219,7 +188,7 @@ export class ClassWeeklyScheduleController {
     description: 'Không có quyền (ví dụ: không phải là sinh viên).',
   })
   async getMyScheduleLecturer(
-    @Query() query: { semesterCode: string; classGroupIds?: number[] },
+    @Query() query: FilterClassWeeklySchduleDto,
     @Req() req: RequestHasLecturerDto & RequestHasUserDto & Request,
     @Res() res: Response,
   ) {
@@ -232,7 +201,7 @@ export class ClassWeeklyScheduleController {
     );
     return new SuccessResponse({
       data,
-      message: 'Lấy lịch học cá nhân theo tuần thành công',
+      message: 'Lấy lịch dạy của giảng viên theo tuần thành công',
     }).send(res);
   }
 
@@ -298,6 +267,38 @@ export class ClassWeeklyScheduleController {
     return new SuccessResponse({
       data,
       message: 'Lấy thông tin lịch học hàng tuần thành công',
+    }).send(res);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Lấy danh sách lịch học hàng tuần (có phân trang)' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng kết quả mỗi trang',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách lịch học thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
+    const { data, meta } =
+      await this.classWeeklyScheduleService.findAll(paginationDto);
+    return new SuccessResponse({
+      data,
+      metadata: meta,
+      message: 'Lấy danh sách lịch học hàng tuần thành công',
     }).send(res);
   }
 

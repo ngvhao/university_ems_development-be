@@ -304,7 +304,6 @@ export class ClassWeeklyScheduleService {
       relations: {
         classGroup: {
           course: true,
-          semester: true,
         },
         room: true,
         timeSlot: true,

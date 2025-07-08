@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.entity';
 import { RoomEntity } from 'src/modules/room/entities/room.entity';
 import { TimeSlotEntity } from 'src/modules/time_slot/entities/time_slot.entity';
+import { EClassAdjustmentScheduleStatus } from 'src/utils/enums/class.enum';
 import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
@@ -20,6 +21,19 @@ export class ClassAdjustmentScheduleEntity extends IEntity {
   })
   @Column({ type: 'text', nullable: true })
   note: string | null;
+
+  @ApiProperty({
+    description: 'Trạng thái điều chỉnh (0: chưa điều chỉnh, 1: đã điều chỉnh)',
+    example: 0,
+  })
+  @Column({
+    type: 'enum',
+    enum: EClassAdjustmentScheduleStatus,
+    default: EClassAdjustmentScheduleStatus.REQUESTED,
+    comment:
+      'Trạng thái điều chỉnh: REQUESTED = 1, APPROVED = 2, REJECTED = 3, CANCELLED = 4',
+  })
+  status: EClassAdjustmentScheduleStatus;
 
   @ApiProperty({
     type: () => ClassGroupEntity,

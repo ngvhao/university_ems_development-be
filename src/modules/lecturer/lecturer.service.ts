@@ -268,6 +268,7 @@ export class LecturerService {
   async getTeachingClasses(
     lecturerId: number,
     paginationDto: PaginationDto = DEFAULT_PAGINATION,
+    semesterCode?: string,
   ): Promise<{ data: ClassGroupEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
 
@@ -280,6 +281,50 @@ export class LecturerService {
       .leftJoinAndSelect('enrollments.student', 'student')
       .leftJoinAndSelect('student.user', 'studentUser')
       .where('classGroup.lecturerId = :lecturerId', { lecturerId });
+
+    if (semesterCode) {
+      queryBuilder.andWhere('semester.semesterCode = :semesterCode', {
+        semesterCode,
+      });
+    }
+
+    const total = await queryBuilder.getCount();
+    const data = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .orderBy('classGroup.createdAt', 'DESC')
+      .getMany();
+
+    const meta = generatePaginationMeta(total, page, limit);
+
+    return { data, meta };
+  }
+
+  /**
+   * Lấy danh sách nhóm lớp đang giảng dạy của giảng viên
+   * @param lecturerId - ID của giảng viên
+   * @param paginationDto - Tham số phân trang
+   * @returns Danh sách nhóm lớp đang giảng dạy và thông tin phân trang
+   */
+  async getTeachingClassesInGeneral(
+    lecturerId: number,
+    paginationDto: PaginationDto = DEFAULT_PAGINATION,
+    semesterCode?: string,
+  ): Promise<{ data: ClassGroupEntity[]; meta: MetaDataInterface }> {
+    const { page = 1, limit = 10 } = paginationDto;
+
+    const queryBuilder = this.dataSource
+      .getRepository(ClassGroupEntity)
+      .createQueryBuilder('classGroup')
+      .leftJoinAndSelect('classGroup.course', 'course')
+      .leftJoin('classGroup.semester', 'semester')
+      .where('classGroup.lecturerId = :lecturerId', { lecturerId });
+
+    if (semesterCode) {
+      queryBuilder.andWhere('semester.semesterCode = :semesterCode', {
+        semesterCode,
+      });
+    }
 
     const total = await queryBuilder.getCount();
     const data = await queryBuilder

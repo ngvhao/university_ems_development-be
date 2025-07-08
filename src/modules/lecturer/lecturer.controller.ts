@@ -125,14 +125,15 @@ export class LecturerController {
     }).send(res);
   }
 
-  @Get('my-schedule')
+  @Get('me/teaching-classes-in-general')
   @UseGuards(RolesGuard)
   @Roles([EUserRole.LECTURER])
-  @ApiOperation({ summary: '[Giảng viên] Xem lịch giảng dạy được phân công' })
+  @ApiOperation({
+    summary: '[Giảng viên] Lấy danh sách nhóm lớp đang giảng dạy',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Lấy lịch giảng dạy thành công.',
-    isArray: true,
+    description: 'Lấy danh sách nhóm lớp giảng dạy thành công.',
   })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
@@ -143,17 +144,22 @@ export class LecturerController {
     description: 'Không phải giảng viên hoặc chưa có hồ sơ.',
   })
   @UseInterceptors(LecturerInterceptor)
-  async getMyTeachingSchedule(
+  async getMyTeachingClassesInGeneral(
     @Req() req: RequestHasLecturerDto & Request,
+    @Query() paginationDto: PaginationDto & { semesterCode?: string },
     @Res() res: Response,
   ) {
     const currentLecturer = req.lecturer;
-    console.log('currentLecturer', currentLecturer);
-    const schedule = null;
-    // await this.lecturerService.getMyTeachingSchedule(currentLecturer);
+    const { data, meta } =
+      await this.lecturerService.getTeachingClassesInGeneral(
+        currentLecturer.id,
+        paginationDto,
+        paginationDto.semesterCode,
+      );
     return new SuccessResponse({
-      data: schedule,
-      message: 'Lấy lịch giảng dạy thành công.',
+      data,
+      metadata: meta,
+      message: 'Lấy danh sách nhóm lớp giảng dạy thành công.',
     }).send(res);
   }
 
@@ -178,13 +184,14 @@ export class LecturerController {
   @UseInterceptors(LecturerInterceptor)
   async getMyTeachingClasses(
     @Req() req: RequestHasLecturerDto & Request,
-    @Query() paginationDto: PaginationDto,
+    @Query() paginationDto: PaginationDto & { semesterCode?: string },
     @Res() res: Response,
   ) {
     const currentLecturer = req.lecturer;
     const { data, meta } = await this.lecturerService.getTeachingClasses(
       currentLecturer.id,
       paginationDto,
+      paginationDto.semesterCode,
     );
     return new SuccessResponse({
       data,
