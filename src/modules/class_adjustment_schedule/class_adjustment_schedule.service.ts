@@ -7,7 +7,12 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsRelations, FindOptionsWhere, Repository } from 'typeorm';
+import {
+  FindOptionsRelations,
+  FindOptionsWhere,
+  In,
+  Repository,
+} from 'typeorm';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { CreateAdjustmentScheduleDto } from './dto/createClassAdjustmentSchedule.dto';
@@ -189,12 +194,26 @@ export class ClassAdjustmentScheduleService {
       | FindOptionsWhere<ClassAdjustmentScheduleEntity>[],
     relations?: FindOptionsRelations<ClassAdjustmentScheduleEntity>,
   ): Promise<ClassAdjustmentScheduleEntity> {
-    const courseMajor = await this.adjustmentRepo.findOne({
+    const adjustments = await this.adjustmentRepo.findOne({
       where: condition,
       relations,
     });
 
-    return courseMajor;
+    return adjustments;
+  }
+
+  async find(
+    condition:
+      | FindOptionsWhere<ClassAdjustmentScheduleEntity>
+      | FindOptionsWhere<ClassAdjustmentScheduleEntity>[],
+    relations?: FindOptionsRelations<ClassAdjustmentScheduleEntity>,
+  ): Promise<ClassAdjustmentScheduleEntity[]> {
+    const adjustments = await this.adjustmentRepo.find({
+      where: condition,
+      relations,
+    });
+
+    return adjustments;
   }
 
   /**
@@ -233,6 +252,43 @@ export class ClassAdjustmentScheduleService {
 
     const schedules = await queryBuilder.getMany();
 
+    return schedules;
+  }
+
+  /**
+   * Lấy tất cả các lịch học đã được điều chỉnh của một sinh viên dựa trên các nhóm lớp sinh viên đó đã đăng ký.
+   * @param studentId - ID của sinh viên.
+   * @returns Danh sách các lịch học đã được điều chỉnh của sinh viên.
+   * @throws NotFoundException nếu sinh viên không tồn tại.
+   */
+  async getAdjustedSchedulesByLecturerId(
+    lecturerId: number,
+    semesterCode?: string,
+    classGroupIds?: number[],
+  ): Promise<ClassAdjustmentScheduleEntity[]> {
+    const schedules = await this.adjustmentRepo.find({
+      where: {
+        classGroup: {
+          id: In(classGroupIds),
+          lecturerId: lecturerId,
+          semester: {
+            semesterCode: semesterCode,
+          },
+        },
+      },
+      relations: {
+        room: true,
+        timeSlot: true,
+        classGroup: {
+          course: true,
+          semester: true,
+        },
+      },
+      order: {
+        adjustmentDate: 'ASC',
+        timeSlotId: 'ASC',
+      },
+    });
     return schedules;
   }
 }

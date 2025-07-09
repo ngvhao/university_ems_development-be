@@ -3,6 +3,8 @@ import { ERoomType } from 'src/utils/enums/room.enum';
 import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { Entity, Column, OneToMany } from 'typeorm';
 import { ExamScheduleEntity } from 'src/modules/exam_schedule/entities/exam_schedule.entity';
+import { ClassWeeklyScheduleEntity } from 'src/modules/class_weekly_schedule/entities/class_weekly_schedule.entity';
+import { ClassAdjustmentScheduleEntity } from 'src/modules/class_adjustment_schedule/entities/class_adjustment_schedule.entity';
 
 @Entity('rooms')
 export class RoomEntity extends IEntity {
@@ -38,6 +40,26 @@ export class RoomEntity extends IEntity {
   })
   @Column()
   capacity: number;
+
+  @ApiPropertyOptional({
+    type: () => [ClassWeeklyScheduleEntity],
+    description: 'Danh sách lịch học tại phòng này',
+  })
+  @OneToMany(
+    () => ClassWeeklyScheduleEntity,
+    (classWeeklySchedule) => classWeeklySchedule.room,
+  )
+  classWeeklySchedules: ClassWeeklyScheduleEntity[];
+
+  @ApiPropertyOptional({
+    type: () => [ClassAdjustmentScheduleEntity],
+    description: 'Danh sách lịch học được điều chỉnh tại phòng này',
+  })
+  @OneToMany(
+    () => ClassAdjustmentScheduleEntity,
+    (classAdjustmentSchedule) => classAdjustmentSchedule.room,
+  )
+  classAdjustmentSchedules: ClassAdjustmentScheduleEntity[];
 
   @ApiPropertyOptional({
     type: () => [ExamScheduleEntity],

@@ -31,6 +31,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { SuccessResponse } from 'src/utils/response';
+import { FreeClassroomResponseDto } from './dtos/freeClassroomResponse.dto';
 
 @ApiTags('Quản lý Phòng học (Rooms)')
 @ApiBearerAuth('token')
@@ -68,6 +69,62 @@ export class RoomController {
     }).send(res);
   }
 
+  @Get('free-classroom')
+  @ApiOperation({
+    summary: 'Lấy danh sách phòng học có ca trống trong ngày',
+    description:
+      'Trả về danh sách các phòng học còn có ít nhất 1 ca trống trong ngày được chỉ định, kèm theo thông tin các ca trống',
+  })
+  @ApiQuery({
+    name: 'date',
+    required: true,
+    type: String,
+    description: 'Ngày cần kiểm tra (định dạng YYYY-MM-DD)',
+    example: '2025-01-15',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách phòng học có ca trống thành công.',
+    type: [FreeClassroomResponseDto],
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Định dạng ngày không hợp lệ.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực hoặc token không hợp lệ.',
+  })
+  async getFreeClassroom(@Query('date') date: string, @Res() res: Response) {
+    const data = await this.roomService.getFreeClassroom(date);
+    new SuccessResponse({
+      data,
+      message: 'Lấy danh sách phòng học có ca trống thành công.',
+    }).send(res);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Lấy chi tiết một phòng học' })
+  @ApiParam({ name: 'id', description: 'ID của phòng', type: Number })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy thông tin phòng thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy phòng.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực hoặc token không hợp lệ.',
+  })
+  async findOne(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
+    const room = await this.roomService.findOne(id);
+    new SuccessResponse({
+      data: room,
+      message: 'Lấy thông tin phòng thành công.',
+    }).send(res);
+  }
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách phòng học (phân trang)' })
   @ApiQuery({
@@ -96,29 +153,6 @@ export class RoomController {
       data,
       metadata: meta,
       message: 'Lấy danh sách phòng thành công.',
-    }).send(res);
-  }
-
-  @Get(':id')
-  @ApiOperation({ summary: 'Lấy chi tiết một phòng học' })
-  @ApiParam({ name: 'id', description: 'ID của phòng', type: Number })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Lấy thông tin phòng thành công.',
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Không tìm thấy phòng.',
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Chưa xác thực hoặc token không hợp lệ.',
-  })
-  async findOne(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
-    const room = await this.roomService.findOne(id);
-    new SuccessResponse({
-      data: room,
-      message: 'Lấy thông tin phòng thành công.',
     }).send(res);
   }
 

@@ -388,4 +388,18 @@ export class ClassWeeklyScheduleService {
 
     return courseMajor;
   }
+
+  async find(
+    condition:
+      | FindOptionsWhere<ClassWeeklyScheduleEntity>
+      | FindOptionsWhere<ClassWeeklyScheduleEntity>[],
+    relations?: FindOptionsRelations<ClassWeeklyScheduleEntity>,
+  ): Promise<ClassWeeklyScheduleEntity[]> {
+    const classWeeklySchedules = await this.classWeeklyScheduleRepository.find({
+      where: condition,
+      relations,
+    });
+
+    return classWeeklySchedules;
+  }
 }

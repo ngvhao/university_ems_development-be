@@ -34,6 +34,9 @@ import { UpdateAdjustmentScheduleDto } from './dto/updateClassAdjustmentSchedule
 import { ClassAdjustmentScheduleEntity } from './entities/class_adjustment_schedule.entity';
 import { StudentInterceptor } from 'src/interceptors/get-student.interceptor';
 import { RequestHasStudentDto } from 'src/utils/request-has-student-dto';
+import { FilterClassAdjustmentScheduleDto } from './dto/filterClasAdjustmentSchedule.dto';
+import { RequestHasLecturerDto } from 'src/utils/request-has-lecturer-dto';
+import { LecturerInterceptor } from 'src/interceptors/get-lecturer.interceptor';
 
 @ApiTags('Quản lý Lịch học Điều chỉnh (Class Adjustment Schedules)')
 @ApiBearerAuth('token')
@@ -78,7 +81,7 @@ export class ClassAdjustmentScheduleController {
     }).send(res);
   }
 
-  @Get('student/my-schedule')
+  @Get('students/my-schedule')
   @UseGuards(RolesGuard)
   @Roles([EUserRole.STUDENT])
   @UseInterceptors(StudentInterceptor)
@@ -97,7 +100,7 @@ export class ClassAdjustmentScheduleController {
     description: 'Không có quyền (ví dụ: không phải là sinh viên).',
   })
   async getMySchedule(
-    @Query() query: { semesterCode: string },
+    @Query() query: FilterClassAdjustmentScheduleDto,
     @Req() req: RequestHasStudentDto & Request,
     @Res() res: Response,
   ) {
@@ -107,6 +110,43 @@ export class ClassAdjustmentScheduleController {
       await this.classAdjustmentService.getAdjustedSchedulesByStudentId(
         student.id,
         semesterCode,
+      );
+    return new SuccessResponse({
+      data,
+      message: 'Lấy lịch học cá nhân được chỉnh sửa thành công',
+    }).send(res);
+  }
+
+  @Get('lecturers/my-schedule')
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.LECTURER])
+  @UseInterceptors(LecturerInterceptor)
+  @ApiOperation({ summary: '[Lecturer] Lấy lịch học cá nhân' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy lịch học cá nhân thành công.',
+    type: [ClassAdjustmentScheduleEntity],
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực hoặc không phải sinh viên.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền (ví dụ: không phải là sinh viên).',
+  })
+  async getMyScheduleLecturer(
+    @Query() query: FilterClassAdjustmentScheduleDto,
+    @Req() req: RequestHasLecturerDto & Request,
+    @Res() res: Response,
+  ) {
+    const { semesterCode, classGroupIds } = query;
+    const lecturer = req.lecturer!;
+    const data =
+      await this.classAdjustmentService.getAdjustedSchedulesByLecturerId(
+        lecturer.id,
+        semesterCode,
+        classGroupIds,
       );
     return new SuccessResponse({
       data,

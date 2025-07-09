@@ -31,31 +31,9 @@ functions:
       - http:
           method: ANY
           path: /
-          cors:
-            origins:
-              - ${env:FE_URL_DEV}
-              - 'http://localhost:3000'
-            allowCredentials: true
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
       - http:
           method: ANY
           path: '{proxy+}'
-          cors:
-            origins:
-              - ${env:FE_URL_DEV}
-              - 'http://localhost:3000'
-            allowCredentials: true
-            headers:
-              - Content-Type
-              - X-Amz-Date
-              - Authorization
-              - X-Api-Key
-              - X-Amz-Security-Token
 
 custom:
   dotenv:

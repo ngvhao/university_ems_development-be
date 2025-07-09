@@ -70,6 +70,12 @@ export class NotificationRecipientService {
     if (recipientEntry && recipientEntry.status != ERecipientStatus.UNREAD) {
       return;
     }
+    if (recipientEntry) {
+      recipientEntry.status = ERecipientStatus.READ;
+      recipientEntry.readAt = new Date();
+      await this.recipientRepository.save(recipientEntry);
+      return;
+    }
     const notification = await this.notificationService.findOne(notificationId);
 
     const newRecipient: CreateNotificationRecipientDto = {

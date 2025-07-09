@@ -8,6 +8,10 @@ import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { CreateRoomDto } from './dtos/createRoom.dto';
 import { UpdateRoomDto } from './dtos/updateRoom.dto';
 import { DEFAULT_PAGINATION } from 'src/utils/constants';
+import { TimeSlotEntity } from '../time_slot/entities/time_slot.entity';
+interface RoomWithFreeTimeSlots extends RoomEntity {
+  freeTimeSlots: TimeSlotEntity[];
+}
 
 @Injectable()
 export class RoomService {
@@ -99,5 +103,94 @@ export class RoomService {
   async remove(id: number): Promise<void> {
     await this.findOne(id);
     await this.roomRepository.delete(id);
+  }
+
+  /**
+   * Lấy danh sách phòng học có ca trống trong ngày kèm thông tin các ca trống
+   * @param date - Ngày cần kiểm tra (định dạng YYYY-MM-DD)
+   * @returns Promise<RoomWithFreeTimeSlots[]> - Danh sách phòng có ca trống với thông tin timeSlots
+   */
+  async getFreeClassroom(date: string): Promise<RoomWithFreeTimeSlots[]> {
+    const allTimeSlots = await this.roomRepository.manager
+      .getRepository(TimeSlotEntity)
+      .find({
+        order: { shift: 'ASC' },
+      });
+
+    const busyRoomsQuery = this.roomRepository
+      .createQueryBuilder('room')
+      .leftJoin(
+        'room.classWeeklySchedules',
+        'weeklySchedule',
+        ':date = ANY(weeklySchedule.scheduledDates)',
+      )
+      .leftJoin(
+        'room.classAdjustmentSchedules',
+        'adjustmentSchedule',
+        'adjustmentSchedule.adjustmentDate = :date',
+      )
+      .leftJoin('weeklySchedule.timeSlot', 'weeklyTimeSlot')
+      .leftJoin('adjustmentSchedule.timeSlot', 'adjustmentTimeSlot')
+      .select([
+        'room.id',
+        'room.roomNumber',
+        'room.buildingName',
+        'room.floor',
+        'room.roomType',
+        'room.capacity',
+        'weeklyTimeSlot.id',
+        'weeklyTimeSlot.startTime',
+        'weeklyTimeSlot.endTime',
+        'weeklyTimeSlot.shift',
+        'adjustmentTimeSlot.id',
+        'adjustmentTimeSlot.startTime',
+        'adjustmentTimeSlot.endTime',
+        'adjustmentTimeSlot.shift',
+      ])
+      .setParameter('date', date);
+
+    const busyRoomsData = await busyRoomsQuery.getMany();
+
+    const busyTimeSlotsByRoom = new Map<number, Set<number>>();
+
+    busyRoomsData.forEach((room) => {
+      if (!busyTimeSlotsByRoom.has(room.id)) {
+        busyTimeSlotsByRoom.set(room.id, new Set());
+      }
+
+      room.classWeeklySchedules?.forEach((schedule) => {
+        if (schedule.timeSlot) {
+          busyTimeSlotsByRoom.get(room.id)!.add(schedule.timeSlot.id);
+        }
+      });
+
+      room.classAdjustmentSchedules?.forEach((schedule) => {
+        if (schedule.timeSlot) {
+          busyTimeSlotsByRoom.get(room.id)!.add(schedule.timeSlot.id);
+        }
+      });
+    });
+
+    const allRooms = await this.roomRepository.find();
+
+    const freeRooms = allRooms
+      .map((room) => {
+        const busyTimeSlots = busyTimeSlotsByRoom.get(room.id) || new Set();
+
+        const freeTimeSlots = allTimeSlots.filter(
+          (timeSlot) => !busyTimeSlots.has(timeSlot.id),
+        );
+
+        if (freeTimeSlots.length > 0) {
+          return {
+            ...room,
+            freeTimeSlots: freeTimeSlots,
+          } as RoomWithFreeTimeSlots;
+        }
+        return null;
+      })
+      .filter((room): room is RoomWithFreeTimeSlots => room !== null);
+
+    return freeRooms;
   }
 }
