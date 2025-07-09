@@ -11,7 +11,7 @@ import {
 import { NestExpressApplication } from '@nestjs/platform-express';
 import helmet from 'helmet';
 import * as bodyParser from 'body-parser';
-import { API_PREFIX_PATH, FEUrl } from './utils/constants';
+import { API_PREFIX_PATH } from './utils/constants';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 
@@ -30,14 +30,23 @@ export function setupMiddlewares(app: INestApplication) {
             'https://*.analytics.google.com',
             'https://*.googletagmanager.com',
           ],
-          scriptSrc: ["'self'", 'https://www.googletagmanager.com'],
-          styleSrc: ["'self'", 'https://fonts.googleapis.com'],
+          scriptSrc: [
+            "'self'",
+            'https://www.googletagmanager.com',
+            `'unsafe-inline'`,
+          ],
+          styleSrc: [
+            "'self'",
+            'https://fonts.googleapis.com',
+            `'unsafe-inline'`,
+          ],
           imgSrc: [
             "'self'",
             'data:',
             'https://*.google-analytics.com',
             'https://ssl.gstatic.com',
             'https://www.gstatic.com',
+            'validator.swagger.io',
           ],
           fontSrc: ["'self'", 'https://fonts.gstatic.com'],
           objectSrc: ["'none'"],
@@ -52,15 +61,18 @@ export function setupMiddlewares(app: INestApplication) {
   app.setGlobalPrefix(API_PREFIX_PATH);
 
   const config = new DocumentBuilder()
-    .setTitle('Xypass')
-    .setDescription('Xypass project')
+    .setTitle('University BE')
+    .setDescription('University BE project')
     .setVersion('1.0')
+    .addServer(process.env.BE_URL, 'Development')
     .addBearerAuth({ type: 'http', scheme: 'bearer', in: 'header' }, 'token')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup(apiPath, app, document, {
-    swaggerOptions: { persistAuthorization: true },
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
   });
 
   app.use(bodyParser.json());
@@ -88,23 +100,6 @@ export function setupMiddlewares(app: INestApplication) {
       },
     }),
   );
-  app.enableCors({
-    origin: (origin, callback) => {
-      const allowedOrigins = [
-        'http://localhost:3000',
-        'http://localhost:3001',
-        FEUrl.DEV,
-        FEUrl.PRD,
-      ];
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  });
   app.useGlobalFilters(new HttpExceptionFilter());
   return expressApp;
 }
