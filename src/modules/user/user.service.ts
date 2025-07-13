@@ -12,6 +12,9 @@ import { CreateUserDto } from './dtos/createUser.dto';
 import { UpdateUserDto } from './dtos/updateUser.dto';
 import { EUserRole } from 'src/utils/enums/user.enum';
 import { Helpers } from 'src/utils/helpers';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
+import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
+import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 
 @Injectable()
 export class UserService {
@@ -19,6 +22,20 @@ export class UserService {
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
   ) {}
+
+  async findAll(paginationDto: PaginationDto): Promise<{
+    users: UserEntity[];
+    meta: MetaDataInterface;
+  }> {
+    const { page, limit } = paginationDto;
+    const skip = (page - 1) * limit;
+    const [users, total] = await this.userRepository.findAndCount({
+      skip,
+      take: limit,
+    });
+    const meta = generatePaginationMeta(total, page, limit);
+    return { users, meta };
+  }
 
   /**
    * Lấy thông tin người dùng bằng ID.
@@ -256,7 +273,7 @@ export class UserService {
       user.personalEmail = updateUserDto.personalEmail;
     }
 
-    if (updateUserDto) {
+    if (updateUserDto && updateUserDto.password) {
       user.password = await Helpers.hashPassword({
         password: updateUserDto.password,
       });
@@ -273,6 +290,32 @@ export class UserService {
       console.error('Lỗi khi cập nhật người dùng:', error);
       throw new InternalServerErrorException(
         'Đã xảy ra lỗi khi cập nhật người dùng.',
+      );
+    }
+  }
+
+  /**
+   * Xóa người dùng theo ID.
+   * @param id - ID của người dùng cần xóa.
+   * @returns Promise<void> - Không trả về dữ liệu nếu xóa thành công.
+   * @throws NotFoundException - Nếu không tìm thấy người dùng.
+   * @throws InternalServerErrorException - Nếu có lỗi khi xóa.
+   */
+  async deleteUser(id: number): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id } });
+
+    if (!user) {
+      throw new NotFoundException(
+        `Không tìm thấy người dùng với ID ${id} để xóa.`,
+      );
+    }
+
+    try {
+      await this.userRepository.remove(user);
+    } catch (error) {
+      console.error('Lỗi khi xóa người dùng:', error);
+      throw new InternalServerErrorException(
+        'Đã xảy ra lỗi khi xóa người dùng.',
       );
     }
   }

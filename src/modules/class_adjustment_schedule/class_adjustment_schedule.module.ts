@@ -14,7 +14,7 @@ import { LecturerModule } from '../lecturer/lecturer.module';
     forwardRef(() => ClassGroupModule),
     forwardRef(() => RoomModule),
     forwardRef(() => TimeSlotModule),
-    StudentModule,
+    forwardRef(() => StudentModule),
     LecturerModule,
   ],
   controllers: [ClassAdjustmentScheduleController],

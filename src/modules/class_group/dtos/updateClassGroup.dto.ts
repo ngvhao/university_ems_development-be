@@ -1,9 +1,13 @@
-import { PartialType } from '@nestjs/swagger';
-import { IsNumber, IsOptional, Min } from 'class-validator';
+import { OmitType, PartialType } from '@nestjs/swagger';
+import { IsArray, IsNumber, IsOptional, Min } from 'class-validator';
 import { CreateClassGroupDto } from './createClassGroup.dto';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { UpdateClassWeeklyScheduleDto } from 'src/modules/class_weekly_schedule/dtos/updateClassWeeklySchedule.dto';
 
-export class UpdateClassGroupDto extends PartialType(CreateClassGroupDto) {
+export class UpdateClassGroupDto extends OmitType(
+  PartialType(CreateClassGroupDto),
+  ['schedules'],
+) {
   @ApiPropertyOptional({
     description:
       'Số lượng sinh viên đã đăng ký chính thức (chỉ dùng cho mục đích cập nhật cụ thể, thường được quản lý bởi logic đăng ký)',
@@ -27,4 +31,13 @@ export class UpdateClassGroupDto extends PartialType(CreateClassGroupDto) {
   @Min(0, { message: 'Số sinh viên đăng ký tạm không được âm' })
   @IsNumber({}, { message: 'Số sinh viên đăng ký tạm phải là số' })
   preRegisteredStudents?: number;
+
+  @ApiPropertyOptional({
+    description: 'Lịch học của nhóm lớp',
+    example: [],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  schedules?: UpdateClassWeeklyScheduleDto[];
 }

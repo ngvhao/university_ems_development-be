@@ -13,7 +13,7 @@ import { LecturerModule } from '../lecturer/lecturer.module';
 @Module({
   imports: [
     TypeOrmModule.forFeature([ClassWeeklyScheduleEntity]),
-    StudentModule,
+    forwardRef(() => StudentModule),
     LecturerModule,
     forwardRef(() => ClassGroupModule),
     forwardRef(() => RoomModule),

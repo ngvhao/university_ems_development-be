@@ -251,7 +251,7 @@ export class ClassGroupController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách nhóm lớp' })
+  @ApiOperation({ summary: 'Lấy danh sách nhóm lớp (có phân trang và lọc)' })
   @ApiQuery({
     name: 'page',
     required: false,
@@ -263,6 +263,42 @@ export class ClassGroupController {
     required: false,
     type: Number,
     description: 'Số lượng kết quả mỗi trang',
+  })
+  @ApiQuery({
+    name: 'facultyId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID khoa',
+  })
+  @ApiQuery({
+    name: 'departmentId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID bộ môn',
+  })
+  @ApiQuery({
+    name: 'majorId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID ngành học',
+  })
+  @ApiQuery({
+    name: 'courseId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID môn học',
+  })
+  @ApiQuery({
+    name: 'semesterId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID học kỳ',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    type: String,
+    description: 'Lọc theo trạng thái',
   })
   @ApiResponse({
     status: HttpStatus.OK,

@@ -32,6 +32,7 @@ import { Helpers } from 'src/utils/helpers';
 import { UserService } from '../user/user.service';
 import { StudentHelper } from 'src/utils/helpers/student.helper';
 import { StudentChatbotDataDto } from './dtos/studentChatbotData.dto';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 
 @Injectable()
 export class StudentService {
@@ -210,20 +211,15 @@ export class StudentService {
   /**
    * Lấy danh sách sinh viên có phân trang và lọc.
    * Trả về thông tin user liên kết (không bao gồm password).
-   * @param filterDto - DTO chứa các tiêu chí lọc và phân trang.
+   * @param paginationDto - DTO chứa thông tin phân trang.
+   * @param filterDto - DTO chứa các tiêu chí lọc.
    * @returns Promise<{ data: StudentEntity[]; meta: MetaDataInterface }> - Danh sách sinh viên và metadata.
    */
   async findAll(
-    filterDto: FilterStudentDto,
+    paginationDto: PaginationDto,
+    filterDto?: FilterStudentDto,
   ): Promise<{ data: StudentEntity[]; meta: MetaDataInterface }> {
-    const {
-      page = 1,
-      limit = 10,
-      search,
-      classId,
-      majorId,
-      academicYear,
-    } = filterDto;
+    const { page = 1, limit = 10 } = paginationDto;
     const skip = (page - 1) * limit;
 
     // Build base query for filtering
@@ -233,23 +229,38 @@ export class StudentService {
       .leftJoin('student.class', 'class')
       .leftJoin('student.major', 'major');
 
-    if (search) {
-      const searchTerm = `%${search.toLowerCase()}%`;
-      baseQuery.andWhere(
-        '(LOWER(user.firstName) LIKE :search OR LOWER(user.lastName) LIKE :search OR LOWER(user.userCode) LIKE :search OR LOWER(user.universityEmail) LIKE :search OR LOWER(user.personalEmail) LIKE :search OR LOWER(student.studentCode) LIKE :search)',
-        { search: searchTerm },
-      );
+    // Apply filters
+    if (filterDto?.facultyId) {
+      baseQuery
+        .leftJoin('major.department', 'department')
+        .leftJoin('department.faculty', 'faculty')
+        .andWhere('faculty.id = :facultyId', {
+          facultyId: filterDto.facultyId,
+        });
     }
-    if (classId) {
-      baseQuery.andWhere('student.classId = :classId', { classId });
+
+    if (filterDto?.departmentId) {
+      baseQuery
+        .leftJoin('major.department', 'department')
+        .andWhere('department.id = :departmentId', {
+          departmentId: filterDto.departmentId,
+        });
     }
-    if (majorId) {
-      baseQuery.andWhere('student.majorId = :majorId', { majorId });
-    }
-    if (academicYear) {
-      baseQuery.andWhere('student.academicYear = :academicYear', {
-        academicYear,
+
+    if (filterDto?.majorId) {
+      baseQuery.andWhere('student.majorId = :majorId', {
+        majorId: filterDto.majorId,
       });
+    }
+
+    if (filterDto?.classId) {
+      baseQuery.andWhere('student.classId = :classId', {
+        classId: filterDto.classId,
+      });
+    }
+
+    if (filterDto?.status) {
+      baseQuery.andWhere('user.status = :status', { status: filterDto.status });
     }
 
     // Get total count
@@ -263,23 +274,37 @@ export class StudentService {
       .leftJoinAndSelect('student.major', 'major');
 
     // Apply same filters
-    if (search) {
-      const searchTerm = `%${search.toLowerCase()}%`;
-      dataQuery.andWhere(
-        '(LOWER(user.firstName) LIKE :search OR LOWER(user.lastName) LIKE :search OR LOWER(user.userCode) LIKE :search OR LOWER(user.universityEmail) LIKE :search OR LOWER(user.personalEmail) LIKE :search OR LOWER(student.studentCode) LIKE :search)',
-        { search: searchTerm },
-      );
+    if (filterDto?.facultyId) {
+      dataQuery
+        .leftJoin('major.department', 'department')
+        .leftJoin('department.faculty', 'faculty')
+        .andWhere('faculty.id = :facultyId', {
+          facultyId: filterDto.facultyId,
+        });
     }
-    if (classId) {
-      dataQuery.andWhere('student.classId = :classId', { classId });
+
+    if (filterDto?.departmentId) {
+      dataQuery
+        .leftJoin('major.department', 'department')
+        .andWhere('department.id = :departmentId', {
+          departmentId: filterDto.departmentId,
+        });
     }
-    if (majorId) {
-      dataQuery.andWhere('student.majorId = :majorId', { majorId });
-    }
-    if (academicYear) {
-      dataQuery.andWhere('student.academicYear = :academicYear', {
-        academicYear,
+
+    if (filterDto?.majorId) {
+      dataQuery.andWhere('student.majorId = :majorId', {
+        majorId: filterDto.majorId,
       });
+    }
+
+    if (filterDto?.classId) {
+      dataQuery.andWhere('student.classId = :classId', {
+        classId: filterDto.classId,
+      });
+    }
+
+    if (filterDto?.status) {
+      dataQuery.andWhere('user.status = :status', { status: filterDto.status });
     }
 
     // Apply pagination and ordering

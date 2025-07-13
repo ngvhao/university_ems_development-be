@@ -4,7 +4,6 @@ import {
   HttpStatus,
   Post,
   Get,
-  Patch,
   Delete,
   Param,
   Query,
@@ -14,6 +13,7 @@ import {
   Req,
   ForbiddenException,
   UseInterceptors,
+  Put,
 } from '@nestjs/common';
 import { StudentService } from './student.service';
 import { Request, Response } from 'express';
@@ -38,6 +38,7 @@ import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
 import { StudentChatbotDataDto } from './dtos/studentChatbotData.dto';
 import { RequestHasStudentDto } from 'src/utils/request-has-student-dto';
 import { StudentInterceptor } from 'src/interceptors/get-student.interceptor';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 
 @ApiTags('Sinh viên (Students)')
 @ApiBearerAuth('token')
@@ -97,7 +98,48 @@ export class StudentController {
     EUserRole.LECTURER,
   ])
   @ApiOperation({ summary: 'Lấy danh sách sinh viên (phân trang và lọc)' })
-  @ApiQuery({ type: FilterStudentDto })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng kết quả mỗi trang',
+  })
+  @ApiQuery({
+    name: 'facultyId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID khoa',
+  })
+  @ApiQuery({
+    name: 'departmentId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID bộ môn',
+  })
+  @ApiQuery({
+    name: 'majorId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID ngành học',
+  })
+  @ApiQuery({
+    name: 'classId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID lớp học',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    type: String,
+    description: 'Lọc theo trạng thái',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description:
@@ -111,8 +153,15 @@ export class StudentController {
     status: HttpStatus.FORBIDDEN,
     description: 'Không có quyền xem danh sách sinh viên.',
   })
-  async findAll(@Query() filterDto: FilterStudentDto, @Res() res: Response) {
-    const { data, meta } = await this.studentService.findAll(filterDto);
+  async findAll(
+    @Query() paginationDto: PaginationDto,
+    @Query() filterDto: FilterStudentDto,
+    @Res() res: Response,
+  ) {
+    const { data, meta } = await this.studentService.findAll(
+      paginationDto,
+      filterDto,
+    );
     return new SuccessResponse({
       message: 'Lấy danh sách sinh viên thành công',
       data,
@@ -210,7 +259,7 @@ export class StudentController {
     }).send(res);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @Roles([
     EUserRole.ADMINISTRATOR,
     EUserRole.ACADEMIC_MANAGER,

@@ -1,30 +1,40 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsNumber, IsEnum } from 'class-validator';
-import { EGradeType } from 'src/utils/enums/grade.enum';
+import { IsOptional, IsNumber, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class FilterGradeDetailDto {
   @ApiPropertyOptional({
-    description: 'ID của sinh viên',
-    example: 101,
+    description: 'Lọc theo ID sinh viên',
+    example: 1,
   })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   studentId?: number;
 
   @ApiPropertyOptional({
-    description: 'ID của nhóm lớp',
-    example: 25,
+    description: 'Lọc theo ID nhóm lớp',
+    example: 1,
   })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   classGroupId?: number;
 
   @ApiPropertyOptional({
-    description: 'Loại điểm',
-    enum: EGradeType,
-    example: EGradeType.MIDTERM,
+    description: 'Lọc theo loại điểm',
+    example: 'MIDTERM',
   })
   @IsOptional()
-  @IsEnum(EGradeType)
-  gradeType?: EGradeType;
+  @IsString()
+  gradeType?: string;
+
+  @ApiPropertyOptional({
+    description: 'Lọc theo ID học kỳ',
+    example: 1,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  semesterId?: number;
 }

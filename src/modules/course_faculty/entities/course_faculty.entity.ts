@@ -36,7 +36,7 @@ export class CourseFacultyEntity extends IEntity {
     type: () => CourseEntity,
     description: 'Thông tin môn học',
   })
-  @ManyToOne(() => CourseEntity, (course) => course.id, {
+  @ManyToOne(() => CourseEntity, (course) => course.courseFaculties, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'courseId' })
@@ -46,7 +46,7 @@ export class CourseFacultyEntity extends IEntity {
     type: () => FacultyEntity,
     description: 'Thông tin khoa',
   })
-  @ManyToOne(() => FacultyEntity, (faculty) => faculty.id, {
+  @ManyToOne(() => FacultyEntity, (faculty) => faculty.courseFaculties, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'facultyId' })

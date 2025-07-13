@@ -13,6 +13,7 @@ import { UpdateCourseDto } from './dtos/updateCourse.dto';
 import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
+import { FilterCourseDto } from './dtos/filterCourse.dto';
 
 @Injectable()
 export class CourseService {
@@ -72,16 +73,15 @@ export class CourseService {
    * @throws ConflictException nếu mã môn học bị trùng.
    */
   async create(createCourseDto: CreateCourseDto): Promise<CourseEntity> {
-    const { courseCode, ...restData } = createCourseDto;
+    const { courseCode, facultyId, ...restData } = createCourseDto;
 
-    // 1. Kiểm tra trùng mã môn học
     await this.checkCourseCodeConflict(courseCode);
 
-    // 2. Tạo entity mới
     try {
       const course = this.courseRepository.create({
         ...restData,
         courseCode,
+        courseFaculties: [{ facultyId }],
       });
       return await this.courseRepository.save(course);
     } catch (error) {
@@ -93,20 +93,69 @@ export class CourseService {
   }
 
   /**
-   * Lấy danh sách môn học (có phân trang).
+   * Lấy danh sách môn học (có phân trang và lọc).
    * @param paginationDto - Thông tin phân trang.
+   * @param filterDto - Thông tin lọc.
    * @returns Promise<{ data: CourseEntity[]; meta: MetaDataInterface }> - Danh sách môn học và metadata.
    */
   async findAll(
     paginationDto: PaginationDto,
+    filterDto?: FilterCourseDto,
   ): Promise<{ data: CourseEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
-    const [data, total] = await this.courseRepository.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { courseCode: 'ASC' },
-    });
+
+    const queryBuilder = this.courseRepository.createQueryBuilder('course');
+
+    if (filterDto?.facultyId) {
+      queryBuilder
+        .leftJoin('course.courseFaculties', 'courseFaculty')
+        .leftJoin('courseFaculty.faculty', 'faculty')
+        .andWhere('faculty.id = :facultyId', {
+          facultyId: filterDto.facultyId,
+        });
+    }
+
+    if (filterDto?.departmentId) {
+      queryBuilder
+        .leftJoin('course.courseMajors', 'courseMajor')
+        .leftJoin('courseMajor.major', 'major')
+        .leftJoin('major.department', 'department')
+        .andWhere('department.id = :departmentId', {
+          departmentId: filterDto.departmentId,
+        });
+    }
+
+    if (filterDto?.majorId) {
+      queryBuilder
+        .leftJoin('course.courseMajors', 'courseMajor')
+        .andWhere('courseMajor.majorId = :majorId', {
+          majorId: filterDto.majorId,
+        });
+    }
+
+    if (filterDto?.curriculumId) {
+      queryBuilder
+        .leftJoin('course.curriculumCourses', 'curriculumCourse')
+        .andWhere('curriculumCourse.curriculumId = :curriculumId', {
+          curriculumId: filterDto.curriculumId,
+        });
+    }
+
+    if (filterDto?.status) {
+      queryBuilder.andWhere('course.status = :status', {
+        status: filterDto.status,
+      });
+    }
+
+    // Apply pagination
+    queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .orderBy('course.courseCode', 'ASC');
+
+    const [data, total] = await queryBuilder.getManyAndCount();
     const meta = generatePaginationMeta(total, page, limit);
+
     return { data, meta };
   }
 

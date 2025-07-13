@@ -14,7 +14,6 @@ import {
   LessThanOrEqual,
   MoreThanOrEqual,
   In,
-  FindOptionsSelect,
 } from 'typeorm';
 import { ClassGroupEntity } from './entities/class_group.entity';
 import { CreateClassGroupDto } from './dtos/createClassGroup.dto';
@@ -28,12 +27,15 @@ import { GenerateScheduleResponseDto } from './dtos/generatecClassGroupSchedule.
 import { ClassWeeklyScheduleEntity } from '../class_weekly_schedule/entities/class_weekly_schedule.entity';
 import { SemesterEntity } from '../semester/entities/semester.entity';
 import { EDayOfWeek } from 'src/utils/enums/schedule.enum';
+import { ClassWeeklyScheduleService } from '../class_weekly_schedule/class_weekly_schedule.service';
+import { UpdateClassWeeklyScheduleDto } from '../class_weekly_schedule/dtos/updateClassWeeklySchedule.dto';
 
 @Injectable()
 export class ClassGroupService {
   constructor(
     @InjectRepository(ClassGroupEntity)
     private readonly classGroupRepository: Repository<ClassGroupEntity>,
+    private readonly classWeeklyScheduleService: ClassWeeklyScheduleService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -67,9 +69,8 @@ export class ClassGroupService {
    * @throws ConflictException nếu groupNumber đã tồn tại trong semesterId đó.
    */
   async create(createDto: CreateClassGroupDto): Promise<ClassGroupEntity> {
-    const { semesterId, groupNumber, courseId } = createDto;
+    const { semesterId, groupNumber, courseId, schedules } = createDto;
 
-    // Kiểm tra trùng lặp groupNumber trong cùng CourseSemester
     const existingGroup = await this.classGroupRepository.findOne({
       where: { semesterId, groupNumber, courseId },
       select: ['id'],
@@ -80,15 +81,44 @@ export class ClassGroupService {
       );
     }
 
-    // Tạo và lưu nhóm mới
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      const newGroup = this.classGroupRepository.create(createDto);
-      return await this.classGroupRepository.save(newGroup);
+      const newGroup = queryRunner.manager.create(ClassGroupEntity, createDto);
+      const savedGroup = await queryRunner.manager.save(newGroup);
+      if (schedules) {
+        for (const classWeeklySchedule of schedules) {
+          const newClassWeeklySchedule = queryRunner.manager.create(
+            ClassWeeklyScheduleEntity,
+            {
+              ...classWeeklySchedule,
+              lecturerId: createDto.lecturerId,
+              classGroupId: savedGroup.id,
+            },
+          );
+          await this.classWeeklyScheduleService.checkConflict(
+            newClassWeeklySchedule,
+          );
+          await queryRunner.manager.save(newClassWeeklySchedule);
+        }
+      }
+
+      await queryRunner.commitTransaction();
+
+      return savedGroup;
     } catch (error) {
-      console.error('Lỗi khi tạo nhóm lớp:', error);
-      throw new BadRequestException(
-        'Không thể tạo nhóm lớp, vui lòng kiểm tra lại dữ liệu.',
-      );
+      await queryRunner.rollbackTransaction();
+      if (error.code === '23505') {
+        throw new ConflictException(
+          'Dữ liệu bị trùng lặp trong database: ',
+          error,
+        );
+      }
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
   }
 
@@ -334,16 +364,19 @@ export class ClassGroupService {
   async findAll({
     filterDto,
     paginationDto,
-    // relations,
-    // select,
   }: {
     filterDto: FilterClassGroupDto;
     paginationDto: PaginationDto;
-    // relations?: FindOptionsRelations<ClassGroupEntity>;
-    select?: FindOptionsSelect<ClassGroupEntity>;
   }): Promise<{ data: ClassGroupEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
-    const { semesterId, statuses, majorId, yearAdmission } = filterDto;
+    const {
+      semesterId,
+      statuses,
+      majorId,
+      yearAdmission,
+      courseId,
+      facultyId,
+    } = filterDto;
 
     const where: FindOptionsWhere<ClassGroupEntity> = {};
     if (semesterId !== undefined) {
@@ -364,6 +397,18 @@ export class ClassGroupService {
       };
     }
 
+    if (courseId !== undefined) {
+      where.courseId = courseId;
+    }
+
+    if (facultyId !== undefined) {
+      where.course = {
+        courseFaculties: { facultyId: facultyId },
+      };
+    }
+
+    console.log('where:', where);
+
     const [data, total] = await this.classGroupRepository.findAndCount({
       where,
       relations: {
@@ -372,6 +417,9 @@ export class ClassGroupService {
         schedules: {
           timeSlot: true,
           room: true,
+        },
+        lecturer: {
+          user: true,
         },
       },
       skip: (page - 1) * limit,
@@ -427,6 +475,11 @@ export class ClassGroupService {
     id: number,
     updateDto: UpdateClassGroupDto,
   ): Promise<ClassGroupEntity> {
+    // 1. Validate and find existing group
+    const originalGroup = await this.findGroupByIdOrThrow(id);
+
+    await this.validateUpdateConstraints(id, updateDto, originalGroup);
+
     const existingGroup = await this.classGroupRepository.preload({
       id: id,
       ...updateDto,
@@ -436,8 +489,19 @@ export class ClassGroupService {
       throw new NotFoundException(`Không tìm thấy Nhóm lớp với ID ${id}`);
     }
 
-    const originalGroup = await this.findGroupByIdOrThrow(id);
+    if (updateDto.schedules) {
+      await this.updateSchedules(existingGroup.id, updateDto.schedules);
+    }
 
+    return await this.saveUpdatedGroup(existingGroup);
+  }
+
+  private async validateUpdateConstraints(
+    id: number,
+    updateDto: UpdateClassGroupDto,
+    originalGroup: ClassGroupEntity,
+  ): Promise<void> {
+    // Check semesterId change
     if (
       updateDto.semesterId &&
       updateDto.semesterId !== originalGroup.semesterId
@@ -447,47 +511,110 @@ export class ClassGroupService {
       );
     }
 
+    // Check groupNumber conflict
     if (
       updateDto.groupNumber &&
       updateDto.groupNumber !== originalGroup.groupNumber
     ) {
-      const conflict = await this.classGroupRepository.findOne({
-        where: {
-          semesterId: originalGroup.semesterId,
-          groupNumber: updateDto.groupNumber,
-          id: Not(id),
-        },
-        select: ['id'],
-      });
-      if (conflict) {
-        throw new ConflictException(
-          `Nhóm lớp số ${updateDto.groupNumber} đã tồn tại cho Học phần-Học kỳ ID ${originalGroup.semesterId}.`,
-        );
-      }
+      await this.checkGroupNumberConflict(
+        id,
+        updateDto.groupNumber,
+        originalGroup.semesterId,
+      );
     }
 
-    // Kiểm tra logic maxStudents và registeredStudents
-    const finalMaxStudents = existingGroup.maxStudents;
-    const finalRegisteredStudents = existingGroup.registeredStudents;
+    // Validate student count constraints
+    this.validateStudentCountConstraints(updateDto, originalGroup);
+  }
+
+  /**
+   * Check if group number conflicts with existing groups
+   */
+  private async checkGroupNumberConflict(
+    id: number,
+    groupNumber: number,
+    semesterId: number,
+  ): Promise<void> {
+    const conflict = await this.classGroupRepository.findOne({
+      where: {
+        semesterId,
+        groupNumber,
+        id: Not(id),
+      },
+      select: ['id'],
+    });
+
+    if (conflict) {
+      throw new ConflictException(
+        `Nhóm lớp số ${groupNumber} đã tồn tại cho Học phần-Học kỳ ID ${semesterId}.`,
+      );
+    }
+  }
+
+  /**
+   * Validate student count constraints
+   */
+  private validateStudentCountConstraints(
+    updateDto: UpdateClassGroupDto,
+    originalGroup: ClassGroupEntity,
+  ): void {
+    const { maxStudents, registeredStudents } = updateDto;
     const originalRegisteredStudents = originalGroup.registeredStudents;
 
-    if (
-      updateDto.maxStudents !== undefined &&
-      updateDto.maxStudents < originalRegisteredStudents
-    ) {
+    // Check if maxStudents is being reduced below current registered count
+    if (maxStudents !== undefined && maxStudents < originalRegisteredStudents) {
       throw new BadRequestException(
-        `Không thể đặt Số lượng tối đa (${updateDto.maxStudents}) nhỏ hơn số sinh viên đã đăng ký hiện tại (${originalRegisteredStudents}).`,
-      );
-    }
-    if (
-      updateDto.registeredStudents !== undefined &&
-      finalRegisteredStudents > finalMaxStudents
-    ) {
-      throw new BadRequestException(
-        `Không thể đặt Số sinh viên đăng ký (${finalRegisteredStudents}) lớn hơn Số lượng tối đa (${finalMaxStudents}).`,
+        `Không thể đặt Số lượng tối đa (${maxStudents}) nhỏ hơn số sinh viên đã đăng ký hiện tại (${originalRegisteredStudents}).`,
       );
     }
 
+    // Check if registeredStudents exceeds maxStudents
+    if (registeredStudents !== undefined && registeredStudents > maxStudents) {
+      throw new BadRequestException(
+        `Không thể đặt Số sinh viên đăng ký (${registeredStudents}) lớn hơn Số lượng tối đa (${maxStudents}).`,
+      );
+    }
+  }
+
+  /**
+   * Update class weekly schedules
+   */
+  private async updateSchedules(
+    classGroupId: number,
+    schedules: UpdateClassWeeklyScheduleDto[],
+  ): Promise<void> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      for (const classWeeklySchedule of schedules) {
+        await queryRunner.manager.update(
+          ClassWeeklyScheduleEntity,
+          { id: classWeeklySchedule.id },
+          {
+            ...classWeeklySchedule,
+            classGroupId,
+          },
+        );
+      }
+
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      console.error('Lỗi khi cập nhật lịch học:', error);
+      throw new BadRequestException('Không thể cập nhật lịch học.');
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /**
+   * Save the updated class group
+   */
+  private async saveUpdatedGroup(
+    existingGroup: ClassGroupEntity,
+  ): Promise<ClassGroupEntity> {
     try {
       return await this.classGroupRepository.save(existingGroup);
     } catch (error) {

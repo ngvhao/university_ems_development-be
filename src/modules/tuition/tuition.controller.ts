@@ -39,6 +39,7 @@ import { CreateTuitionBatchDto } from './dto/createTuitionBatch.dto';
 import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
 import { StudentInterceptor } from 'src/interceptors/get-student.interceptor';
 import { RequestHasStudentDto } from 'src/utils/request-has-student-dto';
+import { FilterTuitionDto } from './dto/filterTuition.dto';
 
 @ApiTags('Quản lý Học phí (Tuitions)')
 @ApiBearerAuth('token')
@@ -179,7 +180,7 @@ export class TuitionController {
 
   @Get()
   @ApiOperation({
-    summary: 'Lấy danh sách học phí (có phân trang và tìm kiếm)',
+    summary: 'Lấy danh sách học phí (có phân trang và lọc)',
   })
   @ApiQuery({
     name: 'page',
@@ -194,11 +195,40 @@ export class TuitionController {
     description: 'Số lượng kết quả mỗi trang',
   })
   @ApiQuery({
-    name: 'search',
+    name: 'studentId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID sinh viên',
+  })
+  @ApiQuery({
+    name: 'semesterId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID học kỳ',
+  })
+  @ApiQuery({
+    name: 'paymentStatus',
     required: false,
     type: String,
-    description:
-      'Từ khóa tìm kiếm (tên SV, mã SV, tên học kỳ, số tiền, trạng thái)',
+    description: 'Lọc theo trạng thái thanh toán',
+  })
+  @ApiQuery({
+    name: 'facultyId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID khoa',
+  })
+  @ApiQuery({
+    name: 'departmentId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID bộ môn',
+  })
+  @ApiQuery({
+    name: 'majorId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID ngành học',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -208,8 +238,12 @@ export class TuitionController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Chưa xác thực.',
   })
-  async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
-    const result = await this.tuitionService.findAll(paginationDto);
+  async findAll(
+    @Query() paginationDto: PaginationDto,
+    @Query() filterDto: FilterTuitionDto,
+    @Res() res: Response,
+  ) {
+    const result = await this.tuitionService.findAll(paginationDto, filterDto);
     return new SuccessResponse({
       data: result.data,
       metadata: result.meta,

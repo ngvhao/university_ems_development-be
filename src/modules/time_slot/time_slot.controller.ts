@@ -4,13 +4,13 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
   UseGuards,
   Res,
   Query,
   ParseIntPipe,
   HttpStatus,
+  Put,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -104,7 +104,8 @@ export class TimeSlotController {
   async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
     const result = await this.timeSlotService.findAll(paginationDto);
     return new SuccessResponse({
-      ...result,
+      data: result.data,
+      metadata: result.meta,
       message: 'Lấy danh sách Khung giờ thành công',
     }).send(res);
   }
@@ -133,7 +134,7 @@ export class TimeSlotController {
     }).send(res);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseGuards(RolesGuard)
   @Roles([EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER])
   @ApiOperation({ summary: 'Cập nhật thông tin một Khung giờ' })

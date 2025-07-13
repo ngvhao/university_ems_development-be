@@ -429,7 +429,8 @@ export class StudyPlanService {
       where.semester = { id: semesterId };
     }
     if (courseId !== undefined) where.courseId = courseId;
-    if (status !== undefined) where.status = status;
+    if (status !== undefined)
+      where.status = status as unknown as EStudyPlanStatus;
 
     const [data, total] = await this.studyPlanRepository.findAndCount({
       where,

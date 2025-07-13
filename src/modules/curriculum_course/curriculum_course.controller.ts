@@ -5,13 +5,13 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
   Query,
   Res,
   UseGuards,
   ParseIntPipe,
   HttpStatus,
+  Put,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -208,7 +208,7 @@ export class CurriculumCourseController {
     }).send(res);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseGuards(RolesGuard)
   @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
   @ApiOperation({

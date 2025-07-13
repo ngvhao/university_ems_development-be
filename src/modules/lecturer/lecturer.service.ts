@@ -27,6 +27,7 @@ import _ from 'lodash';
 import { DEFAULT_PAGINATION } from 'src/utils/constants';
 import { ClassEntity } from '../class/entities/class.entity';
 import { ClassGroupEntity } from '../class_group/entities/class_group.entity';
+import { FilterLecturerDto } from './dtos/filterLecturer.dto';
 
 @Injectable()
 export class LecturerService {
@@ -165,13 +166,21 @@ export class LecturerService {
 
   async findAll(
     paginationDto: PaginationDto = DEFAULT_PAGINATION,
+    filterDto?: FilterLecturerDto,
   ): Promise<{ data: LecturerEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
-
+    const where: FindOptionsWhere<LecturerEntity> = {};
+    if (filterDto?.facultyId) {
+      where.department = { facultyId: filterDto.facultyId };
+    }
+    if (filterDto?.departmentId) {
+      where.departmentId = filterDto.departmentId;
+    }
     const [data, total] = await this.lecturerRepository.findAndCount({
-      relations: ['user', 'department'],
       skip: (page - 1) * limit,
       take: limit,
+      where,
+      relations: ['user', 'department'],
     });
 
     const meta = generatePaginationMeta(total, page, limit);

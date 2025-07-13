@@ -1,24 +1,31 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsNumber, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
-import { IsNumber, IsOptional, IsPositive, IsString } from 'class-validator';
-import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 
-export class FilterMajorDto extends PaginationDto {
+export class FilterMajorDto {
   @ApiPropertyOptional({
-    description: 'Từ khóa tìm kiếm (Tên, Mã)',
-    example: 'Công nghệ thông tin',
-  })
-  @IsOptional()
-  @IsString()
-  search?: string;
-
-  @ApiPropertyOptional({
-    description: 'Lọc theo ID Khoa',
+    description: 'Lọc theo ID khoa',
     example: 1,
   })
   @IsOptional()
-  @IsNumber({}, { message: 'ID Khoa phải là số' })
-  @IsPositive({ message: 'ID Khoa phải là số dương' })
   @Type(() => Number)
+  @IsNumber()
   facultyId?: number;
+
+  @ApiPropertyOptional({
+    description: 'Lọc theo ID bộ môn',
+    example: 1,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  departmentId?: number;
+
+  @ApiPropertyOptional({
+    description: 'Lọc theo trạng thái',
+    example: 'ACTIVE',
+  })
+  @IsOptional()
+  @IsString()
+  status?: string;
 }

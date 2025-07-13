@@ -6,17 +6,87 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
+  Req,
+  Res,
+  Query,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { ExamScheduleService } from './exam_schedule.service';
 import { CreateExamScheduleDto } from './dtos/createExamSchedule.dto';
 import { UpdateExamScheduleDto } from './dtos/updateExamSchedule.dto';
 import { ExamScheduleEntity } from './entities/exam_schedule.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from 'src/decorators/roles.decorator';
+import { EUserRole } from 'src/utils/enums/user.enum';
+import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
+import { Response, Request } from 'express';
+import { SuccessResponse } from 'src/utils/response';
+import { HttpStatus } from '@nestjs/common';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
+import { FilterExamScheduleDto } from './dtos/filterExamSchedule.dto';
 
 @ApiTags('Exam Schedules')
+@ApiBearerAuth('token')
+@UseGuards(JwtAuthGuard)
 @Controller('exam-schedules')
 export class ExamScheduleController {
   constructor(private readonly examScheduleService: ExamScheduleService) {}
+
+  @Get('student/schedule')
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.STUDENT])
+  @ApiOperation({
+    summary: 'Lấy lịch thi của sinh viên theo học kỳ',
+    description:
+      'Lấy danh sách lịch thi của sinh viên đang đăng nhập theo mã học kỳ',
+  })
+  @ApiQuery({
+    name: 'semesterCode',
+    required: true,
+    type: String,
+    description: 'Mã học kỳ (ví dụ: 2024-1, 2024-2)',
+    example: '2024-1',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy lịch thi thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy học kỳ hoặc sinh viên.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực hoặc token không hợp lệ.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền truy cập.',
+  })
+  async getStudentExamSchedule(
+    @Query('semesterCode') semesterCode: string,
+    @Req() req: RequestHasUserDto & Request,
+    @Res() res: Response,
+  ) {
+    const user = req.user;
+    const examSchedules =
+      await this.examScheduleService.getExamScheduleByUserAndSemester(
+        user.id,
+        semesterCode,
+      );
+    return new SuccessResponse({
+      message: 'Lấy lịch thi thành công',
+      data: examSchedules,
+    }).send(res);
+  }
 
   @Post()
   @ApiOperation({ summary: 'Create a new exam schedule' })
@@ -32,14 +102,56 @@ export class ExamScheduleController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all exam schedules' })
+  @ApiOperation({ summary: 'Lấy danh sách lịch thi (có phân trang và lọc)' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng kết quả mỗi trang',
+  })
+  @ApiQuery({
+    name: 'semesterId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID học kỳ',
+  })
+  @ApiQuery({
+    name: 'classGroupId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID nhóm lớp',
+  })
+  @ApiQuery({
+    name: 'examType',
+    required: false,
+    type: String,
+    description: 'Lọc theo loại thi',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Return all exam schedules',
+    description: 'Lấy danh sách lịch thi thành công',
     type: [ExamScheduleEntity],
   })
-  findAll(): Promise<ExamScheduleEntity[]> {
-    return this.examScheduleService.findAll();
+  async findAll(
+    @Query() paginationDto: PaginationDto,
+    @Query() filterDto: FilterExamScheduleDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    const result = await this.examScheduleService.findAll(
+      paginationDto,
+      filterDto,
+    );
+    return new SuccessResponse({
+      data: result.data,
+      metadata: result.meta,
+      message: 'Lấy danh sách lịch thi thành công',
+    }).send(res);
   }
 
   @Get('class-group/:classGroupId')

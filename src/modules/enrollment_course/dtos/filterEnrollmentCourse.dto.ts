@@ -1,45 +1,40 @@
-import { IsOptional, IsEnum, IsPositive } from 'class-validator';
-import { Type } from 'class-transformer';
-import { EEnrollmentStatus } from 'src/utils/enums/course.enum';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsNumber, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class FilterEnrollmentCourseDto {
   @ApiPropertyOptional({
-    description: 'Lọc theo ID Sinh viên (chỉ Admin/Manager)',
-    example: 101,
-    type: Number,
+    description: 'Lọc theo ID sinh viên',
+    example: 1,
   })
   @IsOptional()
-  @IsPositive({ message: 'ID Sinh viên phải là số dương' })
   @Type(() => Number)
+  @IsNumber()
   studentId?: number;
 
   @ApiPropertyOptional({
-    description: 'Lọc theo ID Nhóm lớp học',
-    example: 25,
-    type: Number,
+    description: 'Lọc theo ID nhóm lớp',
+    example: 1,
   })
   @IsOptional()
-  @IsPositive({ message: 'ID Nhóm lớp học phải là số dương' })
   @Type(() => Number)
+  @IsNumber()
   classGroupId?: number;
 
   @ApiPropertyOptional({
     description: 'Lọc theo trạng thái đăng ký',
-    enum: EEnrollmentStatus,
-    example: EEnrollmentStatus.ENROLLED,
+    example: 'ENROLLED',
   })
   @IsOptional()
-  @IsEnum(EEnrollmentStatus, { message: 'Trạng thái đăng ký không hợp lệ' })
-  status?: EEnrollmentStatus;
+  @IsString()
+  status?: string;
 
   @ApiPropertyOptional({
     description: 'Lọc theo ID học kỳ',
     example: 1,
-    type: Number,
   })
   @IsOptional()
-  @IsPositive({ message: 'ID học kỳ phải là số dương' })
   @Type(() => Number)
+  @IsNumber()
   semesterId?: number;
 }

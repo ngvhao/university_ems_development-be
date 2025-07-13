@@ -51,7 +51,6 @@ export class SemesterService {
     const { page = 1, limit = 10 } = paginationDto;
 
     const [data, total] = await this.semesterRepository.findAndCount({
-      relations: ['registrationSchedules', 'studyPlans', 'curriculumCourses'],
       order: {
         startYear: 'DESC',
         term: 'DESC',

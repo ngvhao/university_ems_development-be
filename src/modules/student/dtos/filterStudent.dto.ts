@@ -1,44 +1,49 @@
-import { IsOptional, IsString, IsNumber, IsPositive } from 'class-validator';
+import { IsOptional, IsNumber, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { PaginationDto } from 'src/utils/dtos/pagination.dto';
-import { Type } from 'class-transformer';
 
-export class FilterStudentDto extends PaginationDto {
+export class FilterStudentDto {
   @ApiPropertyOptional({
-    description: 'Từ khóa tìm kiếm (Tên, Họ, Email, Mã sinh viên)',
-    example: 'Văn A',
-  })
-  @IsOptional()
-  @IsString()
-  search?: string;
-
-  @ApiPropertyOptional({
-    description: 'Lọc theo ID Lớp sinh hoạt',
+    description: 'ID của khoa',
     example: 1,
   })
   @IsOptional()
-  @IsNumber({}, { message: 'ID Lớp phải là số' })
-  @IsPositive({ message: 'ID Lớp phải là số dương' })
-  @Type(() => Number)
-  classId?: number;
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
+  facultyId?: number;
 
   @ApiPropertyOptional({
-    description: 'Lọc theo ID Chuyên ngành',
-    example: 5,
+    description: 'ID của bộ môn',
+    example: 1,
   })
   @IsOptional()
-  @IsNumber({}, { message: 'ID Chuyên ngành phải là số' })
-  @IsPositive({ message: 'ID Chuyên ngành phải là số dương' })
-  @Type(() => Number)
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
+  departmentId?: number;
+
+  @ApiPropertyOptional({
+    description: 'ID của ngành học',
+    example: 1,
+  })
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
   majorId?: number;
 
   @ApiPropertyOptional({
-    description: 'Lọc theo Khóa học (Năm nhập học)',
-    example: 2024,
+    description: 'ID của lớp học',
+    example: 1,
   })
   @IsOptional()
-  @IsNumber({}, { message: 'Khóa học phải là số' })
-  @IsPositive({ message: 'Khóa học phải là số dương' })
-  @Type(() => Number)
-  academicYear?: number;
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
+  classId?: number;
+
+  @ApiPropertyOptional({
+    description: 'Trạng thái sinh viên',
+    example: 'ACTIVE',
+  })
+  @IsOptional()
+  @IsString()
+  status?: string;
 }

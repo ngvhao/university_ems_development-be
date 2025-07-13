@@ -28,6 +28,7 @@ import { CreateTuitionBatchDto } from './dto/createTuitionBatch.dto';
 import { PaymentTransactionService } from '../payment_transaction/payment_transaction.service';
 import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
+import { FilterTuitionDto } from './dto/filterTuition.dto';
 
 interface GroupedEnrollments {
   [studentId: number]: EnrollmentCourseEntity[];
@@ -472,27 +473,74 @@ export class TuitionService {
     }
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<{
+  async findAll(
+    paginationDto: PaginationDto,
+    filterDto?: FilterTuitionDto,
+  ): Promise<{
     data: TuitionEntity[];
     meta: MetaDataInterface;
   }> {
     const { page = 1, limit = 10 } = paginationDto;
-    const skip = (page - 1) * limit;
 
-    const [data, total] = await this.tuitionRepository.findAndCount({
-      relations: {
-        student: {
-          user: true,
-        },
-        semester: true,
-        details: true,
-        paymentTransactions: true,
-      },
-      order: { createdAt: 'DESC' },
-      skip,
-      take: limit,
-    });
+    const queryBuilder = this.tuitionRepository.createQueryBuilder('tuition');
 
+    // Apply filters
+    if (filterDto?.studentId) {
+      queryBuilder.andWhere('tuition.studentId = :studentId', {
+        studentId: filterDto.studentId,
+      });
+    }
+
+    if (filterDto?.semesterId) {
+      queryBuilder.andWhere('tuition.semesterId = :semesterId', {
+        semesterId: filterDto.semesterId,
+      });
+    }
+
+    if (filterDto?.paymentStatus) {
+      queryBuilder.andWhere('tuition.status = :paymentStatus', {
+        paymentStatus: filterDto.paymentStatus,
+      });
+    }
+
+    if (filterDto?.facultyId) {
+      queryBuilder
+        .leftJoin('tuition.student', 'student')
+        .leftJoin('student.major', 'major')
+        .leftJoin('major.department', 'department')
+        .leftJoin('department.faculty', 'faculty')
+        .andWhere('faculty.id = :facultyId', {
+          facultyId: filterDto.facultyId,
+        });
+    }
+
+    if (filterDto?.departmentId) {
+      queryBuilder
+        .leftJoin('tuition.student', 'student')
+        .leftJoin('student.major', 'major')
+        .leftJoin('major.department', 'department')
+        .andWhere('department.id = :departmentId', {
+          departmentId: filterDto.departmentId,
+        });
+    }
+
+    if (filterDto?.majorId) {
+      queryBuilder
+        .leftJoin('tuition.student', 'student')
+        .leftJoin('student.major', 'major')
+        .andWhere('major.id = :majorId', { majorId: filterDto.majorId });
+    }
+
+    // Apply pagination and ordering
+    queryBuilder
+      .leftJoinAndSelect('tuition.student', 'student')
+      .leftJoinAndSelect('tuition.semester', 'semester')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .orderBy('tuition.issueDate', 'DESC')
+      .addOrderBy('tuition.studentId', 'ASC');
+
+    const [data, total] = await queryBuilder.getManyAndCount();
     const meta = generatePaginationMeta(total, page, limit);
 
     return { data, meta };

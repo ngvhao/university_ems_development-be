@@ -288,15 +288,6 @@ export class CurriculumCourseService {
     id: number,
     updateCurriculumCourseDto: UpdateCurriculumCourseDto,
   ): Promise<CurriculumCourseEntity> {
-    if (
-      updateCurriculumCourseDto.curriculumId !== undefined ||
-      updateCurriculumCourseDto.courseId !== undefined
-    ) {
-      throw new BadRequestException(
-        'Không thể thay đổi Chương trình đào tạo hoặc Môn học của một bản ghi đã tồn tại.',
-      );
-    }
-
     const curriculumCourseToUpdate =
       await this.curriculumCourseRepository.preload({
         id: id,

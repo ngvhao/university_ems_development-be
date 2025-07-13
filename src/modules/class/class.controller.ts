@@ -31,6 +31,7 @@ import {
 import { SuccessResponse } from 'src/utils/response';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { ClassEntity } from './entities/class.entity';
+import { FilterClassDto } from './dtos/filterClass.dto';
 
 @ApiTags('Quản lý Lớp học (Classes)')
 @ApiBearerAuth('token')
@@ -100,8 +101,15 @@ export class ClassController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Chưa xác thực.',
   })
-  async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
-    const { data, meta } = await this.classService.findAll(paginationDto);
+  async findAll(
+    @Query() paginationDto: PaginationDto,
+    @Query() filterDto: FilterClassDto,
+    @Res() res: Response,
+  ) {
+    const { data, meta } = await this.classService.findAll(
+      paginationDto,
+      filterDto,
+    );
     return new SuccessResponse({
       message: 'Lấy danh sách lớp học thành công',
       data: data,

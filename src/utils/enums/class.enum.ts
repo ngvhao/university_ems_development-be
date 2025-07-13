@@ -1,5 +1,5 @@
 export enum EClassGroupStatus {
-  CLOSED_FOR_REGISTER = 0,
+  CLOSED_FOR_REGISTER = 5,
   OPEN_FOR_REGISTER = 1,
   LOCKED = 2,
   CANCELLED = 3,

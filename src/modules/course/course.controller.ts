@@ -32,13 +32,18 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { CourseEntity } from './entities/course.entity';
+import { FilterClassGroupDto, FilterCourseDto } from './dtos/filterCourse.dto';
+import { ClassGroupService } from '../class_group/class_group.service';
 
 @ApiTags('Quản lý Môn học (Courses)')
 @ApiBearerAuth('token')
 @UseGuards(JwtAuthGuard)
 @Controller('courses')
 export class CourseController {
-  constructor(private readonly courseService: CourseService) {}
+  constructor(
+    private readonly courseService: CourseService,
+    private readonly classGroupService: ClassGroupService,
+  ) {}
 
   @Post()
   @UseGuards(RolesGuard)
@@ -80,7 +85,7 @@ export class CourseController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách môn học (có phân trang)' })
+  @ApiOperation({ summary: 'Lấy danh sách môn học (có phân trang và lọc)' })
   @ApiQuery({
     name: 'page',
     required: false,
@@ -93,6 +98,36 @@ export class CourseController {
     type: Number,
     description: 'Số lượng kết quả mỗi trang',
   })
+  @ApiQuery({
+    name: 'facultyId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID khoa',
+  })
+  @ApiQuery({
+    name: 'departmentId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID bộ môn',
+  })
+  @ApiQuery({
+    name: 'majorId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID ngành học',
+  })
+  @ApiQuery({
+    name: 'curriculumId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID chương trình đào tạo',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    type: String,
+    description: 'Lọc theo trạng thái',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Lấy danh sách môn học thành công.',
@@ -101,8 +136,15 @@ export class CourseController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Chưa xác thực.',
   })
-  async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
-    const { data, meta } = await this.courseService.findAll(paginationDto);
+  async findAll(
+    @Query() paginationDto: PaginationDto,
+    @Query() filterDto: FilterCourseDto,
+    @Res() res: Response,
+  ) {
+    const { data, meta } = await this.courseService.findAll(
+      paginationDto,
+      filterDto,
+    );
     return new SuccessResponse({
       data: data,
       metadata: meta,
@@ -211,6 +253,60 @@ export class CourseController {
     await this.courseService.remove(id);
     return new SuccessResponse({
       message: 'Xóa môn học thành công',
+    }).send(res);
+  }
+
+  @Get(':courseId/class-groups')
+  @ApiOperation({ summary: 'Lấy danh sách Nhóm lớp theo Môn học và Học kỳ' })
+  @ApiParam({
+    name: 'courseId',
+    type: Number,
+    description: 'ID của Môn học',
+  })
+  @ApiQuery({
+    name: 'semesterId',
+    required: true,
+    type: Number,
+    description: 'ID của Học kỳ',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng kết quả mỗi trang',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách Nhóm lớp theo Môn học và Học kỳ thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy Môn học.',
+  })
+  async getClassGroupsByCourse(
+    @Param('courseId', ParseIntPipe) courseId: number,
+    @Query() paginationDto: PaginationDto,
+    @Query() filterDto: FilterClassGroupDto,
+    @Res() res: Response,
+  ) {
+    const result = await this.classGroupService.findAll({
+      filterDto: { ...filterDto, courseId },
+      paginationDto,
+    });
+    return new SuccessResponse({
+      data: result.data,
+      metadata: result.meta,
+      message: 'Lấy danh sách Nhóm lớp theo Môn học và Học kỳ thành công',
     }).send(res);
   }
 }

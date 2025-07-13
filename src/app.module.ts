@@ -38,6 +38,7 @@ import { NotificationRecipientModule } from './modules/notification_recipient/no
 import { NotificationRuleModule } from './modules/notification_audience_rule/notification_audience_rule.module';
 import { ExamScheduleModule } from './modules/exam_schedule/exam_schedule.module';
 import { GradeDetailModule } from './modules/grade_detail/grade_detail.module';
+import { DriveModule } from './modules/drive/drive.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { GradeDetailModule } from './modules/grade_detail/grade_detail.module';
     NotificationRecipientModule,
     ExamScheduleModule,
     GradeDetailModule,
+    DriveModule,
   ],
   controllers: [AppController],
   providers: [AppService],

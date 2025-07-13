@@ -36,6 +36,7 @@ import {
 import { LecturerEntity } from './entities/lecturer.entity';
 import { LecturerInterceptor } from 'src/interceptors/get-lecturer.interceptor';
 import { RequestHasLecturerDto } from 'src/utils/request-has-lecturer-dto';
+import { FilterLecturerDto } from './dtos/filterLecturer.dto';
 
 @ApiTags('Quản lý Giảng viên (Lecturers)')
 @ApiBearerAuth('token')
@@ -95,7 +96,7 @@ export class LecturerController {
     EUserRole.LECTURER,
     EUserRole.STUDENT,
   ])
-  @ApiOperation({ summary: 'Lấy danh sách Giảng viên' })
+  @ApiOperation({ summary: 'Lấy danh sách Giảng viên (có phân trang và lọc)' })
   @ApiQuery({
     name: 'page',
     required: false,
@@ -108,6 +109,24 @@ export class LecturerController {
     type: Number,
     description: 'Số lượng kết quả mỗi trang',
   })
+  @ApiQuery({
+    name: 'facultyId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID khoa',
+  })
+  @ApiQuery({
+    name: 'departmentId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID bộ môn',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    type: String,
+    description: 'Lọc theo trạng thái',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Lấy danh sách thành công.',
@@ -116,8 +135,12 @@ export class LecturerController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Chưa xác thực.',
   })
-  async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
-    const result = await this.lecturerService.findAll(paginationDto);
+  async findAll(
+    @Query() paginationDto: PaginationDto,
+    @Query() filterDto: FilterLecturerDto,
+    @Res() res: Response,
+  ) {
+    const result = await this.lecturerService.findAll(paginationDto, filterDto);
     return new SuccessResponse({
       data: result.data,
       metadata: result.meta,

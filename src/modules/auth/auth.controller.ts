@@ -105,7 +105,11 @@ export class AuthController {
           userId: user.id,
         },
         {
-          major: true,
+          major: {
+            department: {
+              faculty: true,
+            },
+          },
           class: true,
         },
       );

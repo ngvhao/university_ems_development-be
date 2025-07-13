@@ -7,6 +7,7 @@ import {
   Min,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
 } from 'class-validator';
 import { ECourseType } from 'src/utils/enums/course-type.enum';
 
@@ -64,4 +65,13 @@ export class CreateCourseDto {
   @IsEnum(ECourseType, { message: 'Loại môn học không hợp lệ' })
   @IsNotEmpty({ message: 'Loại môn học không được để trống' })
   courseType: ECourseType;
+
+  @ApiPropertyOptional({
+    description: 'ID của môn học',
+    example: 1,
+    type: Number,
+    minimum: 1,
+  })
+  @IsNumber({}, { message: 'ID của khoa phải là số' })
+  facultyId: number;
 }

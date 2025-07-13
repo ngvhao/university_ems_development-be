@@ -66,7 +66,7 @@ export class ClassWeeklyScheduleService {
    * @param excludeId - (Optional) ID của lịch cần loại trừ khỏi kiểm tra (dùng khi update).
    * @throws ConflictException nếu tìm thấy lịch trùng lặp.
    */
-  private async checkConflict(
+  async checkConflict(
     scheduleData: {
       classGroupId: number;
       dayOfWeek: EDayOfWeek;
@@ -95,7 +95,6 @@ export class ClassWeeklyScheduleService {
       );
     }
 
-    // Kiểm tra phòng có bị trùng lịch vào thời điểm đó không ---
     const conflictingRoomSchedule =
       await this.classWeeklyScheduleRepository.findOne({
         where: {
@@ -146,17 +145,13 @@ export class ClassWeeklyScheduleService {
   ): Promise<ClassWeeklyScheduleEntity> {
     await this.validateForeignKeys(dto);
 
-    // 2. Kiểm tra trùng lặp lịch
     await this.checkConflict(dto);
 
-    // 3. Tạo và lưu lịch mới
     try {
       const schedule = this.classWeeklyScheduleRepository.create(dto);
       return await this.classWeeklyScheduleRepository.save(schedule);
     } catch (error) {
-      // Xử lý lỗi conflict do race condition nếu checkConflict chưa bắt được
       if (error.code === '23505') {
-        // Unique constraint violation
         throw new ConflictException(
           'Lịch học này có thể đã tồn tại (trùng nhóm lớp, ngày, giờ hoặc phòng).',
         );

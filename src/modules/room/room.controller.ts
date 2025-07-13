@@ -32,6 +32,7 @@ import {
 } from '@nestjs/swagger';
 import { SuccessResponse } from 'src/utils/response';
 import { FreeClassroomResponseDto } from './dtos/freeClassroomResponse.dto';
+import { FilterRoomDto } from './dtos/filterRoom.dto';
 
 @ApiTags('Quản lý Phòng học (Rooms)')
 @ApiBearerAuth('token')
@@ -126,7 +127,7 @@ export class RoomController {
     }).send(res);
   }
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách phòng học (phân trang)' })
+  @ApiOperation({ summary: 'Lấy danh sách phòng học (có phân trang và lọc)' })
   @ApiQuery({
     name: 'page',
     required: false,
@@ -139,6 +140,24 @@ export class RoomController {
     type: Number,
     description: 'Số lượng mục mỗi trang',
   })
+  @ApiQuery({
+    name: 'roomType',
+    required: false,
+    type: String,
+    description: 'Lọc theo loại phòng',
+  })
+  @ApiQuery({
+    name: 'capacity',
+    required: false,
+    type: Number,
+    description: 'Lọc theo sức chứa',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    type: String,
+    description: 'Lọc theo trạng thái',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Lấy danh sách phòng thành công.',
@@ -147,8 +166,15 @@ export class RoomController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Chưa xác thực hoặc token không hợp lệ.',
   })
-  async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
-    const { data, meta } = await this.roomService.findAll({}, paginationDto);
+  async findAll(
+    @Query() paginationDto: PaginationDto,
+    @Query() filterDto: FilterRoomDto,
+    @Res() res: Response,
+  ) {
+    const { data, meta } = await this.roomService.findAll(
+      filterDto,
+      paginationDto,
+    );
     new SuccessResponse({
       data,
       metadata: meta,

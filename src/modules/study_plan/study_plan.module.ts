@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { StudyPlanEntity } from './entities/study_plan.entity';
 import { StudyPlanController } from './study_plan.controller';
@@ -14,12 +14,11 @@ import { SettingModule } from '../setting/setting.module';
   imports: [
     TypeOrmModule.forFeature([StudyPlanEntity]),
     SemesterModule,
-    StudentModule,
-    CourseModule,
+    forwardRef(() => StudentModule),
+    forwardRef(() => CourseModule),
     LecturerCourseModule,
     CurriculumModule,
     SettingModule,
-    SemesterModule,
   ],
   controllers: [StudyPlanController],
   providers: [StudyPlanService],

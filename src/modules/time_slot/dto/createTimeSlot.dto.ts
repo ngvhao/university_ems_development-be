@@ -1,11 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsInt, Min, Matches } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsInt,
+  Min,
+  Matches,
+  IsOptional,
+} from 'class-validator';
 import { IsTimeBefore } from 'src/decorators/is-time-before.decorator';
 import { TIME_REGEX } from 'src/utils/constants';
 
 export class CreateTimeSlotDto {
   @ApiProperty({
-    description: 'Thời gian bắt đầu của khung giờ (HH:MM)',
+    description: 'Thời gian bắt đầu của khung giờ (HH:MM) - theo múi giờ local',
     example: '07:00',
     required: true,
     pattern: '^([01]\\d|2[0-3]):([0-5]\\d)$',
@@ -18,7 +25,8 @@ export class CreateTimeSlotDto {
   startTime: string;
 
   @ApiProperty({
-    description: 'Thời gian kết thúc của khung giờ (HH:MM)',
+    description:
+      'Thời gian kết thúc của khung giờ (HH:MM) - theo múi giờ local',
     example: '09:30',
     required: true,
     pattern: '^([01]\\d|2[0-3]):([0-5]\\d)$',
@@ -29,9 +37,19 @@ export class CreateTimeSlotDto {
     message: 'Thời gian kết thúc phải đúng định dạng HH:MM',
   })
   @IsTimeBefore('startTime', {
-    message: '$property phải là thời gian sau startTime.',
+    message: 'Thời gian kết thúc phải là thời gian sau thời gian bắt đầu.',
   })
   endTime: string;
+
+  @ApiProperty({
+    description: 'Múi giờ (ví dụ: Asia/Ho_Chi_Minh, UTC, etc.)',
+    example: 'Asia/Ho_Chi_Minh',
+    required: false,
+    default: 'Asia/Ho_Chi_Minh',
+  })
+  @IsOptional()
+  @IsString({ message: 'Múi giờ phải là chuỗi' })
+  timezone?: string;
 
   @ApiProperty({
     description:

@@ -6,7 +6,9 @@ import {
   IsOptional,
   Min,
   IsPositive,
+  IsArray,
 } from 'class-validator';
+import { CreateClassWeeklyScheduleDto } from 'src/modules/class_weekly_schedule/dtos/createClassWeeklySchedule.dto';
 import { EClassGroupStatus } from 'src/utils/enums/class.enum';
 
 export class CreateClassGroupDto {
@@ -66,4 +68,22 @@ export class CreateClassGroupDto {
   @IsOptional()
   @IsEnum(EClassGroupStatus, { message: 'Trạng thái không hợp lệ' })
   status?: EClassGroupStatus;
+
+  @ApiProperty({
+    description: 'ID của giảng viên',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  lecturerId?: number;
+
+  @ApiProperty({
+    description: 'Lịch học của nhóm lớp',
+    example: [],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  schedules: CreateClassWeeklyScheduleDto[];
 }

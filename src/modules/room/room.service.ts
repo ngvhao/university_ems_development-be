@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindManyOptions, FindOptionsWhere, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { RoomEntity } from './entities/room.entity';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
@@ -9,6 +9,7 @@ import { CreateRoomDto } from './dtos/createRoom.dto';
 import { UpdateRoomDto } from './dtos/updateRoom.dto';
 import { DEFAULT_PAGINATION } from 'src/utils/constants';
 import { TimeSlotEntity } from '../time_slot/entities/time_slot.entity';
+import { FilterRoomDto } from './dtos/filterRoom.dto';
 interface RoomWithFreeTimeSlots extends RoomEntity {
   freeTimeSlots: TimeSlotEntity[];
 }
@@ -39,23 +40,46 @@ export class RoomService {
   }
 
   /**
-   * Lấy danh sách các phòng học có phân trang.
-   * @param condition - Điều kiện truy vấn (FindOptionsWhere<RoomEntity>)
+   * Lấy danh sách các phòng học có phân trang và lọc.
+   * @param filterDto - DTO chứa các tiêu chí lọc.
    * @param paginationDto - DTO chứa thông tin phân trang (page, limit).
    * @returns Promise<{ data: RoomEntity[]; meta: MetaDataInterface }> - Danh sách phòng và thông tin metadata phân trang.
    */
   async findAll(
-    condition?: FindOptionsWhere<RoomEntity> | FindOptionsWhere<RoomEntity>[],
+    filterDto?: FilterRoomDto,
     paginationDto: PaginationDto = DEFAULT_PAGINATION,
   ): Promise<{ data: RoomEntity[]; meta: MetaDataInterface }> {
     const { page, limit } = paginationDto;
 
-    const findOptions: FindManyOptions<RoomEntity> = {
-      where: condition,
-      skip: (page - 1) * limit,
-      take: limit,
-    };
-    const [data, total] = await this.roomRepository.findAndCount(findOptions);
+    const queryBuilder = this.roomRepository.createQueryBuilder('room');
+
+    // Apply filters
+    if (filterDto?.roomType) {
+      queryBuilder.andWhere('room.roomType = :roomType', {
+        roomType: filterDto.roomType,
+      });
+    }
+
+    if (filterDto?.capacity) {
+      queryBuilder.andWhere('room.capacity >= :capacity', {
+        capacity: filterDto.capacity,
+      });
+    }
+
+    if (filterDto?.status) {
+      queryBuilder.andWhere('room.status = :status', {
+        status: filterDto.status,
+      });
+    }
+
+    // Apply pagination and ordering
+    queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .orderBy('room.buildingName', 'ASC')
+      .addOrderBy('room.roomNumber', 'ASC');
+
+    const [data, total] = await queryBuilder.getManyAndCount();
     const meta = generatePaginationMeta(total, page, limit);
 
     return { data, meta };

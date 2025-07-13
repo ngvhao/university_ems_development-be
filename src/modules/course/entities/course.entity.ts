@@ -73,6 +73,10 @@ export class CourseEntity extends IEntity {
     type: () => [CourseFacultyEntity],
     description: 'Các khoa có liên quan đến môn học này',
   })
-  @OneToMany(() => CourseFacultyEntity, (courseFaculty) => courseFaculty.course)
+  @OneToMany(
+    () => CourseFacultyEntity,
+    (courseFaculty) => courseFaculty.course,
+    { cascade: true },
+  )
   courseFaculties: CourseFacultyEntity[];
 }

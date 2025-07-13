@@ -4,13 +4,13 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
   Query,
   Res,
   UseGuards,
   ParseIntPipe,
   HttpStatus,
+  Put,
 } from '@nestjs/common';
 import { FacultyService } from './faculty.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -32,13 +32,21 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { FacultyEntity } from './entities/faculty.entity';
+import { DepartmentService } from '../department/department.service';
+import { CourseService } from '../course/course.service';
+import { MajorService } from '../major/major.service';
 
 @ApiTags('Quản lý Khoa (Faculties)')
 @ApiBearerAuth('token')
 @UseGuards(JwtAuthGuard)
 @Controller('faculties')
 export class FacultyController {
-  constructor(private readonly facultyService: FacultyService) {}
+  constructor(
+    private readonly facultyService: FacultyService,
+    private readonly departmentService: DepartmentService,
+    private readonly courseService: CourseService,
+    private readonly majorService: MajorService,
+  ) {}
 
   @Post()
   @UseGuards(RolesGuard)
@@ -48,7 +56,6 @@ export class FacultyController {
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Tạo Khoa thành công.',
-    // type: FacultyEntity,
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
@@ -103,7 +110,8 @@ export class FacultyController {
   async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
     const result = await this.facultyService.findAll(paginationDto);
     return new SuccessResponse({
-      ...result,
+      data: result.data,
+      metadata: result.meta,
       message: 'Lấy danh sách Khoa thành công',
     }).send(res);
   }
@@ -132,7 +140,7 @@ export class FacultyController {
     }).send(res);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @UseGuards(RolesGuard)
   @Roles([EUserRole.ADMINISTRATOR])
   @ApiOperation({ summary: 'Cập nhật thông tin một Khoa' })
@@ -205,6 +213,148 @@ export class FacultyController {
     await this.facultyService.remove(id);
     return new SuccessResponse({
       message: 'Xóa Khoa thành công',
+    }).send(res);
+  }
+
+  @Get(':facultyId/departments')
+  @ApiOperation({ summary: 'Lấy danh sách Bộ môn theo Khoa' })
+  @ApiParam({
+    name: 'facultyId',
+    type: Number,
+    description: 'ID của Khoa',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng kết quả mỗi trang',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách Bộ môn theo Khoa thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy Khoa.',
+  })
+  async getDepartmentsByFaculty(
+    @Param('facultyId', ParseIntPipe) facultyId: number,
+    @Query() paginationDto: PaginationDto,
+    @Res() res: Response,
+  ) {
+    await this.facultyService.findOne(facultyId);
+    const result = await this.departmentService.findAll(
+      paginationDto,
+      facultyId,
+    );
+    return new SuccessResponse({
+      data: result.data,
+      metadata: result.meta,
+      message: 'Lấy danh sách Bộ môn theo Khoa thành công',
+    }).send(res);
+  }
+
+  @Get(':facultyId/majors')
+  @ApiOperation({ summary: 'Lấy danh sách Chuyên ngành theo Khoa' })
+  @ApiParam({
+    name: 'facultyId',
+    type: Number,
+    description: 'ID của Khoa',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng kết quả mỗi trang',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách Chuyên ngành theo Khoa thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy Khoa.',
+  })
+  async getMajorsByFaculty(
+    @Param('facultyId', ParseIntPipe) facultyId: number,
+    @Query() paginationDto: PaginationDto,
+    @Res() res: Response,
+  ) {
+    await this.facultyService.findOne(facultyId);
+    const result = await this.majorService.findAll(paginationDto, {
+      facultyId,
+    });
+    return new SuccessResponse({
+      data: result.data,
+      metadata: result.meta,
+      message: 'Lấy danh sách Chuyên ngành theo Khoa thành công',
+    }).send(res);
+  }
+
+  @Get(':facultyId/courses')
+  @ApiOperation({ summary: 'Lấy danh sách Môn học theo Khoa' })
+  @ApiParam({
+    name: 'facultyId',
+    type: Number,
+    description: 'ID của Khoa',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng kết quả mỗi trang',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách Môn học theo Khoa thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy Khoa.',
+  })
+  async getCoursesByFaculty(
+    @Param('facultyId', ParseIntPipe) facultyId: number,
+    @Query() paginationDto: PaginationDto,
+    @Res() res: Response,
+  ) {
+    await this.facultyService.findOne(facultyId);
+    const result = await this.courseService.findAll(paginationDto, {
+      facultyId,
+    });
+    return new SuccessResponse({
+      data: result.data,
+      metadata: result.meta,
+      message: 'Lấy danh sách Môn học theo Khoa thành công',
     }).send(res);
   }
 }

@@ -17,6 +17,7 @@ import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { LecturerEntity } from '../lecturer/entities/lecturer.entity';
 import { StudentService } from '../student/student.service';
+import { FilterClassDto } from './dtos/filterClass.dto';
 
 @Injectable()
 export class ClassService {
@@ -95,25 +96,94 @@ export class ClassService {
 
   async findAll(
     paginationDto: PaginationDto,
-  ): Promise<{ data: ClassEntity[]; meta: MetaDataInterface }> {
+    filterDto: FilterClassDto,
+  ): Promise<{
+    data: (ClassEntity & { studentCount: number })[];
+    meta: MetaDataInterface;
+  }> {
     const { page = 1, limit = 10 } = paginationDto;
-    const [data, total] = await this.classRepository.findAndCount({
-      skip: (page - 1) * limit,
-      take: limit,
-      order: {
-        createdAt: 'DESC',
-      },
-      relations: {
-        major: true,
-        lecturer: {
-          user: true,
-        },
-      },
-    });
+
+    const query = this.classRepository
+      .createQueryBuilder('class')
+      .leftJoin('class.major', 'major')
+      .leftJoin('major.department', 'department')
+      .leftJoin('department.faculty', 'faculty')
+      .leftJoin('class.lecturer', 'lecturer')
+      .leftJoin('lecturer.user', 'user')
+      .leftJoinAndSelect('class.students', 'students')
+      .leftJoinAndSelect('students.user', 'userStudent')
+      .loadRelationCountAndMap('class.studentCount', 'class.students')
+      .select([
+        'class.id',
+        'class.classCode',
+        'class.yearOfAdmission',
+        'class.createdAt',
+        'class.updatedAt',
+        'class.homeroomLecturerId',
+        'class.majorId',
+        'major.id',
+        'major.name',
+        'major.majorCode',
+        'department.id',
+        'department.name',
+        'department.departmentCode',
+        'faculty.id',
+        'faculty.name',
+        'faculty.facultyCode',
+        'lecturer.id',
+        'user.id',
+        'user.firstName',
+        'user.lastName',
+        'user.universityEmail',
+        'user.phoneNumber',
+        'students.id',
+        'students.status',
+        'students.studentCode',
+        'students.gpa',
+        'userStudent.id',
+        'userStudent.firstName',
+        'userStudent.lastName',
+        'userStudent.universityEmail',
+        'userStudent.phoneNumber',
+        'userStudent.personalEmail',
+      ])
+
+      .skip((page - 1) * limit)
+      .take(limit)
+      .orderBy('class.createdAt', 'DESC');
+
+    if (filterDto.facultyId) {
+      query.andWhere('faculty.id = :facultyId', {
+        facultyId: filterDto.facultyId,
+      });
+    }
+    if (filterDto.departmentId) {
+      query.andWhere('department.id = :departmentId', {
+        departmentId: filterDto.departmentId,
+      });
+    }
+    if (filterDto.majorId) {
+      query.andWhere('major.id = :majorId', { majorId: filterDto.majorId });
+    }
+    if (filterDto.yearOfAdmission) {
+      query.andWhere('class.yearOfAdmission = :year', {
+        year: filterDto.yearOfAdmission,
+      });
+    }
+    if (filterDto.homeroomLecturerId) {
+      query.andWhere('class.homeroomLecturerId = :lecturerId', {
+        lecturerId: filterDto.homeroomLecturerId,
+      });
+    }
+
+    const [data, total] = await query.getManyAndCount();
+    console.log('Query result:', { dataLength: data?.length, total });
 
     const meta = generatePaginationMeta(total, page, limit);
-
-    return { data, meta };
+    return {
+      data: (data || []) as (ClassEntity & { studentCount: number })[],
+      meta,
+    };
   }
 
   async findOne(id: number): Promise<ClassEntity> {

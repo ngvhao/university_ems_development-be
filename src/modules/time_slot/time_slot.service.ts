@@ -3,31 +3,68 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
-  Inject,
-  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, FindOptionsWhere, Not } from 'typeorm';
+import { TimeSlotEntity } from './entities/time_slot.entity';
 import { CreateTimeSlotDto } from './dto/createTimeSlot.dto';
 import { UpdateTimeSlotDto } from './dto/updateTimeSlot.dto';
-import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
-import { TimeSlotEntity } from './entities/time_slot.entity';
-import { ClassWeeklyScheduleService } from '../class_weekly_schedule/class_weekly_schedule.service';
-import { ClassAdjustmentScheduleService } from '../class_adjustment_schedule/class_adjustment_schedule.service';
-import { DEFAULT_PAGINATION } from 'src/utils/constants';
+import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 
 @Injectable()
 export class TimeSlotService {
   constructor(
     @InjectRepository(TimeSlotEntity)
     private readonly timeSlotRepository: Repository<TimeSlotEntity>,
-    @Inject(forwardRef(() => ClassWeeklyScheduleService))
-    private readonly classWeeklyScheduleService: ClassWeeklyScheduleService,
-    @Inject(forwardRef(() => ClassAdjustmentScheduleService))
-    private readonly classAdjustmentScheduleService: ClassAdjustmentScheduleService,
   ) {}
+
+  /**
+   * Convert local time to UTC for storage
+   */
+  private convertLocalTimeToUTC(
+    timeString: string,
+    timezone: string = 'Asia/Ho_Chi_Minh',
+  ): string {
+    const [hours, minutes] = timeString.split(':').map(Number);
+
+    // Create a date object in the specified timezone
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+
+    // Convert to UTC
+    const utcDate = new Date(
+      date.toLocaleString('en-US', { timeZone: timezone }),
+    );
+    const utcHours = utcDate.getUTCHours().toString().padStart(2, '0');
+    const utcMinutes = utcDate.getUTCMinutes().toString().padStart(2, '0');
+
+    return `${utcHours}:${utcMinutes}`;
+  }
+
+  /**
+   * Convert UTC time back to local timezone
+   */
+  private convertUTCToLocalTime(
+    utcTimeString: string,
+    timezone: string = 'Asia/Ho_Chi_Minh',
+  ): string {
+    const [utcHours, utcMinutes] = utcTimeString.split(':').map(Number);
+
+    // Create UTC date
+    const utcDate = new Date();
+    utcDate.setUTCHours(utcHours, utcMinutes, 0, 0);
+
+    // Convert to local timezone
+    const localDate = new Date(
+      utcDate.toLocaleString('en-US', { timeZone: timezone }),
+    );
+    const localHours = localDate.getHours().toString().padStart(2, '0');
+    const localMinutes = localDate.getMinutes().toString().padStart(2, '0');
+
+    return `${localHours}:${localMinutes}`;
+  }
 
   /**
    * Helper: Tìm Khung giờ theo ID, ném lỗi nếu không tìm thấy.
@@ -44,17 +81,37 @@ export class TimeSlotService {
   }
 
   /**
-   * Helper: Validate logic thời gian (endTime > startTime).
+   * Validate time logic with support for overnight schedules
    * @param startTime - Chuỗi thời gian bắt đầu (HH:MM).
    * @param endTime - Chuỗi thời gian kết thúc (HH:MM).
    * @throws BadRequestException nếu logic không hợp lệ.
    */
   private validateTimeLogic(startTime: string, endTime: string): void {
-    if (endTime <= startTime) {
+    // Convert time strings to minutes for comparison
+    const endTimeMinutes = this.timeToMinutes(endTime);
+    const startTimeMinutes = this.timeToMinutes(startTime);
+
+    // For overnight schedules, endTime can be less than startTime
+    // This is valid when the schedule spans across midnight
+    if (endTimeMinutes < startTimeMinutes) {
+      // This is a valid overnight schedule
+      return;
+    }
+
+    // For same-day schedules, endTime must be greater than startTime
+    if (endTimeMinutes <= startTimeMinutes) {
       throw new BadRequestException(
         `Thời gian kết thúc (${endTime}) phải sau thời gian bắt đầu (${startTime}).`,
       );
     }
+  }
+
+  /**
+   * Convert time string to minutes
+   */
+  private timeToMinutes(timeString: string): number {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return hours * 60 + minutes;
   }
 
   /**
@@ -107,55 +164,60 @@ export class TimeSlotService {
   }
 
   /**
-   * Tạo một Khung giờ mới.
-   * @param createTimeSlotDto - Dữ liệu tạo Khung giờ.
-   * @returns Promise<TimeSlotEntity> - Khung giờ vừa tạo.
-   * @throws BadRequestException nếu thời gian không hợp lệ.
-   * @throws ConflictException nếu khung giờ bị trùng (thời gian hoặc ca).
+   * Create a new time slot with timezone handling
    */
   async create(createTimeSlotDto: CreateTimeSlotDto): Promise<TimeSlotEntity> {
-    const { startTime, endTime, shift } = createTimeSlotDto;
+    const {
+      startTime,
+      endTime,
+      timezone = 'Asia/Ho_Chi_Minh',
+      shift,
+    } = createTimeSlotDto;
 
-    await this.checkTimeConflict(startTime, endTime);
+    // Validate time logic first (before timezone conversion)
+    this.validateTimeLogic(startTime, endTime);
+
+    // Convert local times to UTC for storage
+    const utcStartTime = this.convertLocalTimeToUTC(startTime, timezone);
+    const utcEndTime = this.convertLocalTimeToUTC(endTime, timezone);
+
+    // Check for conflicts
+    await this.checkTimeConflict(utcStartTime, utcEndTime);
     await this.checkShiftConflict(shift);
 
     try {
-      const timeSlot = this.timeSlotRepository.create(createTimeSlotDto);
+      const timeSlot = this.timeSlotRepository.create({
+        startTime: utcStartTime,
+        endTime: utcEndTime,
+        shift,
+      });
+
       return await this.timeSlotRepository.save(timeSlot);
     } catch (error) {
       if (error.code === '23505') {
-        if (error.detail?.includes('(start_time, end_time)')) {
-          throw new ConflictException(
-            `Khung giờ từ ${startTime} đến ${endTime} có thể đã tồn tại.`,
-          );
-        }
-        if (error.detail?.includes('(shift)')) {
-          throw new ConflictException(
-            `Ca/tiết học số ${shift} có thể đã tồn tại.`,
-          );
-        }
+        throw new ConflictException(
+          `Khung giờ với thời gian ${utcStartTime}-${utcEndTime} đã tồn tại.`,
+        );
       }
-      console.error('Lỗi khi tạo Khung giờ:', error);
-      throw new BadRequestException('Không thể tạo Khung giờ.');
+      console.error('Lỗi khi tạo khung giờ:', error);
+      throw new BadRequestException(
+        'Không thể tạo khung giờ, vui lòng kiểm tra lại dữ liệu.',
+      );
     }
   }
 
   /**
-   * Lấy danh sách Khung giờ (có phân trang).
-   * @param paginationDto - Thông tin phân trang.
-   * @returns Promise<{ data: TimeSlotEntity[]; meta: MetaDataInterface }> - Danh sách và metadata.
+   * Get time slots with timezone conversion
    */
   async findAll(
-    paginationDto: PaginationDto = DEFAULT_PAGINATION,
+    paginationDto?: PaginationDto,
   ): Promise<{ data: TimeSlotEntity[]; meta: MetaDataInterface }> {
-    const { page, limit } = paginationDto;
-    // const where: FindOptionsWhere<TimeSlotEntity> = {};
+    const { page = 1, limit = 10 } = paginationDto;
 
     const [data, total] = await this.timeSlotRepository.findAndCount({
-      // where,
       skip: (page - 1) * limit,
       take: limit,
-      order: { shift: 'ASC', startTime: 'ASC' },
+      order: { shift: 'ASC' },
     });
 
     const meta = generatePaginationMeta(total, page, limit);
@@ -234,22 +296,22 @@ export class TimeSlotService {
   async remove(id: number): Promise<void> {
     await this.findOne(id);
 
-    const classWeeklySchedule = await this.classWeeklyScheduleService.getOne({
-      timeSlotId: id,
-    });
-    if (classWeeklySchedule) {
-      throw new BadRequestException(
-        `Không thể xóa Khung giờ ID ${id} vì đang được sử dụng trong lịch học hàng tuần.`,
-      );
-    }
+    // const classWeeklySchedule = await this.classWeeklyScheduleService.getOne({
+    //   timeSlotId: id,
+    // });
+    // if (classWeeklySchedule) {
+    //   throw new BadRequestException(
+    //     `Không thể xóa Khung giờ ID ${id} vì đang được sử dụng trong lịch học hàng tuần.`,
+    //   );
+    // }
 
-    const classAdjustmentSchedule =
-      await this.classAdjustmentScheduleService.getOne({ timeSlotId: id });
-    if (classAdjustmentSchedule) {
-      throw new BadRequestException(
-        `Không thể xóa Khung giờ ID ${id} vì đang được sử dụng trong  lịch học điều chỉnh.`,
-      );
-    }
+    // const classAdjustmentSchedule =
+    //   await this.classAdjustmentScheduleService.getOne({ timeSlotId: id });
+    // if (classAdjustmentSchedule) {
+    //   throw new BadRequestException(
+    //     `Không thể xóa Khung giờ ID ${id} vì đang được sử dụng trong  lịch học điều chỉnh.`,
+    //   );
+    // }
 
     await this.timeSlotRepository.delete(id);
   }

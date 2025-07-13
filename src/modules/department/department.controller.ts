@@ -32,13 +32,17 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { DepartmentEntity } from './entities/department.entity';
+import { MajorService } from '../major/major.service';
 
 @ApiTags('Quản lý Bộ môn (Departments)')
 @ApiBearerAuth('token')
 @UseGuards(JwtAuthGuard)
 @Controller('departments')
 export class DepartmentController {
-  constructor(private readonly departmentService: DepartmentService) {}
+  constructor(
+    private readonly departmentService: DepartmentService,
+    private readonly majorService: MajorService,
+  ) {}
 
   @Post()
   @UseGuards(RolesGuard)
@@ -216,6 +220,52 @@ export class DepartmentController {
     await this.departmentService.remove(id);
     return new SuccessResponse({
       message: 'Xóa Bộ môn thành công',
+    }).send(res);
+  }
+
+  @Get(':departmentId/majors')
+  @ApiOperation({ summary: 'Lấy danh sách Ngành học theo Bộ môn' })
+  @ApiParam({
+    name: 'departmentId',
+    type: Number,
+    description: 'ID của Bộ môn',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng kết quả mỗi trang',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách Ngành học theo Bộ môn thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy Bộ môn.',
+  })
+  async getMajorsByDepartment(
+    @Param('departmentId', ParseIntPipe) departmentId: number,
+    @Query() paginationDto: PaginationDto,
+    @Res() res: Response,
+  ) {
+    await this.departmentService.findOne(departmentId);
+    const result = await this.majorService.findAll(paginationDto, {
+      departmentId,
+    });
+    return new SuccessResponse({
+      ...result,
+      message: 'Lấy danh sách Ngành học theo Bộ môn thành công',
     }).send(res);
   }
 }

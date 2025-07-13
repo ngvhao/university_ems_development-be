@@ -32,6 +32,7 @@ import {
 } from '@nestjs/swagger';
 import { MajorEntity } from './entities/major.entity';
 import { FilterMajorDto } from './dtos/filterMajor.dto';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 
 @ApiTags('Quản lý Ngành học (Majors)')
 @ApiBearerAuth('token')
@@ -80,7 +81,7 @@ export class MajorController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách Ngành học (có phân trang)' })
+  @ApiOperation({ summary: 'Lấy danh sách Ngành học (có phân trang và lọc)' })
   @ApiQuery({
     name: 'page',
     required: false,
@@ -93,6 +94,24 @@ export class MajorController {
     type: Number,
     description: 'Số lượng kết quả mỗi trang',
   })
+  @ApiQuery({
+    name: 'facultyId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID khoa',
+  })
+  @ApiQuery({
+    name: 'departmentId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID bộ môn',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    type: String,
+    description: 'Lọc theo trạng thái',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Lấy danh sách thành công.',
@@ -101,8 +120,15 @@ export class MajorController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Chưa xác thực.',
   })
-  async findAll(@Query() filterDto: FilterMajorDto, @Res() res: Response) {
-    const { data, meta } = await this.majorService.findAll(filterDto);
+  async findAll(
+    @Query() paginationDto: PaginationDto,
+    @Query() filterDto: FilterMajorDto,
+    @Res() res: Response,
+  ) {
+    const { data, meta } = await this.majorService.findAll(
+      paginationDto,
+      filterDto,
+    );
     return new SuccessResponse({
       data,
       metadata: meta,

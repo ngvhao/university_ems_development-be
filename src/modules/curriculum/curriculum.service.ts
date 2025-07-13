@@ -23,6 +23,7 @@ import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { MajorService } from '../major/major.service';
 import { StudentEntity } from '../student/entities/student.entity';
+import { FilterCurriculumDto } from './dtos/filterCurriculum.dto';
 
 @Injectable()
 export class CurriculumService {
@@ -225,32 +226,39 @@ export class CurriculumService {
   }
 
   /**
-   * Lấy danh sách chương trình đào tạo (có phân trang).
+   * Lấy danh sách chương trình đào tạo (có phân trang và lọc).
    * @param paginationDto - Thông tin phân trang.
-   * @returns Promise<{ data: CurriculumEntity[]; meta: MetaDataInterface }> - Danh sách CTĐT và metadata.
+   * @param filterDto - Thông tin lọc.
+   * @returns Promise<{ data: CurriculumEntity[]; meta: MetaDataInterface }> - Danh sách chương trình đào tạo và metadata.
    */
   async findAll(
     paginationDto: PaginationDto,
-    majorId?: number,
+    filterDto?: FilterCurriculumDto,
   ): Promise<{ data: CurriculumEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
-    const where: FindOptionsWhere<CurriculumEntity> = { majorId };
 
+    const where: FindOptionsWhere<CurriculumEntity> = {};
+    if (filterDto?.facultyId) {
+      where.major = { department: { facultyId: filterDto.facultyId } };
+    }
+    if (filterDto?.departmentId) {
+      where.major = { departmentId: filterDto.departmentId };
+    }
+    if (filterDto?.majorId) {
+      where.majorId = filterDto.majorId;
+    }
+    if (filterDto?.startAcademicYear) {
+      where.startAcademicYear = filterDto.startAcademicYear;
+    }
     const [data, total] = await this.curriculumRepository.findAndCount({
       where,
-      relations: {
-        major: true,
-        curriculumCourses: {
-          course: true,
-          semester: true,
-          prerequisiteCourse: true,
-        },
-      },
       skip: (page - 1) * limit,
       take: limit,
-      order: { majorId: 'ASC', startAcademicYear: 'DESC' },
+      relations: {
+        major: true,
+      },
+      order: { startAcademicYear: 'DESC', majorId: 'ASC' },
     });
-
     const meta = generatePaginationMeta(total, page, limit);
     return { data, meta };
   }
@@ -264,6 +272,8 @@ export class CurriculumService {
   async findOne(id: number): Promise<CurriculumEntity> {
     return this.findCurriculumByIdOrThrow(id, [
       'major',
+      'major.department',
+      'major.department.faculty',
       'curriculumCourses',
       'curriculumCourses.course',
       'curriculumCourses.semester',

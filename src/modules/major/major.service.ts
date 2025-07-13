@@ -18,6 +18,7 @@ import { StudentService } from '../student/student.service';
 import { ClassService } from '../class/class.service';
 import { CurriculumService } from '../curriculum/curriculum.service';
 import { FilterMajorDto } from './dtos/filterMajor.dto';
+import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 
 @Injectable()
 export class MajorService {
@@ -104,30 +105,37 @@ export class MajorService {
   }
 
   /**
-   * Lấy danh sách Ngành học .
+   * Lấy danh sách Ngành học (có phân trang và lọc).
    * @param paginationDto - Thông tin phân trang.
+   * @param filterDto - Thông tin lọc.
    * @returns Promise<{ data: MajorEntity[]; meta: MetaDataInterface }> - Danh sách và metadata.
    */
   async findAll(
-    filterDto: FilterMajorDto,
+    paginationDto: PaginationDto,
+    filterDto?: FilterMajorDto,
   ): Promise<{ data: MajorEntity[]; meta: MetaDataInterface }> {
-    const { page = 1, limit = 10, facultyId } = filterDto;
-    // const where: FindOptionsWhere<MajorEntity> = {};
-
+    const { page = 1, limit = 10 } = paginationDto;
+    const where: FindOptionsWhere<MajorEntity> = {};
+    if (filterDto?.facultyId) {
+      where.department = { facultyId: filterDto.facultyId };
+    }
+    if (filterDto?.departmentId) {
+      where.departmentId = filterDto.departmentId;
+    }
     const [data, total] = await this.majorRepository.findAndCount({
-      where: {
-        department: facultyId ? { facultyId } : undefined,
-      },
+      skip: (page - 1) * limit,
+      take: limit,
+      where,
       relations: {
         department: true,
       },
-
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { name: 'ASC' },
+      order: {
+        name: 'ASC',
+      },
     });
 
     const meta = generatePaginationMeta(total, page, limit);
+
     return { data, meta };
   }
 

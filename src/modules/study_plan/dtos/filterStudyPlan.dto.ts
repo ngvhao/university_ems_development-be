@@ -1,57 +1,76 @@
+import { IsOptional, IsNumber, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsEnum, IsPositive } from 'class-validator';
-import { Type } from 'class-transformer';
-import { EStudyPlanStatus } from 'src/utils/enums/study-plan.enum';
 
 export class FilterStudyPlanDto {
   @ApiPropertyOptional({
-    description: 'Lọc theo ID Sinh viên',
-    example: 101,
-    type: Number,
-  })
-  @IsOptional()
-  @IsPositive({ message: 'ID Sinh viên phải là số dương' })
-  @Type(() => Number)
-  studentId?: number;
-
-  @ApiPropertyOptional({
-    description: 'Lọc theo ID Khoa',
+    description: 'ID của khoa',
     example: 1,
-    type: Number,
   })
   @IsOptional()
-  @IsPositive({ message: 'ID Khoa phải là số dương' })
-  @Type(() => Number)
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
   facultyId?: number;
 
   @ApiPropertyOptional({
-    description: 'Lọc theo mã học kỳ',
-    example: 5,
-    type: Number,
+    description: 'ID của bộ môn',
+    example: 1,
   })
-  @IsOptional({ message: 'ID học kỳ không được để trống' })
-  @IsPositive({ message: 'ID Học kỳ' })
-  @Type(() => Number)
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
+  departmentId?: number;
+
+  @ApiPropertyOptional({
+    description: 'ID của ngành học',
+    example: 1,
+  })
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
+  majorId?: number;
+
+  @ApiPropertyOptional({
+    description: 'ID của lớp học',
+    example: 1,
+  })
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
+  classId?: number;
+
+  @ApiPropertyOptional({
+    description: 'ID của sinh viên',
+    example: 1,
+  })
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
+  studentId?: number;
+
+  @ApiPropertyOptional({
+    description: 'ID của học kỳ',
+    example: 1,
+  })
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
   semesterId?: number;
 
   @ApiPropertyOptional({
-    description: 'Lọc theo ID Môn học',
-    example: 15,
-    type: Number,
+    description: 'ID của môn học',
+    example: 1,
   })
   @IsOptional()
-  @IsPositive({ message: 'ID Môn học phải là số dương' })
-  @Type(() => Number)
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
   courseId?: number;
 
   @ApiPropertyOptional({
-    description: 'Lọc theo trạng thái kế hoạch (0: Cancelled, 1: Planned)',
-    enum: EStudyPlanStatus,
-    example: EStudyPlanStatus.PLANNED,
-    type: 'number',
+    description: 'Trạng thái kế hoạch học tập',
+    example: 'ACTIVE',
   })
   @IsOptional()
-  @IsEnum(EStudyPlanStatus, { message: 'Trạng thái không hợp lệ (0 hoặc 1)' })
-  @Type(() => Number)
-  status?: EStudyPlanStatus;
+  @IsString()
+  status?: string;
 }

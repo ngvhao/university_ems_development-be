@@ -318,7 +318,7 @@ export class EnrollmentCourseService {
       where.classGroupId = classGroupId;
     }
     if (status) {
-      where.status = status;
+      where.status = status as unknown as EEnrollmentStatus;
     }
     if (semesterId) {
       where.classGroup = {

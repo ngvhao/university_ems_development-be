@@ -36,6 +36,7 @@ import {
 import { CurriculumEntity } from './entities/curriculum.entity';
 import { RequestHasStudentDto } from 'src/utils/request-has-student-dto';
 import { StudentInterceptor } from 'src/interceptors/get-student.interceptor';
+import { FilterCurriculumDto } from './dtos/filterCurriculum.dto';
 
 @ApiTags('Quản lý Chương trình Đào tạo (Curriculums)')
 @ApiBearerAuth('token')
@@ -89,7 +90,7 @@ export class CurriculumController {
 
   @Get()
   @ApiOperation({
-    summary: 'Lấy danh sách chương trình đào tạo (có phân trang)',
+    summary: 'Lấy danh sách chương trình đào tạo (có phân trang và lọc)',
   })
   @ApiQuery({
     name: 'page',
@@ -103,6 +104,30 @@ export class CurriculumController {
     type: Number,
     description: 'Số lượng kết quả mỗi trang',
   })
+  @ApiQuery({
+    name: 'facultyId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID khoa',
+  })
+  @ApiQuery({
+    name: 'departmentId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID bộ môn',
+  })
+  @ApiQuery({
+    name: 'majorId',
+    required: false,
+    type: Number,
+    description: 'Lọc theo ID ngành học',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    type: String,
+    description: 'Lọc theo trạng thái',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Lấy danh sách chương trình đào tạo thành công.',
@@ -111,8 +136,15 @@ export class CurriculumController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Chưa xác thực.',
   })
-  async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
-    const result = await this.curriculumService.findAll(paginationDto);
+  async findAll(
+    @Query() paginationDto: PaginationDto,
+    @Query() filterDto: FilterCurriculumDto,
+    @Res() res: Response,
+  ) {
+    const result = await this.curriculumService.findAll(
+      paginationDto,
+      filterDto,
+    );
     return new SuccessResponse({
       data: result.data,
       metadata: result.meta,
