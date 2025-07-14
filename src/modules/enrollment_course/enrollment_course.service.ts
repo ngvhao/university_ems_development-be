@@ -22,6 +22,7 @@ import { CreateEnrollmentCourseDto } from './dtos/createEnrollmentCourse.dto';
 import { FilterEnrollmentCourseDto } from './dtos/filterEnrollmentCourse.dto';
 import { UserEntity } from '../user/entities/user.entity';
 import { ClassGroupEntity } from '../class_group/entities/class_group.entity';
+import { UpdateEnrollmentStatusDto } from './dtos/updateEnrollmentCourse.dto';
 
 @Injectable()
 export class EnrollmentCourseService {
@@ -459,6 +460,27 @@ export class EnrollmentCourseService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async update(
+    id: number,
+    updateEnrollmentDto: UpdateEnrollmentStatusDto,
+    currentUser: UserEntity,
+  ): Promise<EnrollmentCourseEntity> {
+    const enrollment = await this.findEnrollmentByIdOrThrow(id);
+    await this.updateStatus(id, updateEnrollmentDto, currentUser);
+    return enrollment;
+  }
+
+  async updateStatus(
+    id: number,
+    updateEnrollmentDto: UpdateEnrollmentStatusDto,
+    currentUser: UserEntity,
+  ): Promise<EnrollmentCourseEntity> {
+    const enrollment = await this.findEnrollmentByIdOrThrow(id);
+    await this.checkEnrollmentAccessPermission(enrollment, currentUser);
+    enrollment.status = updateEnrollmentDto.status;
+    return await this.enrollmentRepository.save(enrollment);
   }
 
   /**

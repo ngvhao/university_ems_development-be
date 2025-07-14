@@ -100,6 +100,7 @@ export class ClassGroupService {
           );
           await this.classWeeklyScheduleService.checkConflict(
             newClassWeeklySchedule,
+            { semesterId },
           );
           await queryRunner.manager.save(newClassWeeklySchedule);
         }

@@ -13,6 +13,7 @@ import {
   Not,
   FindOptionsRelations,
   In,
+  Between,
 } from 'typeorm';
 import { ClassWeeklyScheduleEntity } from './entities/class_weekly_schedule.entity';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
@@ -72,13 +73,28 @@ export class ClassWeeklyScheduleService {
       dayOfWeek: EDayOfWeek;
       timeSlotId: number;
       roomId: number;
+      startDate: Date;
+      endDate: Date;
     },
-    excludeId?: number,
+    {
+      semesterId,
+      excludeId,
+    }: {
+      semesterId?: number;
+      excludeId?: number;
+    },
   ): Promise<void> {
     const whereCondition: FindOptionsWhere<ClassWeeklyScheduleEntity> = {
       classGroupId: scheduleData.classGroupId,
       dayOfWeek: scheduleData.dayOfWeek,
       timeSlotId: scheduleData.timeSlotId,
+      classGroup: {
+        semester: {
+          id: semesterId,
+        },
+      },
+      startDate: Between(scheduleData.startDate, scheduleData.endDate),
+      endDate: Between(scheduleData.startDate, scheduleData.endDate),
     };
     if (excludeId) {
       whereCondition.id = Not(excludeId);
@@ -101,6 +117,13 @@ export class ClassWeeklyScheduleService {
           roomId: scheduleData.roomId,
           dayOfWeek: scheduleData.dayOfWeek,
           timeSlotId: scheduleData.timeSlotId,
+          classGroup: {
+            semester: {
+              id: semesterId,
+            },
+          },
+          startDate: Between(scheduleData.startDate, scheduleData.endDate),
+          endDate: Between(scheduleData.startDate, scheduleData.endDate),
           ...(excludeId && { id: Not(excludeId) }),
         },
         select: ['id', 'classGroupId'],
@@ -142,10 +165,11 @@ export class ClassWeeklyScheduleService {
    */
   async create(
     dto: CreateClassWeeklyScheduleDto,
+    semesterId?: number,
   ): Promise<ClassWeeklyScheduleEntity> {
     await this.validateForeignKeys(dto);
 
-    await this.checkConflict(dto);
+    await this.checkConflict(dto, { semesterId });
 
     try {
       const schedule = this.classWeeklyScheduleRepository.create(dto);
@@ -328,6 +352,8 @@ export class ClassWeeklyScheduleService {
       dayOfWeek: dto.dayOfWeek ?? originalSchedule.dayOfWeek,
       timeSlotId: dto.timeSlotId ?? originalSchedule.timeSlotId,
       roomId: dto.roomId ?? originalSchedule.roomId,
+      startDate: dto.startDate ?? originalSchedule.startDate,
+      endDate: dto.endDate ?? originalSchedule.endDate,
     };
 
     const needsConflictCheck =
@@ -336,7 +362,10 @@ export class ClassWeeklyScheduleService {
       dto.timeSlotId ||
       dto.roomId;
     if (needsConflictCheck) {
-      await this.checkConflict(finalScheduleData, id);
+      await this.checkConflict(finalScheduleData, {
+        semesterId: originalSchedule.classGroup.semesterId,
+        excludeId: id,
+      });
     }
 
     const scheduleToUpdate = await this.classWeeklyScheduleRepository.preload({

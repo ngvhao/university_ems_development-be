@@ -12,6 +12,9 @@ import {
   HttpStatus,
   HttpCode,
   NotFoundException,
+  Put,
+  Body,
+  Post,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { EnrollmentCourseService } from './enrollment_course.service';
@@ -30,9 +33,12 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBody,
 } from '@nestjs/swagger';
 import { EnrollmentCourseEntity } from './entities/enrollment_course.entity';
 import { EEnrollmentStatus } from 'src/utils/enums/course.enum';
+import { UpdateEnrollmentStatusDto } from './dtos/updateEnrollmentCourse.dto';
+import { CreateEnrollmentCourseDto } from './dtos/createEnrollmentCourse.dto';
 
 @ApiTags('Quản lý Đăng ký Môn học (Enrollments)')
 @ApiBearerAuth('token')
@@ -283,6 +289,98 @@ export class EnrollmentCourseController {
     return new SuccessResponse({
       data: data,
       message: 'Hủy đăng ký môn học thành công.',
+    }).send(res);
+  }
+
+  @Put(':id')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @ApiOperation({ summary: 'Cập nhật thông tin lượt đăng ký' })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'ID của lượt đăng ký cần cập nhật',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Cập nhật thông tin thành công.',
+    type: EnrollmentCourseEntity,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Không thể cập nhật (đã hủy, lớp bị khóa,...).',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền cập nhật lượt đăng ký này.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy lượt đăng ký.',
+  })
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateEnrollmentDto: UpdateEnrollmentStatusDto,
+    @Req() req: RequestHasUserDto & Request,
+    @Res() res: Response,
+  ) {
+    const currentUser = req.user;
+    const data = await this.enrollmentService.updateStatus(
+      id,
+      updateEnrollmentDto,
+      currentUser,
+    );
+    return new SuccessResponse({
+      data: data,
+      message: 'Cập nhật thông tin đăng ký thành công.',
+    }).send(res);
+  }
+
+  @Post()
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @ApiOperation({ summary: 'Tạo mới một lượt đăng ký môn học' })
+  @ApiBody({ type: CreateEnrollmentCourseDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Tạo mới lượt đăng ký thành công.',
+    type: EnrollmentCourseEntity,
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Không thể tạo lượt đăng ký (đã hủy, lớp bị khóa,...).',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền tạo lượt đăng ký này.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy lượt đăng ký.',
+  })
+  async create(
+    @Body() createEnrollmentDto: CreateEnrollmentCourseDto,
+    @Req() req: RequestHasUserDto & Request,
+    @Res() res: Response,
+  ) {
+    const currentUser = req.user;
+    const data = await this.enrollmentService.create(
+      createEnrollmentDto,
+      currentUser,
+    );
+    return new SuccessResponse({
+      data: data,
+      message: 'Tạo mới lượt đăng ký thành công.',
     }).send(res);
   }
 
