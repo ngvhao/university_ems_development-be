@@ -27,7 +27,7 @@ export class ExamScheduleEntity extends IEntity {
     type: String,
     format: 'date',
   })
-  @Column({ type: 'date', nullable: false })
+  @Column({ type: 'timestamp with time zone', nullable: false })
   examDate: Date;
 
   @ApiProperty({
@@ -35,7 +35,7 @@ export class ExamScheduleEntity extends IEntity {
     example: '08:00',
     type: String,
   })
-  @Column({ type: 'time', nullable: false })
+  @Column({ type: 'time with time zone', nullable: false })
   startTime: string;
 
   @ApiProperty({
@@ -43,7 +43,7 @@ export class ExamScheduleEntity extends IEntity {
     example: '10:00',
     type: String,
   })
-  @Column({ type: 'time', nullable: false })
+  @Column({ type: 'time with time zone', nullable: false })
   endTime: string;
 
   @ApiPropertyOptional({

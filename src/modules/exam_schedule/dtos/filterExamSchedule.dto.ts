@@ -13,6 +13,15 @@ export class FilterExamScheduleDto {
   semesterId?: number;
 
   @ApiPropertyOptional({
+    description: 'Lọc theo ID khoa',
+    example: 1,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  facultyId?: number;
+
+  @ApiPropertyOptional({
     description: 'Lọc theo ID nhóm lớp',
     example: 1,
   })

@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, FindOptionsWhere } from 'typeorm';
 import { ExamScheduleEntity } from './entities/exam_schedule.entity';
 import { CreateExamScheduleDto } from './dtos/createExamSchedule.dto';
 import { UpdateExamScheduleDto } from './dtos/updateExamSchedule.dto';
@@ -8,44 +8,15 @@ import { FilterExamScheduleDto } from './dtos/filterExamSchedule.dto';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
+import { StudentService } from '../student/student.service';
 import { EExamType } from 'src/utils/enums/exam.enum';
-
-interface ExamScheduleResponse {
-  id: number;
-  examType: EExamType;
-  examDate: Date;
-  startTime: string;
-  endTime: string;
-  notes: string | null;
-  course: {
-    id: number;
-    courseCode: string;
-    name: string;
-    credit: number;
-  };
-  classGroup: {
-    id: number;
-    classGroupCode: string;
-  };
-  room: {
-    id: number;
-    roomCode: string;
-    roomName: string;
-    building: string;
-    floor: number;
-  };
-  semester: {
-    id: number;
-    semesterCode: string;
-    semesterName: string;
-  };
-}
 
 @Injectable()
 export class ExamScheduleService {
   constructor(
     @InjectRepository(ExamScheduleEntity)
-    private examScheduleRepository: Repository<ExamScheduleEntity>,
+    private readonly examScheduleRepository: Repository<ExamScheduleEntity>,
+    private readonly studentService: StudentService,
     private dataSource: DataSource,
   ) {}
 
@@ -58,8 +29,7 @@ export class ExamScheduleService {
   async getExamScheduleByStudentAndSemester(
     studentId: number,
     semesterCode: string,
-  ): Promise<ExamScheduleResponse[]> {
-    // Tìm học kỳ theo semester code
+  ): Promise<ExamScheduleEntity[]> {
     const semester = await this.dataSource
       .getRepository('SemesterEntity')
       .createQueryBuilder('semester')
@@ -72,7 +42,6 @@ export class ExamScheduleService {
       );
     }
 
-    // Lấy lịch thi của sinh viên trong học kỳ đó
     const examSchedules = await this.dataSource
       .getRepository('ExamScheduleEntity')
       .createQueryBuilder('exam')
@@ -91,36 +60,7 @@ export class ExamScheduleService {
       .addOrderBy('exam.startTime', 'ASC')
       .getMany();
 
-    return examSchedules.map((exam) => ({
-      id: exam.id,
-      examType: exam.examType,
-      examDate: exam.examDate,
-      startTime: exam.startTime,
-      endTime: exam.endTime,
-      notes: exam.notes,
-      course: {
-        id: exam.classGroup.course.id,
-        courseCode: exam.classGroup.course.courseCode,
-        name: exam.classGroup.course.name,
-        credit: exam.classGroup.course.credit,
-      },
-      classGroup: {
-        id: exam.classGroup.id,
-        classGroupCode: exam.classGroup.classGroupCode,
-      },
-      room: {
-        id: exam.room.id,
-        roomCode: exam.room.roomCode,
-        roomName: exam.room.roomName,
-        building: exam.room.building,
-        floor: exam.room.floor,
-      },
-      semester: {
-        id: exam.semester.id,
-        semesterCode: exam.semester.semesterCode,
-        semesterName: exam.semester.semesterName,
-      },
-    }));
+    return examSchedules as ExamScheduleEntity[];
   }
 
   /**
@@ -132,13 +72,8 @@ export class ExamScheduleService {
   async getExamScheduleByUserAndSemester(
     userId: number,
     semesterCode: string,
-  ): Promise<ExamScheduleResponse[]> {
-    // Tìm student theo user ID
-    const student = await this.dataSource
-      .getRepository('StudentEntity')
-      .createQueryBuilder('student')
-      .where('student.userId = :userId', { userId })
-      .getOne();
+  ): Promise<ExamScheduleEntity[]> {
+    const student = await this.studentService.getOneByUserId(userId);
 
     if (!student) {
       throw new NotFoundException(
@@ -146,7 +81,12 @@ export class ExamScheduleService {
       );
     }
 
-    return this.getExamScheduleByStudentAndSemester(student.id, semesterCode);
+    const data = await this.getExamScheduleByStudentAndSemester(
+      student.id,
+      semesterCode,
+    );
+
+    return data;
   }
 
   async create(
@@ -165,45 +105,55 @@ export class ExamScheduleService {
     const { page, limit } = paginationDto;
     const skip = (page - 1) * limit;
 
-    const query = this.examScheduleRepository
-      .createQueryBuilder('exam')
-      .leftJoinAndSelect('exam.classGroup', 'classGroup')
-      .leftJoinAndSelect('classGroup.course', 'course')
-      .leftJoinAndSelect('exam.room', 'room')
-      .leftJoinAndSelect('exam.semester', 'semester');
+    const where: FindOptionsWhere<ExamScheduleEntity> = {};
 
     if (filterDto.examType) {
-      query.andWhere('exam.examType = :examType', {
-        examType: filterDto.examType,
-      });
+      where.examType = filterDto.examType as unknown as EExamType;
     }
 
     if (filterDto.examDate) {
-      query.andWhere('exam.examDate = :examDate', {
-        examDate: filterDto.examDate,
-      });
+      where.examDate = new Date(filterDto.examDate);
     }
 
     if (filterDto.classGroupId) {
-      query.andWhere('exam.classGroupId = :classGroupId', {
-        classGroupId: filterDto.classGroupId,
-      });
+      where.classGroupId = filterDto.classGroupId;
     }
 
-    if (filterDto.roomId) {
-      query.andWhere('exam.roomId = :roomId', { roomId: filterDto.roomId });
+    if (filterDto.facultyId) {
+      where.classGroup = {
+        course: {
+          courseFaculties: {
+            facultyId: filterDto.facultyId,
+          },
+        },
+      };
     }
 
     if (filterDto.semesterId) {
-      query.andWhere('exam.semesterId = :semesterId', {
-        semesterId: filterDto.semesterId,
-      });
+      where.semesterId = filterDto.semesterId;
     }
 
-    const [data, total] = await query.skip(skip).take(limit).getManyAndCount();
+    if (filterDto.roomId) {
+      where.roomId = filterDto.roomId;
+    }
 
-    const meta = generatePaginationMeta(page, limit, total);
-    return { data, meta };
+    const [examSchedules, total] =
+      await this.examScheduleRepository.findAndCount({
+        where,
+        relations: {
+          classGroup: {
+            course: true,
+          },
+          room: true,
+          semester: true,
+        },
+        order: { examDate: 'ASC', startTime: 'ASC' },
+        skip,
+        take: limit,
+      });
+
+    const meta = generatePaginationMeta(total, page, limit);
+    return { data: examSchedules, meta };
   }
 
   async findOne(id: number): Promise<ExamScheduleEntity> {

@@ -371,6 +371,7 @@ export class ClassGroupService {
     const { page = 1, limit = 10 } = paginationDto;
     const {
       semesterId,
+      status,
       statuses,
       majorId,
       yearAdmission,
@@ -381,6 +382,9 @@ export class ClassGroupService {
     const where: FindOptionsWhere<ClassGroupEntity> = {};
     if (semesterId !== undefined) {
       where.semesterId = semesterId;
+    }
+    if (status !== undefined) {
+      where.status = status;
     }
     if (statuses !== undefined) {
       where.status = In(statuses);
@@ -406,8 +410,6 @@ export class ClassGroupService {
         courseFaculties: { facultyId: facultyId },
       };
     }
-
-    console.log('where:', where);
 
     const [data, total] = await this.classGroupRepository.findAndCount({
       where,

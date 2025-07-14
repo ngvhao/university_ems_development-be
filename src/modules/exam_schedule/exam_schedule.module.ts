@@ -3,9 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ExamScheduleService } from './exam_schedule.service';
 import { ExamScheduleController } from './exam_schedule.controller';
 import { ExamScheduleEntity } from './entities/exam_schedule.entity';
+import { StudentModule } from '../student/student.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ExamScheduleEntity])],
+  imports: [TypeOrmModule.forFeature([ExamScheduleEntity]), StudentModule],
   controllers: [ExamScheduleController],
   providers: [ExamScheduleService],
   exports: [ExamScheduleService],

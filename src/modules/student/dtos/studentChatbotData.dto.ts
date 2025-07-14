@@ -73,21 +73,13 @@ export class ScheduleItemDto {
   @ApiProperty({ description: 'Thông tin môn học' })
   course: {
     courseCode: string;
-    courseName: string;
+    name: string;
     credit: number;
-  };
-
-  @ApiProperty({ description: 'Thông tin giảng viên' })
-  lecturer: {
-    fullName: string;
-    email: string;
   };
 
   @ApiProperty({ description: 'Phòng học' })
   room: {
-    roomCode: string;
-    roomName: string;
-    capacity: number;
+    roomNumber: string;
   };
 
   @ApiProperty({ description: 'Tiết học' })
@@ -108,7 +100,7 @@ export class ExamScheduleDto {
   @ApiProperty({ description: 'Thông tin môn thi' })
   course: {
     courseCode: string;
-    courseName: string;
+    name: string;
     credit: number;
   };
 
@@ -123,8 +115,7 @@ export class ExamScheduleDto {
 
   @ApiProperty({ description: 'Phòng thi' })
   room: {
-    roomCode: string;
-    roomName: string;
+    roomNumber: string;
   };
 
   @ApiProperty({ description: 'Ghi chú về kỳ thi' })
@@ -190,7 +181,7 @@ export class GradeInfoDto {
   @ApiProperty({ description: 'Thông tin môn học' })
   course: {
     courseCode: string;
-    courseName: string;
+    name: string;
     credit: number;
   };
 
@@ -245,7 +236,7 @@ export class NextSemesterInfoDto {
   @ApiProperty({ description: 'Môn học có thể đăng ký' })
   availableCourses: Array<{
     courseCode: string;
-    courseName: string;
+    name: string;
     credit: number;
     prerequisiteCourses: string[];
     maxStudents: number;
@@ -303,7 +294,7 @@ export class StudentChatbotDataDto {
     newDate: Date;
     course: {
       courseCode: string;
-      courseName: string;
+      name: string;
     };
     reason: string;
   }>;

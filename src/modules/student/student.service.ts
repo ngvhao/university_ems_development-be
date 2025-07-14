@@ -693,7 +693,7 @@ export class StudentService {
       )
       .where('enrollment.studentId = :studentId', { studentId })
       .andWhere('classGroup.semesterId = :semesterId', {
-        semesterId: currentSemester.id,
+        semesterId: 44,
       })
       .getMany();
 
@@ -845,7 +845,7 @@ export class StudentService {
         })),
         availableCourses: availableCourses.map((curriculumCourse) => ({
           courseCode: curriculumCourse.course.courseCode,
-          courseName: curriculumCourse.course.name,
+          name: curriculumCourse.course.name,
           credit: curriculumCourse.course.credit,
           prerequisiteCourses: [],
           maxStudents: 50,
@@ -914,17 +914,11 @@ export class StudentService {
         id: schedule.id,
         course: {
           courseCode: schedule.classGroup.course.courseCode,
-          courseName: schedule.classGroup.course.courseName,
+          name: schedule.classGroup.course.name,
           credit: schedule.classGroup.course.credit,
         },
-        lecturer: {
-          fullName: `${schedule.classGroup.lecturer.user.firstName} ${schedule.classGroup.lecturer.user.lastName}`,
-          email: schedule.classGroup.lecturer.user.universityEmail,
-        },
         room: {
-          roomCode: schedule.room.roomCode,
-          roomName: schedule.room.roomName,
-          capacity: schedule.room.capacity,
+          roomNumber: schedule.room.roomNumber,
         },
         timeSlot: {
           startTime: schedule.timeSlot.startTime,
@@ -937,15 +931,14 @@ export class StudentService {
         id: exam.id,
         course: {
           courseCode: exam.classGroup.course.courseCode,
-          courseName: exam.classGroup.course.courseName,
+          name: exam.classGroup.course.name,
           credit: exam.classGroup.course.credit,
         },
         examDate: exam.examDate,
         startTime: exam.startTime,
         endTime: exam.endTime,
         room: {
-          roomCode: exam.room.roomCode,
-          roomName: exam.room.roomName,
+          roomNumber: exam.room.roomNumber,
         },
         notes: exam.notes,
       })),
@@ -977,7 +970,7 @@ export class StudentService {
       currentGrades: currentGrades.map((grade) => ({
         course: {
           courseCode: grade.enrollment.classGroup.course.courseCode,
-          courseName: grade.enrollment.classGroup.course.courseName,
+          name: grade.enrollment.classGroup.course.name,
           credit: grade.enrollment.classGroup.course.credit,
         },
         processScore: grade.processScore,
@@ -1003,7 +996,7 @@ export class StudentService {
         newDate: adjustment.newDate,
         course: {
           courseCode: adjustment.classGroup.course.courseCode,
-          courseName: adjustment.classGroup.course.courseName,
+          name: adjustment.classGroup.course.name,
         },
         reason: adjustment.reason,
       })),

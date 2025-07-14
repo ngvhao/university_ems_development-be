@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsNumber, IsString, IsArray } from 'class-validator';
+import { IsOptional, IsNumber, IsArray, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
+import { EClassGroupStatus } from 'src/utils/enums/class.enum';
 
 export class FilterClassGroupDto {
   @ApiPropertyOptional({
@@ -53,17 +54,20 @@ export class FilterClassGroupDto {
     example: 'ACTIVE',
   })
   @IsOptional()
-  @IsString()
-  status?: string;
+  @IsEnum(EClassGroupStatus)
+  status?: EClassGroupStatus;
 
   @ApiPropertyOptional({
     description: 'Lọc theo danh sách trạng thái',
-    example: ['ACTIVE', 'INACTIVE'],
+    example: [
+      EClassGroupStatus.OPEN_FOR_REGISTER,
+      EClassGroupStatus.CLOSED_FOR_REGISTER,
+    ],
   })
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
-  statuses?: string[];
+  @IsEnum(EClassGroupStatus, { each: true })
+  statuses?: EClassGroupStatus[];
 
   @ApiPropertyOptional({
     description: 'Lọc theo năm nhập học',
