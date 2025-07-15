@@ -7,10 +7,12 @@ import { LocalStrategy } from './strategys/local.strategy';
 import { JwtStrategy } from './strategys/jwt.strategy';
 import { StudentModule } from '../student/student.module';
 import { LecturerModule } from '../lecturer/lecturer.module';
+import { RolesGuard } from './guards/roles.guard';
 
 @Module({
   imports: [UserModule, StudentModule, LecturerModule],
   controllers: [AuthController],
-  providers: [AuthService, JwtService, LocalStrategy, JwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy, RolesGuard, JwtService],
+  exports: [AuthService],
 })
 export class AuthModule {}

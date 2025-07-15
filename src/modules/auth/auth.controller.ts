@@ -21,6 +21,12 @@ import { LocalAuthGuard } from './guards/local-auth.guard';
 import { EUserRole } from 'src/utils/enums/user.enum';
 import { StudentService } from '../student/student.service';
 import { LecturerService } from '../lecturer/lecturer.service';
+import { AuthService } from './auth.service';
+import {
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  ChangePasswordDto,
+} from './dtos/password.dto';
 
 @Controller('auth')
 @ApiTags('Auth')
@@ -29,7 +35,7 @@ export class AuthController {
     private readonly jwtService: JwtService,
     private readonly studentService: StudentService,
     private readonly lecturerService: LecturerService,
-    // private readonly authService: AuthService,
+    private readonly authService: AuthService,
   ) {}
 
   @UseGuards(LocalAuthGuard)
@@ -75,7 +81,6 @@ export class AuthController {
       payload = await this.jwtService.verifyAsync(refreshToken, {
         secret: jwtConstants.refreshSecret,
       });
-      console.log('refreshToken@@payload::', payload);
     } catch {
       AuthHelpers.setExpireTokens(res);
       throw new BadRequestException('Invalid or expired refresh token');
@@ -136,6 +141,39 @@ export class AuthController {
     AuthHelpers.setExpireTokens(res);
     return new SuccessResponse({
       message: 'Logout successfully',
+    }).send(res);
+  }
+
+  @Post('/forgot-password')
+  async forgotPassword(@Body() body: ForgotPasswordDto, @Res() res: Response) {
+    await this.authService.sendResetPasswordEmail(body.email);
+    return new SuccessResponse({
+      message: 'Đã gửi email đặt lại mật khẩu nếu email tồn tại.',
+    }).send(res);
+  }
+
+  @Post('/reset-password')
+  async resetPassword(@Body() body: ResetPasswordDto, @Res() res: Response) {
+    await this.authService.resetPassword(body.token, body.newPassword);
+    return new SuccessResponse({
+      message: 'Đặt lại mật khẩu thành công.',
+    }).send(res);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('/change-password')
+  async changePassword(
+    @Req() req: RequestHasUserDto & Request,
+    @Body() body: ChangePasswordDto,
+    @Res() res: Response,
+  ) {
+    await this.authService.changePassword(
+      req.user.id,
+      body.oldPassword,
+      body.newPassword,
+    );
+    return new SuccessResponse({
+      message: 'Đổi mật khẩu thành công.',
     }).send(res);
   }
 }

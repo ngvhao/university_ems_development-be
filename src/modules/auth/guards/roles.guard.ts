@@ -39,41 +39,17 @@ export class RolesGuard implements CanActivate {
     });
 
     if (!user || user.role === undefined || user.role === null) {
-      console.warn(
-        'RolesGuard: User or user role is missing after authentication.',
-        { user: user ? { id: user.id, email: user.universityEmail } : null },
-      );
-      throw new ForbiddenException(
-        'User role information is missing. Access denied.',
-      );
+      throw new ForbiddenException('Access denied.');
     }
 
-    // Convert role to number if it's a string
     let userRole: number;
     if (typeof user.role === 'string') {
       userRole = parseInt(user.role, 10);
-      console.log('RolesGuard - Converted string role to number:', {
-        original: user.role,
-        converted: userRole,
-      });
     } else {
       userRole = user.role;
     }
 
-    console.log('RolesGuard - Final comparison:', {
-      requiredRoles,
-      userRole,
-      userRoleType: typeof userRole,
-    });
-
     const hasPermission = requiredRoles.includes(userRole);
-
-    console.log('RolesGuard - Permission check result:', {
-      hasPermission,
-      userRole,
-      requiredRoles,
-      includes: requiredRoles.includes(userRole),
-    });
 
     if (hasPermission) {
       console.log('RolesGuard - Access granted');

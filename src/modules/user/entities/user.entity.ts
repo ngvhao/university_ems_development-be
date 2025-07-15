@@ -110,6 +110,14 @@ export class UserEntity extends IEntity {
   })
   isActive: EAccountStatus;
 
+  @ApiPropertyOptional({
+    description: 'Token đặt lại mật khẩu',
+    example: 'uuid-token',
+    required: false,
+  })
+  @Column({ nullable: true })
+  resetPasswordToken?: string;
+
   @ApiPropertyOptional({ type: () => StudentEntity })
   @OneToOne(() => StudentEntity, (student) => student.user, {
     nullable: true,

@@ -14,8 +14,6 @@ export class Helpers {
     saltRounds?: number;
   }): Promise<string> {
     const salt = genSaltSync(saltRounds);
-    console.log(salt);
-    console.log(password);
     return hashSync(password, salt);
   }
 

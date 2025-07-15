@@ -11,4 +11,7 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
       'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt',
   })
   password?: string;
+
+  @IsOptional()
+  resetPasswordToken?: string;
 }

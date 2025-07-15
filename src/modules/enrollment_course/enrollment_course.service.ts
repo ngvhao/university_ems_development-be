@@ -167,7 +167,7 @@ export class EnrollmentCourseService {
 
         if (!classGroup) {
           throw new NotFoundException(
-            `Không tìm thấy Nhóm lớp học với ID ${classGroupId}`,
+            `Không tìm thấy Nhóm lớp học với ID ${classGroupId} trong sơ đồ đào tạo của sinh viên`,
           );
         }
 
