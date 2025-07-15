@@ -10,6 +10,7 @@ import { LecturerModule } from '../lecturer/lecturer.module';
 import { RoomModule } from '../room/room.module';
 import { SettingModule } from '../setting/setting.module';
 import { ClassWeeklyScheduleModule } from '../class_weekly_schedule/class_weekly_schedule.module';
+import { EnrollmentCourseModule } from '../enrollment_course/enrollment_course.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ClassWeeklyScheduleModule } from '../class_weekly_schedule/class_weekly
     RoomModule,
     SettingModule,
     forwardRef(() => ClassWeeklyScheduleModule),
+    forwardRef(() => EnrollmentCourseModule),
   ],
   controllers: [ClassGroupController],
   providers: [ClassGroupService],

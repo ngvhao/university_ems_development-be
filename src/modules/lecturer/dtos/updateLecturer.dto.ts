@@ -1,4 +1,3 @@
-// src/modules/lecturer/dtos/updateLecturer.dto.ts
 import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import {
   IsOptional,

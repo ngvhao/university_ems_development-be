@@ -7,9 +7,3 @@ export enum EDayOfWeek {
   SATURDAY = 6,
   SUNDAY = 7,
 }
-
-export enum EAdjustmentType {
-  MAKEUP = 0, // Học bù
-  CANCEL = 1, // Nghỉ học
-  CHANGE = 2, // Thay đổi địa điểm/thời gian
-}

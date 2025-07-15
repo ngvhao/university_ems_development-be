@@ -2,7 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.entity';
 import { RoomEntity } from 'src/modules/room/entities/room.entity';
 import { TimeSlotEntity } from 'src/modules/time_slot/entities/time_slot.entity';
-import { EClassAdjustmentScheduleStatus } from 'src/utils/enums/class.enum';
+import {
+  EAdjustmentType,
+  EClassAdjustmentScheduleStatus,
+} from 'src/utils/enums/class.enum';
 import { IEntity } from 'src/utils/interfaces/entity.interface';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 
@@ -12,7 +15,7 @@ export class ClassAdjustmentScheduleEntity extends IEntity {
     example: '2025-05-12',
     description: 'Ngày học được điều chỉnh sang',
   })
-  @Column({ type: 'date' })
+  @Column({ type: 'timestamp with time zone' })
   adjustmentDate: string;
 
   @ApiProperty({
@@ -23,8 +26,16 @@ export class ClassAdjustmentScheduleEntity extends IEntity {
   note: string | null;
 
   @ApiProperty({
-    description: 'Trạng thái điều chỉnh (0: chưa điều chỉnh, 1: đã điều chỉnh)',
-    example: 0,
+    description: 'Loại điều chỉnh (1: học bù, 2: nghỉ học)',
+    example: 1,
+  })
+  @Column({ type: 'enum', enum: EAdjustmentType })
+  type: EAdjustmentType;
+
+  @ApiProperty({
+    description:
+      'Trạng thái điều chỉnh (1: yêu cầu, 2: phê duyệt, 3: từ chối, 4: hủy)',
+    example: 1,
   })
   @Column({
     type: 'enum',
@@ -56,8 +67,8 @@ export class ClassAdjustmentScheduleEntity extends IEntity {
   room: RoomEntity;
 
   @ApiProperty({ example: 3, description: 'ID của Phòng học' })
-  @Column({ nullable: false })
-  roomId: number;
+  @Column({ nullable: true })
+  roomId?: number;
 
   @ApiProperty({
     type: () => TimeSlotEntity,
@@ -68,6 +79,6 @@ export class ClassAdjustmentScheduleEntity extends IEntity {
   timeSlot: TimeSlotEntity;
 
   @ApiProperty({ example: 2, description: 'ID của Khung giờ học' })
-  @Column({ nullable: false })
-  timeSlotId: number;
+  @Column({ nullable: true })
+  timeSlotId?: number;
 }

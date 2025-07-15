@@ -200,13 +200,17 @@ export class ClassWeeklyScheduleService {
 
     const [data, total] = await this.classWeeklyScheduleRepository.findAndCount(
       {
-        relations: [
-          'classGroup',
-          'room',
-          'timeSlot',
-          'classGroup.courseSemester',
-          'classGroup.courseSemester.course',
-        ],
+        relations: {
+          classGroup: {
+            course: true,
+            semester: true,
+            lecturer: {
+              user: true,
+            },
+          },
+          room: true,
+          timeSlot: true,
+        },
         skip: (page - 1) * limit,
         take: limit,
         order: { classGroupId: 'ASC', dayOfWeek: 'ASC', timeSlotId: 'ASC' },

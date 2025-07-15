@@ -12,3 +12,8 @@ export enum EClassAdjustmentScheduleStatus {
   REJECTED = 3,
   CANCELLED = 4,
 }
+
+export enum EAdjustmentType {
+  MAKEUP = 1,
+  CANCEL = 2,
+}

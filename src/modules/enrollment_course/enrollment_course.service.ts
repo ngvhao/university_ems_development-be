@@ -9,7 +9,12 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, FindOptionsWhere } from 'typeorm';
+import {
+  Repository,
+  DataSource,
+  FindOptionsWhere,
+  FindOptionsRelations,
+} from 'typeorm';
 import { EnrollmentCourseEntity } from './entities/enrollment_course.entity';
 import { StudentService } from 'src/modules/student/student.service';
 import { EUserRole } from 'src/utils/enums/user.enum';
@@ -371,6 +376,17 @@ export class EnrollmentCourseService {
 
     await this.checkEnrollmentAccessPermission(enrollment, currentUser);
 
+    return enrollment;
+  }
+
+  async getOne(
+    conditions: FindOptionsWhere<EnrollmentCourseEntity>,
+    relations?: FindOptionsRelations<EnrollmentCourseEntity>,
+  ): Promise<EnrollmentCourseEntity> {
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: conditions,
+      relations,
+    });
     return enrollment;
   }
 

@@ -14,6 +14,7 @@ import {
   LessThanOrEqual,
   MoreThanOrEqual,
   In,
+  FindOptionsRelations,
 } from 'typeorm';
 import { ClassGroupEntity } from './entities/class_group.entity';
 import { CreateClassGroupDto } from './dtos/createClassGroup.dto';
@@ -29,6 +30,8 @@ import { SemesterEntity } from '../semester/entities/semester.entity';
 import { EDayOfWeek } from 'src/utils/enums/schedule.enum';
 import { ClassWeeklyScheduleService } from '../class_weekly_schedule/class_weekly_schedule.service';
 import { UpdateClassWeeklyScheduleDto } from '../class_weekly_schedule/dtos/updateClassWeeklySchedule.dto';
+import { StudentEntity } from '../student/entities/student.entity';
+import { EEnrollmentStatus } from 'src/utils/enums/course.enum';
 
 @Injectable()
 export class ClassGroupService {
@@ -48,7 +51,7 @@ export class ClassGroupService {
    */
   private async findGroupByIdOrThrow(
     id: number,
-    relations?: string[],
+    relations?: FindOptionsRelations<ClassGroupEntity>,
   ): Promise<ClassGroupEntity> {
     const classGroup = await this.classGroupRepository.findOne({
       where: { id },
@@ -121,6 +124,40 @@ export class ClassGroupService {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  async getStudentsOfClassGroup(
+    id: number,
+    pagination: PaginationDto,
+    status?: EEnrollmentStatus,
+  ): Promise<{ students: StudentEntity[]; meta: MetaDataInterface }> {
+    const { page = 1, limit = 10 } = pagination;
+    const where: FindOptionsWhere<ClassGroupEntity> = {};
+    if (status) {
+      where.enrollments = {
+        status,
+      };
+    }
+    where.id = id;
+    const classGroup = await this.classGroupRepository.findOne({
+      where,
+      relations: {
+        enrollments: {
+          student: {
+            user: true,
+          },
+        },
+      },
+    });
+    const students = classGroup.enrollments.map(
+      (enrollment) => enrollment.student,
+    );
+    const meta = generatePaginationMeta(
+      classGroup.enrollments.length,
+      page,
+      limit,
+    );
+    return { students, meta };
   }
 
   /**
@@ -454,12 +491,17 @@ export class ClassGroupService {
    * @throws NotFoundException nếu không tìm thấy nhóm lớp.
    */
   async findOne(id: number): Promise<ClassGroupEntity> {
-    return this.findGroupByIdOrThrow(id, [
-      'courseSemester',
-      'courseSemester.course',
-      'courseSemester.semester',
-      // 'enrollments',
-    ]);
+    return this.findGroupByIdOrThrow(id, {
+      course: true,
+      semester: true,
+      schedules: {
+        timeSlot: true,
+        room: true,
+      },
+      lecturer: {
+        user: true,
+      },
+    });
   }
 
   /**

@@ -134,18 +134,35 @@ export class ClassAdjustmentScheduleService {
     meta: MetaDataInterface;
   }> {
     const { page = 1, limit = 10 } = paginationDto;
-    const queryBuilder = this.adjustmentRepo.createQueryBuilder('adjustment');
+    const [data, total] = await this.adjustmentRepo.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      order: {
+        adjustmentDate: 'DESC',
+      },
+      relations: {
+        classGroup: {
+          course: true,
+          semester: true,
+          lecturer: {
+            user: true,
+          },
+        },
+        room: true,
+        timeSlot: true,
+      },
+    });
+    // const queryBuilder = this.adjustmentRepo.createQueryBuilder('adjustment');
 
-    queryBuilder
-      .leftJoinAndSelect('adjustment.classGroup', 'classGroup')
-      .leftJoinAndSelect('adjustment.room', 'room')
-      .leftJoinAndSelect('adjustment.timeSlot', 'timeSlot')
-      .orderBy('adjustment.adjustmentDate', 'DESC')
-      .addOrderBy('adjustment.createdAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit);
+    // queryBuilder
+    //   .leftJoinAndSelect('adjustment.classGroup', 'classGroup')
+    //   .leftJoinAndSelect('adjustment.room', 'room')
+    //   .leftJoinAndSelect('adjustment.timeSlot', 'timeSlot')
+    //   .orderBy('adjustment.adjustmentDate', 'DESC')
+    //   .addOrderBy('adjustment.createdAt', 'DESC')
+    //   .skip((page - 1) * limit)
+    //   .take(limit);
 
-    const [data, total] = await queryBuilder.getManyAndCount();
     const meta = generatePaginationMeta(total, page, limit);
     return { data, meta };
   }
@@ -266,16 +283,24 @@ export class ClassAdjustmentScheduleService {
     semesterCode?: string,
     classGroupIds?: number[],
   ): Promise<ClassAdjustmentScheduleEntity[]> {
-    const schedules = await this.adjustmentRepo.find({
-      where: {
-        classGroup: {
-          id: In(classGroupIds),
-          lecturerId: lecturerId,
-          semester: {
-            semesterCode: semesterCode,
-          },
+    const where: FindOptionsWhere<ClassAdjustmentScheduleEntity> = {};
+    if (classGroupIds) {
+      where.classGroup = {
+        id: In(classGroupIds),
+      };
+    }
+    if (semesterCode) {
+      where.classGroup = {
+        semester: {
+          semesterCode: semesterCode,
         },
-      },
+      };
+    }
+    where.classGroup = {
+      lecturerId: lecturerId,
+    };
+    const schedules = await this.adjustmentRepo.find({
+      where,
       relations: {
         room: true,
         timeSlot: true,

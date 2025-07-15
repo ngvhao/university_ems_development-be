@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { GradeDetailEntity } from './entities/grade_detail.entity';
@@ -9,19 +13,41 @@ import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { MetaDataInterface } from 'src/utils/interfaces/meta-data.interface';
 import { DEFAULT_PAGINATION } from 'src/utils/constants';
+import { EnrollmentCourseService } from '../enrollment_course/enrollment_course.service';
+import { EEnrollmentStatus } from 'src/utils/enums/course.enum';
 
 @Injectable()
 export class GradeDetailService {
   constructor(
     @InjectRepository(GradeDetailEntity)
     private readonly gradeDetailRepository: Repository<GradeDetailEntity>,
+    private readonly enrollmentCourseService: EnrollmentCourseService,
   ) {}
 
   async create(
     createGradeDetailDto: CreateGradeDetailDto,
   ): Promise<GradeDetailEntity> {
-    const gradeDetail = this.gradeDetailRepository.create(createGradeDetailDto);
-    return await this.gradeDetailRepository.save(gradeDetail);
+    const enrollment = await this.enrollmentCourseService.getOne({
+      classGroupId: createGradeDetailDto.classGroupId,
+    });
+    if (!enrollment) {
+      throw new NotFoundException('Enrollment not found');
+    }
+    if (enrollment.status !== EEnrollmentStatus.ENROLLED) {
+      throw new BadRequestException('Enrollment is not enrolled');
+    }
+    const gradeDetail = this.gradeDetailRepository.create({
+      ...createGradeDetailDto,
+      enrollmentId: enrollment.id,
+    });
+    try {
+      return await this.gradeDetailRepository.save(gradeDetail);
+    } catch (error) {
+      if (error.code === '23505') {
+        throw new BadRequestException('Điểm cột này đã tồn tại');
+      }
+      throw error;
+    }
   }
 
   async findAll(

@@ -46,6 +46,8 @@ import { RoomService } from '../room/room.service';
 import { ERoomType } from 'src/utils/enums/room.enum';
 import axios from 'axios';
 import { SettingService } from '../setting/setting.service';
+import { EnrollmentCourseService } from '../enrollment_course/enrollment_course.service';
+import { EEnrollmentStatus } from 'src/utils/enums/course.enum';
 
 @ApiTags('Quản lý Nhóm lớp học (Class Groups)')
 @ApiBearerAuth('token')
@@ -60,6 +62,7 @@ export class ClassGroupController {
     private readonly lecturerService: LecturerService,
     private readonly roomService: RoomService,
     private readonly settingService: SettingService,
+    private readonly enrollmentCourseService: EnrollmentCourseService,
   ) {}
 
   @Post()
@@ -475,6 +478,61 @@ export class ClassGroupController {
     await this.classGroupService.remove(id);
     return new SuccessResponse({
       message: 'Xóa nhóm lớp thành công.',
+    }).send(res);
+  }
+
+  @Get(':id/students')
+  @UseGuards(RolesGuard)
+  @Roles([
+    EUserRole.ACADEMIC_MANAGER,
+    EUserRole.ADMINISTRATOR,
+    EUserRole.LECTURER,
+  ])
+  @ApiOperation({
+    summary: 'Lấy danh sách sinh viên đang theo học nhóm lớp này',
+  })
+  @ApiParam({ name: 'id', description: 'ID của nhóm lớp', type: Number })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng kết quả mỗi trang',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách sinh viên thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Không có quyền xem danh sách sinh viên.',
+  })
+  async getStudentsOfClassGroup(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() paginationDto: PaginationDto,
+    @Res() res: Response,
+    @Query('status') status?: EEnrollmentStatus,
+  ) {
+    const filterStatus = status ? status : EEnrollmentStatus.ENROLLED;
+    const { students, meta } =
+      await this.classGroupService.getStudentsOfClassGroup(
+        id,
+        paginationDto,
+        filterStatus,
+      );
+    return new SuccessResponse({
+      data: students,
+      metadata: meta,
+      message: 'Lấy danh sách sinh viên thành công.',
     }).send(res);
   }
 }
