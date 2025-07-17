@@ -1,6 +1,7 @@
 import { IsOptional, IsNumber, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { EAccountStatus } from 'src/utils/enums/user.enum';
 
 export class FilterStudentDto {
   @ApiPropertyOptional({
@@ -41,9 +42,9 @@ export class FilterStudentDto {
 
   @ApiPropertyOptional({
     description: 'Trạng thái sinh viên',
-    example: 'ACTIVE',
+    example: EAccountStatus.ACTIVE,
   })
   @IsOptional()
   @IsString()
-  status?: string;
+  status?: EAccountStatus;
 }

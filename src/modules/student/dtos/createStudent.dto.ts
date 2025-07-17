@@ -1,10 +1,25 @@
-import { IsInt, IsNotEmpty, IsDateString, IsOptional } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsDateString,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { CreateUserDto } from 'src/modules/user/dtos/createUser.dto';
 import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
 
 export class CreateStudentDto extends OmitType(CreateUserDto, [
   'universityEmail',
 ] as const) {
+  @ApiProperty({
+    description: 'Mã sinh viên',
+    example: 'SV000001',
+    required: true,
+  })
+  @IsString({ message: 'Mã sinh viên phải là chuỗi' })
+  @IsOptional()
+  studentCode?: string;
+
   @ApiProperty({
     description: 'Khóa học (Năm nhập học)',
     example: 2025,

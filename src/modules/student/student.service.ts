@@ -67,6 +67,7 @@ export class StudentService {
     studentDTO: CreateStudentDto,
   ): Promise<Partial<StudentEntity>> {
     const {
+      studentCode,
       personalEmail,
       firstName,
       lastName,
@@ -119,23 +120,27 @@ export class StudentService {
       const { facultyCode } = classEntity.major.department.faculty;
       const majorId = classEntity.major.id;
 
-      let studentCode: string;
-      try {
-        studentCode = await StudentHelper.generateStudentCode(
-          this.dataSource,
-          facultyCode,
-          academicYear,
-          majorId,
-        );
-      } catch (error) {
-        console.error('Lỗi khi tạo mã sinh viên:', error);
-        if (error instanceof InternalServerErrorException) throw error;
-        throw new InternalServerErrorException(
-          'Không thể tạo mã sinh viên duy nhất.',
-        );
+      let studentCodeGenerated: string;
+      if (studentCode && studentCode.length > 0) {
+        studentCodeGenerated = studentCode;
+      } else {
+        try {
+          studentCodeGenerated = await StudentHelper.generateStudentCode(
+            this.dataSource,
+            facultyCode,
+            academicYear,
+            majorId,
+          );
+        } catch (error) {
+          console.error('Lỗi khi tạo mã sinh viên:', error);
+          if (error instanceof InternalServerErrorException) throw error;
+          throw new InternalServerErrorException(
+            'Không thể tạo mã sinh viên duy nhất.',
+          );
+        }
       }
 
-      const uniEmail = Helpers.generateStudentEmail(studentCode);
+      const uniEmail = Helpers.generateStudentEmail(studentCodeGenerated);
       const existingUniEmail =
         await this.userService.getUserByUniEmail(uniEmail);
       if (existingUniEmail) {
@@ -173,7 +178,7 @@ export class StudentService {
       );
 
       const studentToCreate: Partial<StudentEntity> = {
-        studentCode: studentCode,
+        studentCode: studentCodeGenerated,
         status: EStudentStatus.STUDYING,
         userId: savedUser.id,
         majorId: majorId,
@@ -221,103 +226,47 @@ export class StudentService {
   ): Promise<{ data: StudentEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
     const skip = (page - 1) * limit;
-
-    // Build base query for filtering
-    const baseQuery = this.studentRepository
-      .createQueryBuilder('student')
-      .leftJoin('student.user', 'user')
-      .leftJoin('student.class', 'class')
-      .leftJoin('student.major', 'major');
-
-    // Apply filters
+    const where: FindOptionsWhere<StudentEntity> = {};
     if (filterDto?.facultyId) {
-      baseQuery
-        .leftJoin('major.department', 'department')
-        .leftJoin('department.faculty', 'faculty')
-        .andWhere('faculty.id = :facultyId', {
-          facultyId: filterDto.facultyId,
-        });
+      where.major = {
+        department: {
+          faculty: { id: filterDto.facultyId },
+        },
+      };
     }
-
     if (filterDto?.departmentId) {
-      baseQuery
-        .leftJoin('major.department', 'department')
-        .andWhere('department.id = :departmentId', {
-          departmentId: filterDto.departmentId,
-        });
+      where.major = {
+        department: { id: filterDto.departmentId },
+      };
     }
-
     if (filterDto?.majorId) {
-      baseQuery.andWhere('student.majorId = :majorId', {
-        majorId: filterDto.majorId,
-      });
+      where.majorId = filterDto.majorId;
     }
-
     if (filterDto?.classId) {
-      baseQuery.andWhere('student.classId = :classId', {
-        classId: filterDto.classId,
-      });
+      where.classId = filterDto.classId;
     }
-
     if (filterDto?.status) {
-      baseQuery.andWhere('user.status = :status', { status: filterDto.status });
+      where.user = { isActive: filterDto.status };
     }
 
-    // Get total count
-    const total = await baseQuery.getCount();
+    const [students, total] = await this.studentRepository.findAndCount({
+      skip,
+      take: limit,
+      relations: {
+        user: true,
+        major: {
+          department: {
+            faculty: true,
+          },
+        },
+      },
+      where,
+      order: {
+        studentCode: 'ASC',
+      },
+    });
 
-    // Build query for data with relations
-    const dataQuery = this.studentRepository
-      .createQueryBuilder('student')
-      .leftJoinAndSelect('student.user', 'user')
-      .leftJoinAndSelect('student.class', 'class')
-      .leftJoinAndSelect('student.major', 'major');
-
-    // Apply same filters
-    if (filterDto?.facultyId) {
-      dataQuery
-        .leftJoin('major.department', 'department')
-        .leftJoin('department.faculty', 'faculty')
-        .andWhere('faculty.id = :facultyId', {
-          facultyId: filterDto.facultyId,
-        });
-    }
-
-    if (filterDto?.departmentId) {
-      dataQuery
-        .leftJoin('major.department', 'department')
-        .andWhere('department.id = :departmentId', {
-          departmentId: filterDto.departmentId,
-        });
-    }
-
-    if (filterDto?.majorId) {
-      dataQuery.andWhere('student.majorId = :majorId', {
-        majorId: filterDto.majorId,
-      });
-    }
-
-    if (filterDto?.classId) {
-      dataQuery.andWhere('student.classId = :classId', {
-        classId: filterDto.classId,
-      });
-    }
-
-    if (filterDto?.status) {
-      dataQuery.andWhere('user.status = :status', { status: filterDto.status });
-    }
-
-    // Apply pagination and ordering
-    dataQuery
-      .orderBy('user.lastName', 'ASC')
-      .addOrderBy('user.firstName', 'ASC')
-      .skip(skip)
-      .take(limit);
-
-    const data = await dataQuery.getMany();
-
-    // Remove password from user data
-    const sanitizedData = data.map((student) => ({
+    const sanitizedData = students.map((student) => ({
       ...student,
       user: student.user ? _.omit(student.user, ['password']) : null,
     })) as StudentEntity[];

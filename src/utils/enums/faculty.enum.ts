@@ -1,6 +1,7 @@
 export enum EFacultyCode {
-  CNTT = 5,
-  MARKETING = 7,
+  IT = 5,
+  FBA = 7,
+  LAW = 6,
 }
 
 export enum EFacultyRegistrationScheduleStatus {

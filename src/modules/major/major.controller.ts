@@ -33,13 +33,18 @@ import {
 import { MajorEntity } from './entities/major.entity';
 import { FilterMajorDto } from './dtos/filterMajor.dto';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
+import { ClassEntity } from '../class/entities/class.entity';
+import { ClassService } from '../class/class.service';
 
 @ApiTags('Quản lý Ngành học (Majors)')
 @ApiBearerAuth('token')
 @UseGuards(JwtAuthGuard)
 @Controller('majors')
 export class MajorController {
-  constructor(private readonly majorService: MajorService) {}
+  constructor(
+    private readonly majorService: MajorService,
+    private readonly classService: ClassService,
+  ) {}
 
   @Post()
   @UseGuards(RolesGuard)
@@ -234,6 +239,54 @@ export class MajorController {
     await this.majorService.remove(id);
     return new SuccessResponse({
       message: 'Xóa Ngành học thành công',
+    }).send(res);
+  }
+
+  @Get(':id/classes')
+  @ApiOperation({ summary: 'Lấy danh sách lớp học thuộc một Ngành học' })
+  @ApiParam({ name: 'id', type: Number, description: 'ID của Ngành học' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Số trang',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Số lượng kết quả mỗi trang',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách lớp học thành công.',
+    type: [ClassEntity],
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy Ngành học.',
+  })
+  async getClassesByMajor(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Res() res: Response,
+  ) {
+    // Kiểm tra ngành tồn tại
+    await this.majorService.findOne(id);
+    // Lấy danh sách lớp theo majorId
+    const { data, meta } = await this.classService.findAll(
+      { page: Number(page), limit: Number(limit) },
+      { majorId: id },
+    );
+    return new SuccessResponse({
+      data,
+      metadata: meta,
+      message: 'Lấy danh sách lớp học theo ngành thành công',
     }).send(res);
   }
 }

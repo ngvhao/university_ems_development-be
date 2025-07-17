@@ -82,8 +82,7 @@ export class StudentController {
     description: 'Lỗi máy chủ nội bộ.',
   })
   async createStudent(@Body() data: CreateStudentDto, @Res() res: Response) {
-    console.log('createStudent@@@sendMessageToQueue');
-    // await this.studentService.testQueue(data);
+    await this.studentService.createStudent(data);
     return new SuccessResponse({
       message: 'Tạo sinh viên thành công',
       statusCode: HttpStatus.CREATED,

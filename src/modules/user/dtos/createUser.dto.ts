@@ -122,12 +122,20 @@ export class CreateUserDto {
   @IsString({ message: 'Dân tộc phải là chuỗi' })
   ethnicity?: string;
 
-  @ApiPropertyOptional({ description: 'Mật khẩu', example: 'Matkhau123@', required: false })
+  @ApiPropertyOptional({
+    description: 'Mật khẩu',
+    example: 'Matkhau123@',
+    required: false,
+  })
   @IsOptional()
   @IsString({ message: 'Mật khẩu phải là chuỗi' })
   password?: string;
 
-  @ApiPropertyOptional({ description: 'Token đặt lại mật khẩu', example: 'uuid-token', required: false })
+  @ApiPropertyOptional({
+    description: 'Token đặt lại mật khẩu',
+    example: 'uuid-token',
+    required: false,
+  })
   @IsOptional()
   resetPasswordToken?: string;
 }
