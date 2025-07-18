@@ -6,6 +6,7 @@ import {
   ENotificationStatus,
   ENotificationType,
   ENotificationPriority,
+  EAudienceType,
 } from 'src/utils/enums/notification.enum';
 
 export class NotificationQueryDto extends PaginationDto {
@@ -43,6 +44,16 @@ export class NotificationQueryDto extends PaginationDto {
   @Transform(({ value }) => parseInt(value))
   @IsInt()
   semesterId?: number;
+
+  @ApiPropertyOptional({ description: 'Lọc theo loại đối tượng' })
+  @IsOptional()
+  @IsEnum(EAudienceType)
+  audienceType?: EAudienceType;
+
+  @ApiPropertyOptional({ description: 'Lọc theo giá trị đối tượng' })
+  @IsOptional()
+  @IsString()
+  audienceValue?: string;
 
   @ApiPropertyOptional({ description: 'Lọc theo ID người tạo' })
   @IsOptional()

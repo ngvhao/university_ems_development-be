@@ -33,8 +33,6 @@ export class NotificationService {
     @InjectRepository(NotificationAudienceRuleEntity)
     private readonly ruleRepository: Repository<NotificationAudienceRuleEntity>,
     private readonly dataSource: DataSource,
-    // @Inject(forwardRef(() => NotificationRuleService))
-    // private readonly ruleService: NotificationRuleService,
     @Inject(forwardRef(() => NotificationRecipientService))
     private readonly recipientService: NotificationRecipientService,
   ) {}
@@ -95,6 +93,8 @@ export class NotificationService {
       status,
       notificationType,
       priority,
+      audienceType,
+      audienceValue,
       semesterId,
       createdByUserId,
     } = queryDto;
@@ -123,6 +123,16 @@ export class NotificationService {
     if (semesterId) {
       queryBuilder.andWhere('notification.semesterId = :semesterId', {
         semesterId,
+      });
+    }
+    if (audienceType) {
+      queryBuilder.andWhere('audienceRules.audienceType = :audienceType', {
+        audienceType,
+      });
+    }
+    if (audienceValue) {
+      queryBuilder.andWhere('audienceRules.audienceValue = :audienceValue', {
+        audienceValue,
       });
     }
     if (createdByUserId) {

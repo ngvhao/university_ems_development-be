@@ -51,6 +51,6 @@ export class CreateLecturerDto extends OmitType(CreateUserDto, [
     default: false,
   })
   @IsOptional()
-  @IsBoolean({ message: 'Trường isHeadDepartment phải là true/false' })
-  isHeadDepartment?: boolean = false;
+  @IsBoolean({ message: 'Trường isHeadOfFaculty phải là true/false' })
+  isHeadOfFaculty?: boolean = false;
 }

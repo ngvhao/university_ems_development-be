@@ -415,7 +415,10 @@ export class ClassGroupService {
       yearAdmission,
       courseId,
       facultyId,
+      semesterCode,
     } = filterDto;
+
+    console.log('dodai', filterDto);
 
     const where: FindOptionsWhere<ClassGroupEntity> = {};
     if (semesterId !== undefined) {
@@ -446,6 +449,12 @@ export class ClassGroupService {
     if (facultyId !== undefined) {
       where.course = {
         courseFaculties: { facultyId: facultyId },
+      };
+    }
+
+    if (semesterCode !== undefined) {
+      where.semester = {
+        semesterCode,
       };
     }
 

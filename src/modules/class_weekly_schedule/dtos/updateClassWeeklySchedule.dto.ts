@@ -1,6 +1,6 @@
 import { ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { CreateClassWeeklyScheduleDto } from './createClassWeeklySchedule.dto';
-import { IsNumber } from 'class-validator';
+import { IsNumber, IsOptional } from 'class-validator';
 export class UpdateClassWeeklyScheduleDto extends PartialType(
   CreateClassWeeklyScheduleDto,
 ) {
@@ -11,5 +11,6 @@ export class UpdateClassWeeklyScheduleDto extends PartialType(
     minimum: 1,
   })
   @IsNumber({}, { message: 'ID lịch học phải là số' })
-  id: number;
+  @IsOptional()
+  id?: number;
 }

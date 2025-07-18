@@ -15,11 +15,11 @@ export class StudentHelper {
     dataSource: DataSource,
     facultyCode: string,
     academicYear: number,
-    majorId: number,
+    facultyId: number,
   ): Promise<string> {
-    const seqName = `student_code_seq_${academicYear}_${majorId}`;
+    const seqName = `student_code_seq_${academicYear}_${facultyId}`;
 
-    await this.ensureSequenceExists(dataSource, academicYear, majorId);
+    await this.ensureSequenceExists(dataSource, academicYear, facultyId);
 
     try {
       const result = await dataSource.query(`SELECT nextval($1) as seq`, [
@@ -39,7 +39,7 @@ export class StudentHelper {
     } catch (error) {
       console.error(`Lỗi khi lấy giá trị sequence: ${error.message}`);
       throw new InternalServerErrorException(
-        `Không thể tạo mã sinh viên cho năm học ${academicYear} và chuyên ngành ${majorId}.`,
+        `Không thể tạo mã sinh viên cho năm học ${academicYear} và chuyên ngành ${facultyId}.`,
       );
     }
   }

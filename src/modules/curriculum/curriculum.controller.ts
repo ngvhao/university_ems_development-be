@@ -47,7 +47,11 @@ export class CurriculumController {
 
   @Post()
   @UseGuards(RolesGuard)
-  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @Roles([
+    EUserRole.ACADEMIC_MANAGER,
+    EUserRole.ADMINISTRATOR,
+    EUserRole.LECTURER,
+  ])
   @ApiOperation({ summary: 'Tạo một chương trình đào tạo mới' })
   @ApiBody({ type: CreateCurriculumDto })
   @ApiResponse({
@@ -201,7 +205,11 @@ export class CurriculumController {
 
   @Get(':id')
   @UseGuards(RolesGuard)
-  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @Roles([
+    EUserRole.ACADEMIC_MANAGER,
+    EUserRole.ADMINISTRATOR,
+    EUserRole.LECTURER,
+  ])
   @ApiOperation({
     summary: 'Lấy thông tin chi tiết một chương trình đào tạo bằng ID',
   })
@@ -233,7 +241,11 @@ export class CurriculumController {
 
   @Put(':id')
   @UseGuards(RolesGuard)
-  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @Roles([
+    EUserRole.ACADEMIC_MANAGER,
+    EUserRole.ADMINISTRATOR,
+    EUserRole.ADMINISTRATOR,
+  ])
   @ApiOperation({ summary: 'Cập nhật thông tin một chương trình đào tạo' })
   @ApiParam({
     name: 'id',
@@ -283,7 +295,11 @@ export class CurriculumController {
 
   @Delete(':id')
   @UseGuards(RolesGuard)
-  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @Roles([
+    EUserRole.ACADEMIC_MANAGER,
+    EUserRole.ADMINISTRATOR,
+    EUserRole.ADMINISTRATOR,
+  ])
   @ApiOperation({ summary: 'Xóa một chương trình đào tạo' })
   @ApiParam({ name: 'id', type: Number, description: 'ID của CTĐT cần xóa' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Xóa thành công.' })

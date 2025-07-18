@@ -4,9 +4,11 @@ import {
   IsDateString,
   IsOptional,
   IsString,
+  IsEnum,
 } from 'class-validator';
 import { CreateUserDto } from 'src/modules/user/dtos/createUser.dto';
 import { ApiProperty, ApiPropertyOptional, OmitType } from '@nestjs/swagger';
+import { EAccountStatus } from 'src/utils/enums/user.enum';
 
 export class CreateStudentDto extends OmitType(CreateUserDto, [
   'universityEmail',
@@ -64,4 +66,12 @@ export class CreateStudentDto extends OmitType(CreateUserDto, [
   @IsInt({ message: 'ID Lớp phải là số nguyên' })
   @IsNotEmpty({ message: 'ID Lớp là bắt buộc' })
   classId: number;
+
+  @ApiPropertyOptional({
+    description: 'Trạng thái tài khoản',
+    example: EAccountStatus.ACTIVE,
+  })
+  @IsOptional()
+  @IsEnum(EAccountStatus)
+  isActive?: EAccountStatus;
 }

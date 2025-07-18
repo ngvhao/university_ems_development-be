@@ -47,9 +47,9 @@ export class LecturerEntity extends IEntity {
   @Column({ length: 255, nullable: true })
   specialization: string;
 
-  @ApiProperty({ description: 'Là trưởng bộ môn?', default: false })
+  @ApiProperty({ description: 'Là trưởng khoa?', default: false })
   @Column({ default: false, nullable: false })
-  isHeadDepartment: boolean;
+  isHeadOfFaculty: boolean;
 
   @ApiProperty({
     type: () => UserEntity,

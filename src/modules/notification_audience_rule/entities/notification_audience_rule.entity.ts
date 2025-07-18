@@ -25,7 +25,7 @@ export class NotificationAudienceRuleEntity extends IEntity {
     name: 'audienceType',
     enum: EAudienceType,
     comment:
-      'ALL_USERS = 6, USER_LIST = 1, ROLE = 2, MAJOR = 3, DEPARTMENT = 4, COURSE_SECTION = 5',
+      'ALL_USERS = 6, USER_LIST = 1, ROLE = 2, MAJOR = 3, DEPARTMENT = 4, COURSE_SECTION = 5, FACULTY = 7',
     nullable: true,
   })
   audienceType: EAudienceType;

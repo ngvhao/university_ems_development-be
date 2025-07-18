@@ -4,7 +4,6 @@ import {
   Delete,
   Get,
   Param,
-  Patch,
   Post,
   Query,
   Req,
@@ -13,6 +12,7 @@ import {
   UseInterceptors,
   ParseIntPipe,
   HttpStatus,
+  Put,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -292,9 +292,15 @@ export class ClassWeeklyScheduleController {
     status: HttpStatus.UNAUTHORIZED,
     description: 'Chưa xác thực.',
   })
-  async findAll(@Query() paginationDto: PaginationDto, @Res() res: Response) {
-    const { data, meta } =
-      await this.classWeeklyScheduleService.findAll(paginationDto);
+  async findAll(
+    @Query() paginationDto: PaginationDto,
+    @Query() query: FilterClassWeeklySchduleDto,
+    @Res() res: Response,
+  ) {
+    const { data, meta } = await this.classWeeklyScheduleService.findAll(
+      paginationDto,
+      query,
+    );
     return new SuccessResponse({
       data,
       metadata: meta,
@@ -302,7 +308,7 @@ export class ClassWeeklyScheduleController {
     }).send(res);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
   @ApiOperation({ summary: 'Cập nhật thông tin một lịch học hàng tuần' })
   @ApiParam({

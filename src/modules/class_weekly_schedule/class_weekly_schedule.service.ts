@@ -27,6 +27,8 @@ import { ClassGroupService } from 'src/modules/class_group/class_group.service';
 import { RoomService } from 'src/modules/room/room.service';
 import { StudentService } from '../student/student.service';
 import { TimeSlotService } from '../time_slot/time_slot.service';
+import _ from 'lodash';
+import { FilterClassWeeklySchduleDto } from './dtos/filterClassWeeklySchdule.dto';
 
 @Injectable()
 export class ClassWeeklyScheduleService {
@@ -170,9 +172,17 @@ export class ClassWeeklyScheduleService {
     await this.validateForeignKeys(dto);
 
     await this.checkConflict(dto, { semesterId });
-
+    const classGroup = await this.classGroupService.findOne(dto.classGroupId);
+    if (!classGroup) {
+      throw new BadRequestException(
+        'Lịch học này không thể được tạo vì giáo viên không phù hợp.',
+      );
+    }
     try {
-      const schedule = this.classWeeklyScheduleRepository.create(dto);
+      const schedule = this.classWeeklyScheduleRepository.create({
+        ...dto,
+        lecturerId: classGroup.lecturerId,
+      });
       return await this.classWeeklyScheduleRepository.save(schedule);
     } catch (error) {
       if (error.code === '23505') {
@@ -192,21 +202,54 @@ export class ClassWeeklyScheduleService {
    * @param paginationDto - Thông tin phân trang.
    * @returns Danh sách lịch học và metadata phân trang.
    */
-  async findAll(paginationDto: PaginationDto): Promise<{
+  async findAll(
+    paginationDto: PaginationDto,
+    query: FilterClassWeeklySchduleDto,
+  ): Promise<{
     data: ClassWeeklyScheduleEntity[];
     meta: MetaDataInterface;
   }> {
     const { page = 1, limit = 10 } = paginationDto;
+    const { lecturerId, roomId, timeSlotId, semesterCode, facultyId } = query;
+
+    const whereCondition: FindOptionsWhere<ClassWeeklyScheduleEntity> = {};
+    console.log('dodai', lecturerId);
+    if (lecturerId) {
+      whereCondition.lecturerId = lecturerId;
+    }
+    if (roomId) {
+      whereCondition.roomId = roomId;
+    }
+    if (timeSlotId) {
+      whereCondition.timeSlotId = timeSlotId;
+    }
+    if (semesterCode) {
+      whereCondition.classGroup = {
+        semester: {
+          semesterCode,
+        },
+      };
+    }
+    if (facultyId) {
+      whereCondition.classGroup = {
+        course: {
+          courseFaculties: {
+            facultyId: facultyId,
+          },
+        },
+      };
+    }
 
     const [data, total] = await this.classWeeklyScheduleRepository.findAndCount(
       {
+        where: whereCondition,
         relations: {
           classGroup: {
             course: true,
-            semester: true,
             lecturer: {
               user: true,
             },
+            semester: true,
           },
           room: true,
           timeSlot: true,
@@ -216,9 +259,21 @@ export class ClassWeeklyScheduleService {
         order: { classGroupId: 'ASC', dayOfWeek: 'ASC', timeSlotId: 'ASC' },
       },
     );
+    const formattedData = data.map((item) => {
+      const newItem = _.cloneDeep(item);
+
+      if (
+        newItem.classGroup?.lecturer?.user &&
+        'password' in newItem.classGroup.lecturer.user
+      ) {
+        delete newItem.classGroup.lecturer.user.password;
+      }
+
+      return newItem;
+    });
 
     const meta = generatePaginationMeta(total, page, limit);
-    return { data, meta };
+    return { data: formattedData, meta };
   }
 
   /**

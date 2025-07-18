@@ -32,13 +32,17 @@ import { SuccessResponse } from 'src/utils/response';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { ClassEntity } from './entities/class.entity';
 import { FilterClassDto } from './dtos/filterClass.dto';
+import { StudentService } from '../student/student.service';
 
 @ApiTags('Quản lý Lớp học (Classes)')
 @ApiBearerAuth('token')
 @UseGuards(JwtAuthGuard)
 @Controller('classes')
 export class ClassController {
-  constructor(private readonly classService: ClassService) {}
+  constructor(
+    private readonly classService: ClassService,
+    private readonly studentService: StudentService,
+  ) {}
 
   @Post()
   @UseGuards(RolesGuard)
@@ -206,6 +210,35 @@ export class ClassController {
     await this.classService.remove(id);
     return new SuccessResponse({
       message: 'Xóa lớp học thành công',
+    }).send(res);
+  }
+
+  @Get(':id/students')
+  @ApiOperation({ summary: 'Lấy danh sách sinh viên của một lớp học' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy danh sách sinh viên của lớp học thành công.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Chưa xác thực.',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy lớp học.',
+  })
+  async getStudentsByClass(
+    @Query() paginationDto: PaginationDto,
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
+    const { data, meta } = await this.studentService.findAll(paginationDto, {
+      classId: id,
+    });
+    return new SuccessResponse({
+      message: 'Lấy danh sách sinh viên của lớp học thành công',
+      data,
+      metadata: meta,
     }).send(res);
   }
 }

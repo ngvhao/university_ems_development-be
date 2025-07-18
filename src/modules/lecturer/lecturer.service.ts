@@ -59,7 +59,7 @@ export class LecturerService {
       departmentId,
       specialization,
       academicRank,
-      isHeadDepartment,
+      isHeadOfFaculty,
     } = createLecturerDto;
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -126,7 +126,7 @@ export class LecturerService {
         userId: savedUser.id,
         academicRank,
         departmentId,
-        isHeadDepartment,
+        isHeadOfFaculty,
         specialization,
       };
       await queryRunner.manager.save(LecturerEntity, lecturerToCreate);
@@ -167,7 +167,7 @@ export class LecturerService {
   async findAll(
     paginationDto: PaginationDto = DEFAULT_PAGINATION,
     filterDto?: FilterLecturerDto,
-  ): Promise<{ data: LecturerEntity[]; meta: MetaDataInterface }> {
+  ): Promise<{ data: Partial<LecturerEntity>[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
     const where: FindOptionsWhere<LecturerEntity> = {};
     if (filterDto?.facultyId) {
@@ -180,12 +180,22 @@ export class LecturerService {
       skip: (page - 1) * limit,
       take: limit,
       where,
-      relations: ['user', 'department'],
+      relations: {
+        user: true,
+        department: {
+          faculty: true,
+        },
+      },
+    });
+
+    const formattedData = data.map((lecturer) => {
+      return {
+        ..._.omit(lecturer, ['user.password', 'user.resetPasswordToken']),
+      };
     });
 
     const meta = generatePaginationMeta(total, page, limit);
-
-    return { data, meta };
+    return { data: formattedData, meta };
   }
 
   async findOne(id: number): Promise<LecturerEntity> {
@@ -219,9 +229,141 @@ export class LecturerService {
     id: number,
     updateLecturerDto: UpdateLecturerDto,
   ): Promise<LecturerEntity> {
-    const lecture = await this.findOne(id);
-    Object.assign(lecture, updateLecturerDto);
-    return this.lecturerRepository.save(lecture);
+    const lecturer = await this.lecturerRepository.findOne({
+      where: { id },
+      relations: ['user', 'department'],
+    });
+    if (!lecturer) {
+      throw new NotFoundException(`Không tìm thấy giảng viên với ID ${id}`);
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    try {
+      const userUpdateFields: Record<string, unknown> = {};
+      const userDtoFields = [
+        'personalEmail',
+        'universityEmail',
+        'firstName',
+        'lastName',
+        'avatarUrl',
+        'phoneNumber',
+        'identityCardNumber',
+        'dateOfBirth',
+        'gender',
+        'hometown',
+        'permanentAddress',
+        'temporaryAddress',
+        'nationality',
+        'ethnicity',
+        'resetPasswordToken',
+      ];
+      for (const key of userDtoFields) {
+        if (updateLecturerDto[key] !== undefined) {
+          userUpdateFields[key] = updateLecturerDto[key];
+        }
+      }
+      if (updateLecturerDto.password) {
+        userUpdateFields.password = await Helpers.hashPassword({
+          password: updateLecturerDto.password,
+        });
+      }
+      if (userUpdateFields.dateOfBirth) {
+        userUpdateFields.dateOfBirth = new Date(
+          userUpdateFields.dateOfBirth as string,
+        );
+      }
+      // if (
+      //   userUpdateFields.personalEmail &&
+      //   (userUpdateFields.personalEmail as string) !==
+      //     lecturer.user.personalEmail
+      // ) {
+      //   const existingPersonal = await this.userService.getUserByPersonalEmail(
+      //     userUpdateFields.personalEmail as string,
+      //   );
+      //   if (
+      //     existingPersonal.length > 0 &&
+      //     existingPersonal.some((u) => u.id !== lecturer.user.id)
+      //   ) {
+      //     throw new ConflictException(
+      //       `Email cá nhân '${userUpdateFields.personalEmail}' đã được sử dụng bởi người dùng khác.`,
+      //     );
+      //   }
+      // }
+      if (
+        userUpdateFields.universityEmail &&
+        (userUpdateFields.universityEmail as string) !==
+          lecturer.user.universityEmail
+      ) {
+        const existingUni = await this.userService.getUserByUniEmail(
+          userUpdateFields.universityEmail as string,
+        );
+        if (existingUni && existingUni.id !== lecturer.user.id) {
+          throw new ConflictException(
+            `Email trường '${userUpdateFields.universityEmail}' đã được sử dụng bởi người dùng khác.`,
+          );
+        }
+      }
+      if (Object.keys(userUpdateFields).length > 0) {
+        await queryRunner.manager.update(
+          'users',
+          { id: lecturer.userId },
+          userUpdateFields,
+        );
+      }
+
+      const lecturerUpdateFields: Record<string, unknown> = {};
+      const lecturerDtoFields = [
+        'departmentId',
+        'academicRank',
+        'specialization',
+        'isHeadOfFaculty',
+      ];
+      for (const key of lecturerDtoFields) {
+        if (updateLecturerDto[key] !== undefined) {
+          lecturerUpdateFields[key] = updateLecturerDto[key];
+        }
+      }
+      if (
+        lecturerUpdateFields.isHeadOfFaculty === true &&
+        (lecturerUpdateFields.departmentId !== undefined ||
+          lecturer.departmentId)
+      ) {
+        const headLecturer = await this.lecturerRepository.findOne({
+          where: {
+            department: {
+              facultyId: lecturer.department.facultyId,
+            },
+            isHeadOfFaculty: true,
+          },
+        });
+        if (headLecturer && headLecturer.id !== lecturer.id) {
+          throw new ConflictException(
+            'Khoa này đã có Trưởng khoa. Không thể gán thêm.',
+          );
+        }
+      }
+      if (Object.keys(lecturerUpdateFields).length > 0) {
+        await queryRunner.manager.update(
+          'lecturers',
+          { id: lecturer.id },
+          lecturerUpdateFields,
+        );
+      }
+
+      await queryRunner.commitTransaction();
+      const updatedLecturer = await this.lecturerRepository.findOne({
+        where: { id: lecturer.id },
+        relations: ['user', 'department'],
+      });
+      return updatedLecturer;
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   async remove(id: number): Promise<void> {

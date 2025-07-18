@@ -1,5 +1,6 @@
 import { PartialType } from '@nestjs/swagger';
 import {
+  IsEnum,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -10,6 +11,7 @@ import {
 import { CreateStudentDto } from './createStudent.dto';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PASSWORD_VALID_REGEX } from 'src/utils/constants';
+import { EStudentStatus } from 'src/utils/enums/user.enum';
 
 export class UpdateStudentDto extends PartialType(CreateStudentDto) {
   @ApiPropertyOptional({
@@ -31,4 +33,8 @@ export class UpdateStudentDto extends PartialType(CreateStudentDto) {
       'Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt',
   })
   password?: string;
+
+  @IsOptional()
+  @IsEnum(EStudentStatus)
+  status?: EStudentStatus;
 }

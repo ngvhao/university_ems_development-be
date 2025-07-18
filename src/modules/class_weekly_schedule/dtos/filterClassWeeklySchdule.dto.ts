@@ -13,4 +13,24 @@ export class FilterClassWeeklySchduleDto {
   )
   @IsNumber({}, { each: true })
   classGroupIds?: number[];
+
+  @IsOptional()
+  @IsNumber()
+  lecturerId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  roomId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  timeSlotId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  departmentId?: number;
+
+  @IsOptional()
+  @IsNumber()
+  facultyId?: number;
 }

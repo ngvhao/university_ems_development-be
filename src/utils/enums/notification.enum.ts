@@ -28,6 +28,7 @@ export enum EAudienceType {
   MAJOR = 3,
   DEPARTMENT = 4,
   COURSE_SECTION = 5,
+  FACULTY = 7,
 }
 
 export enum EConditionLogic {

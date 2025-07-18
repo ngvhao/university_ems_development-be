@@ -259,6 +259,7 @@ export class StudentService {
             faculty: true,
           },
         },
+        class: true,
       },
       where,
       order: {
@@ -341,63 +342,40 @@ export class StudentService {
         academicYear,
         gpa,
         expectedGraduationDate,
-        personalEmail,
-        password,
-        firstName,
-        lastName,
-        avatarUrl,
-        phoneNumber,
-        identityCardNumber,
         dateOfBirth,
-        gender,
-        hometown,
-        permanentAddress,
-        temporaryAddress,
-        nationality,
-        ethnicity,
+        status,
         ...otherUserData
       } = updateDto;
 
-      const userUpdatePayload: Partial<UserEntity> = _.omitBy(
-        {
-          personalEmail,
-          password,
-          firstName,
-          lastName,
-          avatarUrl,
-          status,
-          phoneNumber,
-          identityCardNumber,
-          dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
-          gender,
-          hometown,
-          permanentAddress,
-          temporaryAddress,
-          nationality,
-          ethnicity,
-          ...otherUserData,
-        },
-        _.isNil,
+      const userUpdatePayload: Partial<UserEntity> = _.omit(
+        _.omitBy(
+          {
+            ...otherUserData,
+            dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+          },
+          _.isNil,
+        ),
+        ['studentCode'],
       );
 
       if (Object.keys(userUpdatePayload).length > 0) {
-        if (
-          userUpdatePayload.personalEmail &&
-          userUpdatePayload.personalEmail !== student.user.personalEmail
-        ) {
-          const existingPersonal =
-            await this.userService.getUserByPersonalEmail(
-              userUpdatePayload.personalEmail,
-            );
-          if (
-            existingPersonal.length > 0 &&
-            existingPersonal.some((u) => u.id !== userId)
-          ) {
-            throw new ConflictException(
-              `Email cá nhân '${userUpdatePayload.personalEmail}' đã được sử dụng bởi người dùng khác.`,
-            );
-          }
-        }
+        // if (
+        //   userUpdatePayload.personalEmail &&
+        //   userUpdatePayload.personalEmail !== student.user.personalEmail
+        // ) {
+        //   const existingPersonal =
+        //     await this.userService.getUserByPersonalEmail(
+        //       userUpdatePayload.personalEmail,
+        //     );
+        //   if (
+        //     existingPersonal.length > 0 &&
+        //     existingPersonal.some((u) => u.id !== userId)
+        //   ) {
+        //     throw new ConflictException(
+        //       `Email cá nhân '${userUpdatePayload.personalEmail}' đã được sử dụng bởi người dùng khác.`,
+        //     );
+        //   }
+        // }
         if (userUpdatePayload.password) {
           userUpdatePayload.password = await Helpers.hashPassword({
             password: userUpdatePayload.password,
@@ -432,6 +410,10 @@ export class StudentService {
         studentUpdatePayload.classId = classId;
         studentUpdatePayload.majorId = newClass.major.id;
       }
+      if (status !== undefined) {
+        studentUpdatePayload.status = status as EStudentStatus;
+      }
+      console.log('studentUpdatePayload.status:', studentUpdatePayload.status);
 
       const cleanStudentUpdatePayload = _.omitBy(studentUpdatePayload, _.isNil);
       if (Object.keys(cleanStudentUpdatePayload).length > 0) {

@@ -11,8 +11,6 @@ import {
   Repository,
   FindOptionsWhere,
   Not,
-  LessThanOrEqual,
-  MoreThanOrEqual,
   FindOptionsRelations,
 } from 'typeorm';
 import { CurriculumEntity } from './entities/curriculum.entity';
@@ -170,12 +168,11 @@ export class CurriculumService {
       );
     }
 
-    // Kiểm tra khoảng năm giao nhau:
     const conflictingPrograms = await this.curriculumRepository.find({
       where: {
         majorId: curriculumData.majorId,
-        startAcademicYear: LessThanOrEqual(curriculumData.endAcademicYear),
-        endAcademicYear: MoreThanOrEqual(curriculumData.startAcademicYear),
+        startAcademicYear: curriculumData.endAcademicYear,
+        endAcademicYear: curriculumData.startAcademicYear,
         ...(excludeId && { id: Not(excludeId) }),
       },
       select: ['id', 'startAcademicYear', 'endAcademicYear'],
