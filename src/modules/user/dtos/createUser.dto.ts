@@ -55,10 +55,10 @@ export class CreateUserDto {
     example: EUserRole.ADMINISTRATOR,
   })
   @IsOptional()
-  @IsEnum([EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER], {
+  @IsEnum(EUserRole, {
     message: 'Vai trò không hợp lệ',
   })
-  role?: EUserRole = EUserRole.ADMINISTRATOR;
+  role?: EUserRole;
 
   @ApiPropertyOptional({
     description: 'Số điện thoại (định dạng Việt Nam)',

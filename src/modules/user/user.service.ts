@@ -10,7 +10,7 @@ import { UserEntity } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from './dtos/createUser.dto';
 import { UpdateUserDto } from './dtos/updateUser.dto';
-import { EUserRole } from 'src/utils/enums/user.enum';
+import { EAccountStatus, EUserRole } from 'src/utils/enums/user.enum';
 import { Helpers } from 'src/utils/helpers';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
@@ -47,7 +47,7 @@ export class UserService {
     console.log('UserService.getUserById - Looking for user with ID:', id);
 
     const user = await this.userRepository.findOne({
-      where: { id },
+      where: { id, isActive: EAccountStatus.ACTIVE },
       select: [
         'id',
         'universityEmail',
@@ -149,7 +149,7 @@ export class UserService {
    */
   async getUserByUniEmail(email: string): Promise<UserEntity | null> {
     return this.userRepository.findOne({
-      where: { universityEmail: email },
+      where: { universityEmail: email, isActive: EAccountStatus.ACTIVE },
       relations: {
         student: true,
         lecturer: true,

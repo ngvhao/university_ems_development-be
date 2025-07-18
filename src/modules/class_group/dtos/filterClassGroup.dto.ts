@@ -6,7 +6,7 @@ import {
   IsEnum,
   IsString,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { EClassGroupStatus } from 'src/utils/enums/class.enum';
 
 export class FilterClassGroupDto {
@@ -81,6 +81,7 @@ export class FilterClassGroupDto {
   @IsOptional()
   @IsArray()
   @IsEnum(EClassGroupStatus, { each: true })
+  @Transform(({ value }) => value.map(Number))
   statuses?: EClassGroupStatus[];
 
   @ApiPropertyOptional({

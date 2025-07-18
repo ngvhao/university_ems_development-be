@@ -534,7 +534,11 @@ export class StudentService {
     omitPassword: boolean = true,
   ): Promise<StudentEntity> {
     const student = await this.studentRepository.findOne({
-      where: { studentCode },
+      where: {
+        studentCode,
+        status: EStudentStatus.STUDYING,
+        user: { isActive: EAccountStatus.ACTIVE },
+      },
       relations: ['user', 'major', 'class'],
     });
 
