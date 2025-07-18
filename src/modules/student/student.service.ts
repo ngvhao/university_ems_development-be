@@ -624,7 +624,7 @@ export class StudentService {
       )
       .where('enrollment.studentId = :studentId', { studentId })
       .andWhere('classGroup.semesterId = :semesterId', {
-        semesterId: 44,
+        semesterId: currentSemester.id,
       })
       .getMany();
 
