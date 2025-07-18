@@ -10,6 +10,7 @@ import { LecturerEntity } from 'src/modules/lecturer/entities/lecturer.entity';
 import { CourseEntity } from 'src/modules/course/entities/course.entity';
 import { ApiProperty } from '@nestjs/swagger';
 import { IEntity } from 'src/utils/interfaces/entity.interface';
+import { ERegistrationLecturerCourseStatus } from 'src/utils/enums/course.enum';
 
 @Entity('lecturer_courses')
 @Unique(['lecturerId', 'courseId'])
@@ -47,4 +48,17 @@ export class LecturerCourseEntity extends IEntity {
   @ApiProperty({ description: 'Trạng thái phân công', example: true })
   @Column({ default: true })
   isActive: boolean;
+
+  @ApiProperty({
+    description: 'Trạng thái duyệt phân công',
+    example: ERegistrationLecturerCourseStatus.PENDING,
+  })
+  @Column({
+    type: 'enum',
+    enum: ERegistrationLecturerCourseStatus,
+    default: ERegistrationLecturerCourseStatus.PENDING,
+    comment:
+      'Trạng thái duyệt phân công: 1 - Chờ duyệt, 2 - Đã duyệt, 3 - Từ chối',
+  })
+  status: ERegistrationLecturerCourseStatus;
 }

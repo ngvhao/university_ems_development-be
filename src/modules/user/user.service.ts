@@ -69,6 +69,10 @@ export class UserService {
         'createdAt',
         'updatedAt',
       ],
+      relations: {
+        lecturer: true,
+        student: true,
+      },
     });
 
     if (!user) {
@@ -144,7 +148,13 @@ export class UserService {
    * @returns Promise<UserEntity | null> - Thông tin người dùng hoặc null nếu không tìm thấy.
    */
   async getUserByUniEmail(email: string): Promise<UserEntity | null> {
-    return this.userRepository.findOne({ where: { universityEmail: email } });
+    return this.userRepository.findOne({
+      where: { universityEmail: email },
+      relations: {
+        student: true,
+        lecturer: true,
+      },
+    });
   }
 
   /**

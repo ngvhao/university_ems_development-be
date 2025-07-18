@@ -51,7 +51,7 @@ export class NotificationController {
   @Roles([
     EUserRole.ADMINISTRATOR,
     EUserRole.ACADEMIC_MANAGER,
-    EUserRole.LECTURER,
+    EUserRole.HEAD_OF_FACULTY,
   ])
   @ApiOperation({ summary: 'Tạo thông báo mới' })
   @ApiBody({ type: CreateNotificationDto })

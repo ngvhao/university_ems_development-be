@@ -13,6 +13,7 @@ import { CourseService } from '../course/course.service';
 import { FilterLecturerCourseDto } from './dto/filterLecturerCourse.dto';
 import { generatePaginationMeta } from 'src/utils/common/getPagination.utils';
 import { LecturerService } from '../lecturer/lecturer.service';
+import { ERegistrationLecturerCourseStatus } from 'src/utils/enums/course.enum';
 
 @Injectable()
 export class LecturerCourseService {
@@ -106,7 +107,16 @@ export class LecturerCourseService {
       take: limit,
       relations: {
         course: true,
+        lecturer: {
+          user: true,
+        },
       },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+    data.forEach((item) => {
+      item.lecturer.user.password = undefined;
     });
     const meta = generatePaginationMeta(total, page, limit);
     return { data, meta };
@@ -185,6 +195,20 @@ export class LecturerCourseService {
       );
     }
     assignment.isActive = isActive;
+    return await this.lecturerCourseRepository.save(assignment);
+  }
+
+  async updateRegistrationLecturerCourseStatus(
+    id: number,
+    status: ERegistrationLecturerCourseStatus,
+  ): Promise<LecturerCourseEntity> {
+    const assignment = await this.lecturerCourseRepository.findOneBy({ id });
+    if (!assignment) {
+      throw new NotFoundException(
+        `Không tìm thấy phân công với ID ${id} để cập nhật trạng thái.`,
+      );
+    }
+    assignment.status = status;
     return await this.lecturerCourseRepository.save(assignment);
   }
 }

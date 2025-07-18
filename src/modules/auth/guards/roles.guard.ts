@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Roles } from 'src/decorators/roles.decorator';
+import { EUserRole } from 'src/utils/enums/user.enum';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -17,26 +18,12 @@ export class RolesGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    console.log('RolesGuard - Required Roles:', requiredRoles);
-
     if (!requiredRoles) {
-      console.log('RolesGuard - No roles required, allowing access');
       return true;
     }
 
     const request = context.switchToHttp().getRequest();
     const user = request.user;
-
-    console.log('RolesGuard - Request user:', {
-      user: user
-        ? {
-            id: user.id,
-            role: user.role,
-            roleType: typeof user.role,
-            email: user.universityEmail,
-          }
-        : null,
-    });
 
     if (!user || user.role === undefined || user.role === null) {
       throw new ForbiddenException('Access denied.');
@@ -52,8 +39,15 @@ export class RolesGuard implements CanActivate {
     const hasPermission = requiredRoles.includes(userRole);
 
     if (hasPermission) {
-      console.log('RolesGuard - Access granted');
       return true;
+    }
+    if (
+      userRole === EUserRole.LECTURER &&
+      requiredRoles.includes(EUserRole.HEAD_OF_FACULTY)
+    ) {
+      if (user.lecturer.isHeadOfFaculty) {
+        return true;
+      }
     }
 
     console.log('RolesGuard - Access denied');

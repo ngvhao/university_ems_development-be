@@ -13,3 +13,9 @@ export enum ERegistrationStatus {
   OPEN = 1,
   PENDING = 2,
 }
+
+export enum ERegistrationLecturerCourseStatus {
+  PENDING = 1,
+  APPROVED = 2,
+  REJECTED = 3,
+}

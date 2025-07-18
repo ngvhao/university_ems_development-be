@@ -2,7 +2,7 @@ export enum EUserRole {
   STUDENT = 1,
   LECTURER = 2,
   ACADEMIC_MANAGER = 3,
-  HEAD_OF_DEPARTMENT = 4,
+  HEAD_OF_FACULTY = 4,
   ADMINISTRATOR = 5,
 }
 

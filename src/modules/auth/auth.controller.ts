@@ -47,8 +47,12 @@ export class AuthController {
     @Res() res: Response,
   ) {
     const user = req.user;
-    console.log('user:', user);
-    const payload = { id: user.id, sub: user.universityEmail, role: user.role };
+    const payload = {
+      id: user.id,
+      sub: user.universityEmail,
+      role: user.role,
+      isHeadOfFaculty: user.lecturer?.isHeadOfFaculty,
+    };
 
     // Create accessToken
     const accessToken = AuthHelpers.generateToken(
@@ -76,7 +80,12 @@ export class AuthController {
   async refreshToken(@Req() req: Request, @Res() res: Response) {
     const refreshToken = req.cookies?.refreshToken;
     console.log('refreshToken:', refreshToken);
-    let payload: { id: number; sub: string; role: EUserRole };
+    let payload: {
+      id: number;
+      sub: string;
+      role: EUserRole;
+      isHeadOfFaculty: boolean;
+    };
     try {
       payload = await this.jwtService.verifyAsync(refreshToken, {
         secret: jwtConstants.refreshSecret,
@@ -88,7 +97,12 @@ export class AuthController {
     // Create new accessToken
     const newAccessToken = AuthHelpers.generateToken(
       this.jwtService,
-      { id: payload.id, sub: payload.sub, role: payload.role },
+      {
+        id: payload.id,
+        sub: payload.sub,
+        role: payload.role,
+        isHeadOfFaculty: payload.isHeadOfFaculty,
+      },
       'access',
     );
     AuthHelpers.setTokenCookies(res, newAccessToken);

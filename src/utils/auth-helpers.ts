@@ -6,7 +6,12 @@ import { EUserRole } from './enums/user.enum';
 export class AuthHelpers {
   static generateToken(
     jwtService: JwtService,
-    payload: { id: number; sub: string; role: EUserRole },
+    payload: {
+      id: number;
+      sub: string;
+      role: EUserRole;
+      isHeadOfFaculty: boolean;
+    },
     type: 'access' | 'refresh',
   ): string {
     const isAccessToken = type === 'access';

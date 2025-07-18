@@ -35,6 +35,7 @@ import { RequestHasLecturerDto } from 'src/utils/request-has-lecturer-dto';
 import { RequestHasUserDto } from 'src/utils/request-has-user-dto';
 import { LecturerInterceptor } from 'src/interceptors/get-lecturer.interceptor';
 import { LecturerService } from '../lecturer/lecturer.service';
+import { ERegistrationLecturerCourseStatus } from 'src/utils/enums/course.enum';
 
 @ApiTags('Phân công Giảng dạy (Lecturer-Course)')
 @ApiBearerAuth('token')
@@ -50,7 +51,7 @@ export class LecturerCourseController {
   @Roles([
     EUserRole.ACADEMIC_MANAGER,
     EUserRole.ADMINISTRATOR,
-    EUserRole.LECTURER,
+    EUserRole.HEAD_OF_FACULTY,
   ])
   @ApiOperation({ summary: 'Phân công giảng viên dạy học phần' })
   @ApiBody({ type: CreateLecturerCourseDto })
@@ -113,7 +114,11 @@ export class LecturerCourseController {
   }
 
   @Get()
-  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @Roles([
+    EUserRole.ACADEMIC_MANAGER,
+    EUserRole.ADMINISTRATOR,
+    EUserRole.HEAD_OF_FACULTY,
+  ])
   @ApiOperation({ summary: 'Lấy danh sách phân công giảng dạy' })
   @ApiQuery({ name: 'lecturerId', required: false, type: Number })
   @ApiQuery({ name: 'courseId', required: false, type: Number })
@@ -126,13 +131,70 @@ export class LecturerCourseController {
     @Query('courseId') courseId: number,
     @Res() res: Response,
   ) {
-    const data = await this.lecturerCourseService.findAll({
+    const { data, meta } = await this.lecturerCourseService.findAll({
       lecturerId,
       courseId,
     });
     return new SuccessResponse({
       data,
+      metadata: meta,
       message: 'Lấy danh sách phân công thành công.',
+    }).send(res);
+  }
+
+  @Patch(':id/approve')
+  @Roles([
+    EUserRole.ACADEMIC_MANAGER,
+    EUserRole.ADMINISTRATOR,
+    EUserRole.HEAD_OF_FACULTY,
+  ])
+  @ApiOperation({ summary: 'Duyệt phân công giảng dạy' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID của bản ghi phân công',
+    type: Number,
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Duyệt phân công thành công.',
+  })
+  async approve(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
+    const data =
+      await this.lecturerCourseService.updateRegistrationLecturerCourseStatus(
+        id,
+        ERegistrationLecturerCourseStatus.APPROVED,
+      );
+    return new SuccessResponse({
+      data,
+      message: 'Duyệt phân công thành công.',
+    }).send(res);
+  }
+
+  @Patch(':id/reject')
+  @Roles([
+    EUserRole.ACADEMIC_MANAGER,
+    EUserRole.ADMINISTRATOR,
+    EUserRole.HEAD_OF_FACULTY,
+  ])
+  @ApiOperation({ summary: 'Từ chối phân công giảng dạy' })
+  @ApiParam({
+    name: 'id',
+    description: 'ID của bản ghi phân công',
+    type: Number,
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Từ chối phân công thành công.',
+  })
+  async reject(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
+    const data =
+      await this.lecturerCourseService.updateRegistrationLecturerCourseStatus(
+        id,
+        ERegistrationLecturerCourseStatus.REJECTED,
+      );
+    return new SuccessResponse({
+      data,
+      message: 'Từ chối phân công thành công.',
     }).send(res);
   }
 
