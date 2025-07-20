@@ -7,7 +7,14 @@ import {
   Inject,
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { Repository, FindOneOptions, In, Not, DataSource } from 'typeorm';
+import {
+  Repository,
+  FindOneOptions,
+  In,
+  Not,
+  DataSource,
+  FindOptionsWhere,
+} from 'typeorm';
 import { TuitionEntity } from './entities/tuition.entity';
 import { PaginationDto } from 'src/utils/dtos/pagination.dto';
 import {
@@ -482,65 +489,51 @@ export class TuitionService {
   }> {
     const { page = 1, limit = 10 } = paginationDto;
 
-    const queryBuilder = this.tuitionRepository.createQueryBuilder('tuition');
+    const where: FindOptionsWhere<TuitionEntity> = {};
 
-    // Apply filters
     if (filterDto?.studentId) {
-      queryBuilder.andWhere('tuition.studentId = :studentId', {
-        studentId: filterDto.studentId,
-      });
+      where.studentId = filterDto.studentId;
     }
 
     if (filterDto?.semesterId) {
-      queryBuilder.andWhere('tuition.semesterId = :semesterId', {
-        semesterId: filterDto.semesterId,
-      });
+      where.semesterId = filterDto.semesterId;
     }
 
     if (filterDto?.paymentStatus) {
-      queryBuilder.andWhere('tuition.status = :paymentStatus', {
-        paymentStatus: filterDto.paymentStatus,
-      });
+      where.status = filterDto.paymentStatus;
     }
 
     if (filterDto?.facultyId) {
-      queryBuilder
-        .leftJoin('tuition.student', 'student')
-        .leftJoin('student.major', 'major')
-        .leftJoin('major.department', 'department')
-        .leftJoin('department.faculty', 'faculty')
-        .andWhere('faculty.id = :facultyId', {
-          facultyId: filterDto.facultyId,
-        });
+      where.student = {
+        major: {
+          department: {
+            facultyId: filterDto.facultyId,
+          },
+        },
+      };
     }
 
     if (filterDto?.departmentId) {
-      queryBuilder
-        .leftJoin('tuition.student', 'student')
-        .leftJoin('student.major', 'major')
-        .leftJoin('major.department', 'department')
-        .andWhere('department.id = :departmentId', {
+      where.student = {
+        major: {
           departmentId: filterDto.departmentId,
-        });
+        },
+      };
     }
 
     if (filterDto?.majorId) {
-      queryBuilder
-        .leftJoin('tuition.student', 'student')
-        .leftJoin('student.major', 'major')
-        .andWhere('major.id = :majorId', { majorId: filterDto.majorId });
+      where.student = {
+        majorId: filterDto.majorId,
+      };
     }
 
-    // Apply pagination and ordering
-    queryBuilder
-      .leftJoinAndSelect('tuition.student', 'student')
-      .leftJoinAndSelect('tuition.semester', 'semester')
-      .skip((page - 1) * limit)
-      .take(limit)
-      .orderBy('tuition.issueDate', 'DESC')
-      .addOrderBy('tuition.studentId', 'ASC');
+    const [data, total] = await this.tuitionRepository.findAndCount({
+      where,
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { issueDate: 'DESC' },
+    });
 
-    const [data, total] = await queryBuilder.getManyAndCount();
     const meta = generatePaginationMeta(total, page, limit);
 
     return { data, meta };

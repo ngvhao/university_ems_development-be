@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsNumber, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ETuitionStatus } from 'src/utils/enums/tuition.enum';
 
 export class FilterTuitionDto {
   @ApiPropertyOptional({
@@ -27,7 +28,7 @@ export class FilterTuitionDto {
   })
   @IsOptional()
   @IsString()
-  paymentStatus?: string;
+  paymentStatus?: ETuitionStatus;
 
   @ApiPropertyOptional({
     description: 'Lọc theo ID khoa',

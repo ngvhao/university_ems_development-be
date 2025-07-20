@@ -47,4 +47,13 @@ export class FilterStudentDto {
   @IsOptional()
   @IsString()
   status?: EAccountStatus;
+
+  @ApiPropertyOptional({
+    description: 'Năm nhập học',
+    example: 2025,
+  })
+  @IsOptional()
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber()
+  yearAdmission?: number;
 }

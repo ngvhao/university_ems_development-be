@@ -227,26 +227,32 @@ export class StudentService {
     const { page = 1, limit = 10 } = paginationDto;
     const skip = (page - 1) * limit;
     const where: FindOptionsWhere<StudentEntity> = {};
-    if (filterDto?.facultyId) {
+
+    const { facultyId, departmentId, majorId, classId, status, yearAdmission } =
+      filterDto;
+    if (facultyId) {
       where.major = {
         department: {
-          faculty: { id: filterDto.facultyId },
+          faculty: { id: facultyId },
         },
       };
     }
-    if (filterDto?.departmentId) {
+    if (departmentId) {
       where.major = {
-        department: { id: filterDto.departmentId },
+        department: { id: departmentId },
       };
     }
-    if (filterDto?.majorId) {
-      where.majorId = filterDto.majorId;
+    if (majorId) {
+      where.majorId = majorId;
     }
-    if (filterDto?.classId) {
-      where.classId = filterDto.classId;
+    if (classId) {
+      where.classId = classId;
     }
-    if (filterDto?.status) {
-      where.user = { isActive: filterDto.status };
+    if (status) {
+      where.user = { isActive: status };
+    }
+    if (yearAdmission) {
+      where.academicYear = yearAdmission;
     }
 
     const [students, total] = await this.studentRepository.findAndCount({
