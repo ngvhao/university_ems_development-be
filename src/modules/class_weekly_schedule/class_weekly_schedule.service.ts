@@ -425,6 +425,43 @@ export class ClassWeeklyScheduleService {
         semesterId: originalSchedule.classGroup.semesterId,
         excludeId: id,
       });
+      // Bổ sung kiểm tra conflict lịch giảng viên
+      const lecturerId = originalSchedule.classGroup.lecturerId;
+      const semesterId = originalSchedule.classGroup.semesterId;
+      if (
+        lecturerId &&
+        finalScheduleData.dayOfWeek !== undefined &&
+        finalScheduleData.timeSlotId !== undefined &&
+        finalScheduleData.startDate &&
+        finalScheduleData.endDate
+      ) {
+        const conflictLecturer =
+          await this.classWeeklyScheduleRepository.findOne({
+            where: {
+              lecturerId: lecturerId,
+              dayOfWeek: finalScheduleData.dayOfWeek,
+              timeSlotId: finalScheduleData.timeSlotId,
+              classGroup: {
+                semesterId: semesterId,
+              },
+              startDate: Between(
+                finalScheduleData.startDate,
+                finalScheduleData.endDate,
+              ),
+              endDate: Between(
+                finalScheduleData.startDate,
+                finalScheduleData.endDate,
+              ),
+              id: Not(id),
+            },
+            relations: ['classGroup'],
+          });
+        if (conflictLecturer) {
+          throw new ConflictException(
+            `Giảng viên ID ${lecturerId} đã có lịch dạy bị trùng vào Thứ ${finalScheduleData.dayOfWeek + 1} - Khung giờ ${finalScheduleData.timeSlotId} (Nhóm lớp ID: ${conflictLecturer.classGroupId}).`,
+          );
+        }
+      }
     }
 
     const scheduleToUpdate = await this.classWeeklyScheduleRepository.preload({

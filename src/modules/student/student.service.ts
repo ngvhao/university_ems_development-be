@@ -810,6 +810,124 @@ export class StudentService {
       };
     }
 
+    // Lấy curriculum
+    const curriculumRepo = this.dataSource.getRepository('CurriculumEntity');
+    const curriculum = await curriculumRepo.findOne({
+      where: {
+        majorId: student.majorId,
+        startAcademicYear: student.academicYear,
+      },
+      relations: [
+        'curriculumCourses',
+        'curriculumCourses.course',
+        'curriculumCourses.semester',
+        'curriculumCourses.prerequisiteCourse',
+      ],
+    });
+
+    // Lấy enrollments và grades của sinh viên
+    const allEnrollments = await this.dataSource
+      .getRepository('EnrollmentCourseEntity')
+      .createQueryBuilder('enrollment')
+      .leftJoinAndSelect('enrollment.classGroup', 'classGroup')
+      .leftJoinAndSelect('classGroup.course', 'course')
+      .where('enrollment.studentId = :studentId', { studentId })
+      .getMany();
+    const allGrades = await this.dataSource
+      .getRepository('GradeDetailEntity')
+      .createQueryBuilder('grade')
+      .leftJoinAndSelect('grade.enrollment', 'enrollment')
+      .leftJoinAndSelect('enrollment.classGroup', 'classGroup')
+      .leftJoinAndSelect('classGroup.course', 'course')
+      .where('enrollment.studentId = :studentId', { studentId })
+      .getMany();
+
+    // Map trạng thái từng môn trong curriculum
+    const courseStatusMap = {};
+    for (const enrollment of allEnrollments) {
+      const courseId = enrollment.classGroup.course.id;
+      courseStatusMap[courseId] = {
+        status: enrollment.status,
+        enrollment,
+      };
+    }
+    const gradeMap = {};
+    for (const grade of allGrades) {
+      const courseId = grade.enrollment.classGroup.course.id;
+      gradeMap[courseId] = grade;
+    }
+
+    const curriculumCourses = curriculum?.curriculumCourses || [];
+    const curriculumCourseStatus = curriculumCourses.map((cc) => {
+      const courseId = cc.course.id;
+      let status:
+        | 'PASSED'
+        | 'ENROLLED'
+        | 'FAILED'
+        | 'NOT_ENROLLED'
+        | 'ELIGIBLE' = 'NOT_ENROLLED';
+      let grade, letterGrade, isPassed;
+      if (gradeMap[courseId]) {
+        grade = gradeMap[courseId].totalScore;
+        letterGrade = gradeMap[courseId].letterGrade;
+        isPassed = gradeMap[courseId].isPassed;
+        status = isPassed ? 'PASSED' : 'FAILED';
+      } else if (courseStatusMap[courseId]) {
+        if (courseStatusMap[courseId].status === 7) status = 'ENROLLED';
+        else if (courseStatusMap[courseId].status === 2) status = 'FAILED';
+        else if (courseStatusMap[courseId].status === 1) status = 'PASSED';
+      }
+      return {
+        courseId,
+        courseCode: cc.course.courseCode,
+        name: cc.course.name,
+        credit: cc.course.credit,
+        semester: cc.semester
+          ? { id: cc.semester.id, name: cc.semester.semesterName }
+          : null,
+        isMandatory: cc.isMandatory,
+        prerequisiteCourseId: cc.prerequisiteCourseId,
+        prerequisiteCourseCode: cc.prerequisiteCourse
+          ? cc.prerequisiteCourse.courseCode
+          : null,
+        status,
+        grade,
+        letterGrade,
+        isPassed,
+      };
+    });
+
+    // Xác định các môn học sắp tới (nextCourses): chưa học, đủ điều kiện prerequisite
+    const passedCourseIds = new Set(
+      curriculumCourseStatus
+        .filter((c) => c.status === 'PASSED')
+        .map((c) => c.courseId),
+    );
+    const nextCourses = curriculumCourseStatus
+      .filter((c) => {
+        if (c.status === 'PASSED' || c.status === 'ENROLLED') return false;
+        // Nếu có prerequisite, prerequisite phải đã qua
+        if (c.prerequisiteCourseId) {
+          return passedCourseIds.has(c.prerequisiteCourseId);
+        }
+        return true;
+      })
+      .map((c) => ({
+        courseId: c.courseId,
+        courseCode: c.courseCode,
+        name: c.name,
+        credit: c.credit,
+        semester: c.semester,
+        isMandatory: c.isMandatory,
+        prerequisiteCourseId: c.prerequisiteCourseId,
+        prerequisiteCourseCode: c.prerequisiteCourseCode,
+        reason: c.prerequisiteCourseId
+          ? passedCourseIds.has(c.prerequisiteCourseId)
+            ? 'Đủ điều kiện tiên quyết'
+            : 'Chưa đủ điều kiện tiên quyết'
+          : 'Không có tiên quyết',
+      }));
+
     const result: StudentChatbotDataDto = {
       basicInfo: {
         id: student.id,
@@ -942,6 +1060,16 @@ export class StudentService {
         reason: adjustment.reason,
       })),
       nextSemester: nextSemesterData,
+      curriculum: curriculum
+        ? {
+            id: curriculum.id,
+            name: curriculum.major?.name || '',
+            totalCreditsRequired: curriculum.totalCreditsRequired,
+            electiveCreditsRequired: curriculum.electiveCreditsRequired,
+            courses: curriculumCourseStatus,
+          }
+        : null,
+      nextCourses,
     };
 
     return result;
