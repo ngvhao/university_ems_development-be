@@ -254,6 +254,67 @@ export class NextSemesterInfoDto {
   };
 }
 
+export class CurriculumCourseStatusDto {
+  @ApiProperty({ description: 'ID môn học' })
+  courseId: number;
+  @ApiProperty({ description: 'Mã môn học' })
+  courseCode: string;
+  @ApiProperty({ description: 'Tên môn học' })
+  name: string;
+  @ApiProperty({ description: 'Số tín chỉ' })
+  credit: number;
+  @ApiProperty({ description: 'Học kỳ gợi ý' })
+  semester: { id: number; name: string };
+  @ApiProperty({ description: 'Bắt buộc hay tự chọn' })
+  isMandatory: boolean;
+  @ApiProperty({ description: 'ID môn tiên quyết (nếu có)' })
+  prerequisiteCourseId: number | null;
+  @ApiProperty({ description: 'Mã môn tiên quyết (nếu có)' })
+  prerequisiteCourseCode: string | null;
+  @ApiProperty({ description: 'Trạng thái môn học' })
+  status: 'PASSED' | 'ENROLLED' | 'FAILED' | 'NOT_ENROLLED' | 'ELIGIBLE';
+  @ApiProperty({ description: 'Điểm số (nếu có)' })
+  grade?: number;
+  @ApiProperty({ description: 'Điểm chữ (nếu có)' })
+  letterGrade?: string;
+  @ApiProperty({ description: 'Qua môn hay chưa' })
+  isPassed?: boolean;
+}
+
+export class CurriculumDto {
+  @ApiProperty({ description: 'ID chương trình đào tạo' })
+  id: number;
+  @ApiProperty({ description: 'Tên chương trình đào tạo' })
+  name: string;
+  @ApiProperty({ description: 'Tổng tín chỉ yêu cầu' })
+  totalCreditsRequired: number;
+  @ApiProperty({ description: 'Tín chỉ tự chọn yêu cầu' })
+  electiveCreditsRequired: number;
+  @ApiProperty({ description: 'Danh sách môn học trong CTĐT' })
+  courses: CurriculumCourseStatusDto[];
+}
+
+export class NextCourseDto {
+  @ApiProperty({ description: 'ID môn học' })
+  courseId: number;
+  @ApiProperty({ description: 'Mã môn học' })
+  courseCode: string;
+  @ApiProperty({ description: 'Tên môn học' })
+  name: string;
+  @ApiProperty({ description: 'Số tín chỉ' })
+  credit: number;
+  @ApiProperty({ description: 'Học kỳ gợi ý' })
+  semester: { id: number; name: string };
+  @ApiProperty({ description: 'Bắt buộc hay tự chọn' })
+  isMandatory: boolean;
+  @ApiProperty({ description: 'ID môn tiên quyết (nếu có)' })
+  prerequisiteCourseId: number | null;
+  @ApiProperty({ description: 'Mã môn tiên quyết (nếu có)' })
+  prerequisiteCourseCode: string | null;
+  @ApiProperty({ description: 'Lý do đủ điều kiện hoặc chưa đủ điều kiện' })
+  reason: string;
+}
+
 export class StudentChatbotDataDto {
   @ApiProperty({ description: 'Thông tin cơ bản sinh viên' })
   basicInfo: StudentBasicInfoDto;
@@ -301,4 +362,9 @@ export class StudentChatbotDataDto {
 
   @ApiProperty({ description: 'Thông tin học kỳ kế tiếp' })
   nextSemester: NextSemesterInfoDto;
+
+  @ApiProperty({ description: 'Chương trình đào tạo của sinh viên' })
+  curriculum: CurriculumDto;
+  @ApiProperty({ description: 'Các môn học sắp tới có thể đăng ký' })
+  nextCourses: NextCourseDto[];
 }

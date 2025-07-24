@@ -43,6 +43,30 @@ export class AuthService {
     throw new UnauthorizedException('Invalid credentials');
   }
 
+  checkIfIdentifierIsEmail(email: string): boolean {
+    if (email.includes('@')) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Xác thực người dùng dựa trên mã sinh viên và mật khẩu.
+   * @param studentCode - Mã sinh viên.
+   * @param password - Mật khẩu của người dùng.
+   * @returns Thông tin người dùng nếu xác thực thành công, ngược lại ném ra UnauthorizedException.
+   */
+  async validateUser(
+    identifier: string,
+    password: string,
+  ): Promise<Partial<UserEntity>> {
+    if (this.checkIfIdentifierIsEmail(identifier)) {
+      return await this.validateOther(identifier, password);
+    } else {
+      return await this.validateStudent(identifier, password);
+    }
+  }
+
   /**
    * Xác thực người dùng dựa trên email và mật khẩu.
    * @param uniEmail - Email của người dùng.

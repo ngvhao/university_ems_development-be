@@ -529,7 +529,6 @@ export class ClassGroupService {
     id: number,
     updateDto: UpdateClassGroupDto,
   ): Promise<ClassGroupEntity> {
-    // 1. Validate and find existing group
     const originalGroup = await this.findGroupByIdOrThrow(id);
 
     await this.validateUpdateConstraints(id, updateDto, originalGroup);
@@ -642,7 +641,60 @@ export class ClassGroupService {
     await queryRunner.startTransaction();
 
     try {
+      // Lấy thông tin nhóm lớp để lấy lecturerId và semesterId
+      const classGroup = await this.findOne(classGroupId);
+      const lecturerId = classGroup.lecturerId;
+      const semesterId = classGroup.semesterId;
+
       for (const classWeeklySchedule of schedules) {
+        // Lấy dữ liệu lịch học hiện tại (nếu có)
+        const currentSchedule = classGroup.schedules.find(
+          (sch) => sch.id === classWeeklySchedule.id,
+        );
+        // Chuẩn bị dữ liệu kiểm tra conflict
+        const scheduleData = {
+          classGroupId,
+          dayOfWeek:
+            classWeeklySchedule.dayOfWeek ?? currentSchedule?.dayOfWeek,
+          timeSlotId:
+            classWeeklySchedule.timeSlotId ?? currentSchedule?.timeSlotId,
+          roomId: classWeeklySchedule.roomId ?? currentSchedule?.roomId,
+          startDate:
+            classWeeklySchedule.startDate ?? currentSchedule?.startDate,
+          endDate: classWeeklySchedule.endDate ?? currentSchedule?.endDate,
+        };
+        // Kiểm tra conflict lịch giảng viên (trừ chính lịch này)
+        if (
+          lecturerId &&
+          scheduleData.dayOfWeek !== undefined &&
+          scheduleData.timeSlotId !== undefined &&
+          scheduleData.startDate &&
+          scheduleData.endDate
+        ) {
+          const conflictLecturer = await queryRunner.manager.findOne(
+            ClassWeeklyScheduleEntity,
+            {
+              where: {
+                lecturerId: lecturerId,
+                dayOfWeek: scheduleData.dayOfWeek,
+                timeSlotId: scheduleData.timeSlotId,
+                classGroup: {
+                  semesterId: semesterId,
+                },
+                startDate: LessThanOrEqual(scheduleData.endDate),
+                endDate: MoreThanOrEqual(scheduleData.startDate),
+                id: Not(classWeeklySchedule.id),
+              },
+              relations: ['classGroup'],
+            },
+          );
+          if (conflictLecturer) {
+            throw new ConflictException(
+              `Giảng viên ID ${lecturerId} đã có lịch dạy bị trùng vào Thứ ${scheduleData.dayOfWeek + 1} - Khung giờ ${scheduleData.timeSlotId} (Nhóm lớp ID: ${conflictLecturer.classGroupId}).`,
+            );
+          }
+        }
+        // Tiếp tục update như cũ
         await queryRunner.manager.update(
           ClassWeeklyScheduleEntity,
           { id: classWeeklySchedule.id },

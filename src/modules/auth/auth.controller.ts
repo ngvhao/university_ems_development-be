@@ -72,7 +72,10 @@ export class AuthController {
     AuthHelpers.setTokenCookies(res, accessToken, refreshToken);
     return new SuccessResponse({
       message: 'Login successfully',
-      data: accessToken,
+      data: {
+        accessToken,
+        role: user.role,
+      },
     }).send(res);
   }
 

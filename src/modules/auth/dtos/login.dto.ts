@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
-import { EUserRole } from 'src/utils/enums/user.enum';
 
 export class LoginDto {
   @ApiProperty({
@@ -19,12 +18,4 @@ export class LoginDto {
   @IsNotEmpty({ message: 'Mật khẩu không được để trống' })
   @IsString({ message: 'Mật khẩu phải là chuỗi' })
   password: string;
-
-  @ApiProperty({
-    description:
-      'Vai trò người dùng đăng nhập (ví dụ: STUDENT, LECTURER, ADMIN)',
-    enum: EUserRole,
-    example: EUserRole.STUDENT,
-  })
-  role: EUserRole;
 }
