@@ -324,13 +324,9 @@ export class StudentController {
   }
 
   @Delete(':id')
-  @Roles([EUserRole.ADMINISTRATOR])
+  @Roles([EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER])
   @ApiOperation({ summary: 'Xóa sinh viên (bao gồm tài khoản user)' })
-  @ApiParam({
-    name: 'id',
-    description: 'ID của Sinh viên cần xóa',
-    type: Number,
-  })
+  @ApiParam({ name: 'id', description: 'ID của sinh viên cần xóa' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Xóa sinh viên thành công.',
@@ -347,14 +343,107 @@ export class StudentController {
     status: HttpStatus.FORBIDDEN,
     description: 'Không có quyền xóa sinh viên.',
   })
-  @ApiResponse({
-    status: HttpStatus.INTERNAL_SERVER_ERROR,
-    description: 'Lỗi máy chủ nội bộ.',
-  })
   async remove(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
     await this.studentService.remove(id);
     return new SuccessResponse({
-      message: 'Xóa sinh viên thành công.',
+      message: 'Xóa sinh viên thành công',
+    }).send(res);
+  }
+
+  @Get(':id/gpa')
+  @Roles([
+    EUserRole.ADMINISTRATOR,
+    EUserRole.ACADEMIC_MANAGER,
+    EUserRole.LECTURER,
+    EUserRole.STUDENT,
+  ])
+  @ApiOperation({ summary: 'Lấy thông tin GPA chi tiết của sinh viên' })
+  @ApiParam({ name: 'id', description: 'ID của sinh viên' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy thông tin GPA chi tiết thành công',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy sinh viên.',
+  })
+  async getStudentGPADetails(
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
+    const gpaDetails = await this.studentService.getStudentGPADetails(id);
+    return new SuccessResponse({
+      data: gpaDetails,
+      message: 'Lấy thông tin GPA chi tiết thành công.',
+    }).send(res);
+  }
+
+  @Get(':studentId/course/:classGroupId/grades')
+  @Roles([
+    EUserRole.ADMINISTRATOR,
+    EUserRole.ACADEMIC_MANAGER,
+    EUserRole.LECTURER,
+    EUserRole.STUDENT,
+  ])
+  @ApiOperation({ summary: 'Lấy thông tin chi tiết điểm của một môn học' })
+  @ApiParam({ name: 'studentId', description: 'ID của sinh viên' })
+  @ApiParam({ name: 'classGroupId', description: 'ID của nhóm lớp' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Lấy thông tin điểm chi tiết thành công',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy sinh viên hoặc đăng ký môn học.',
+  })
+  async getCourseGradeDetails(
+    @Param('studentId', ParseIntPipe) studentId: number,
+    @Param('classGroupId', ParseIntPipe) classGroupId: number,
+    @Res() res: Response,
+  ) {
+    const gradeDetails = await this.studentService.getCourseGradeDetails(
+      studentId,
+      classGroupId,
+    );
+    return new SuccessResponse({
+      data: gradeDetails,
+      message: 'Lấy thông tin điểm chi tiết thành công.',
+    }).send(res);
+  }
+
+  @Post(':id/gpa/update')
+  @Roles([EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER])
+  @ApiOperation({ summary: 'Cập nhật GPA cho sinh viên cụ thể' })
+  @ApiParam({ name: 'id', description: 'ID của sinh viên' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Cập nhật GPA thành công',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Không tìm thấy sinh viên.',
+  })
+  async updateStudentGPA(
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
+    await this.studentService.updateStudentGPA(id);
+    return new SuccessResponse({
+      message: 'Cập nhật GPA cho sinh viên thành công.',
+    }).send(res);
+  }
+
+  @Post('gpa/update-all')
+  @Roles([EUserRole.ADMINISTRATOR, EUserRole.ACADEMIC_MANAGER])
+  @ApiOperation({ summary: 'Cập nhật GPA cho tất cả sinh viên' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Cập nhật GPA cho tất cả sinh viên thành công',
+  })
+  async updateAllStudentsGPA(@Res() res: Response) {
+    await this.studentService.updateAllStudentsGPA();
+    return new SuccessResponse({
+      message: 'Cập nhật GPA cho tất cả sinh viên thành công.',
     }).send(res);
   }
 }

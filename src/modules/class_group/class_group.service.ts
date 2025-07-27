@@ -133,11 +133,11 @@ export class ClassGroupService {
   ): Promise<{ students: StudentEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = pagination;
     const where: FindOptionsWhere<ClassGroupEntity> = {};
-    if (status) {
-      where.enrollments = {
-        status,
-      };
-    }
+    // if (status) {
+    //   where.enrollments = {
+    //     status,
+    //   };
+    // }
     where.id = id;
     const classGroup = await this.classGroupRepository.findOne({
       where,
@@ -149,9 +149,12 @@ export class ClassGroupService {
         },
       },
     });
-    const students = classGroup.enrollments.map(
-      (enrollment) => enrollment.student,
-    );
+    if (!classGroup) {
+      throw new NotFoundException(`Không tìm thấy Nhóm lớp với ID ${id}`);
+    }
+    const students = classGroup.enrollments
+      .filter((enrollment) => enrollment.status == status)
+      .map((enrollment) => enrollment.student);
     const meta = generatePaginationMeta(
       classGroup.enrollments.length,
       page,

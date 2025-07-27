@@ -3,12 +3,12 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Delete,
   Query,
   Res,
   HttpStatus,
+  Put,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { GradeDetailService } from './grade_detail.service';
@@ -189,7 +189,7 @@ export class GradeDetailController {
     }).send(res);
   }
 
-  @Patch(':id')
+  @Put(':id')
   @ApiOperation({ summary: 'Cập nhật điểm chi tiết' })
   @ApiResponse({
     status: HttpStatus.OK,

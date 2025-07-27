@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsNumber, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
+import { EGradeType } from 'src/utils/enums/grade.enum';
 
 export class FilterGradeDetailDto {
   @ApiPropertyOptional({
@@ -27,7 +28,7 @@ export class FilterGradeDetailDto {
   })
   @IsOptional()
   @IsString()
-  gradeType?: string;
+  gradeType?: EGradeType;
 
   @ApiPropertyOptional({
     description: 'Lọc theo ID học kỳ',

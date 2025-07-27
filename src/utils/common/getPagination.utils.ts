@@ -10,10 +10,10 @@ export function generatePaginationMeta(
   const prevPage = page > 1 ? page - 1 : null;
 
   return {
-    pageSize: limit,
-    currentPage: page,
-    total,
-    totalPage,
+    pageSize: Number(limit),
+    currentPage: Number(page),
+    total: Number(total),
+    totalPage: Number(totalPage),
     nextPage,
     prevPage,
   };

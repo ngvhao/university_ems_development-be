@@ -10,6 +10,11 @@ import { UserModule } from '../user/user.module';
   imports: [
     TypeOrmModule.forFeature([StudentEntity]),
     forwardRef(() => ClassModule),
+    forwardRef(() =>
+      import('../grade_detail/grade_detail.module').then(
+        (m) => m.GradeDetailModule,
+      ),
+    ),
     UserModule,
     // QueueModule,
   ],

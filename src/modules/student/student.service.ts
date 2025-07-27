@@ -12,7 +12,9 @@ import {
   DataSource,
   FindOptionsRelations,
   FindOptionsWhere,
+  QueryRunner,
   Repository,
+  In,
 } from 'typeorm';
 import { UserEntity } from '../user/entities/user.entity';
 import { StudentEntity } from './entities/student.entity';
@@ -526,6 +528,426 @@ export class StudentService {
       student.user = _.omit(student.user, ['password']) as UserEntity;
     }
     return student;
+  }
+
+  /**
+   * Tính điểm trung bình trọng số cho một môn học của sinh viên
+   * @param studentId - ID của sinh viên
+   * @param classGroupId - ID của nhóm lớp
+   * @param queryRunner - QueryRunner hiện tại (nếu có)
+   * @returns Promise<number> - Điểm trung bình trọng số
+   */
+  async calculateWeightedAverage(
+    studentId: number,
+    classGroupId: number,
+    queryRunner?: QueryRunner,
+  ): Promise<number> {
+    let gradeDetails;
+
+    if (queryRunner) {
+      // Sử dụng transaction hiện tại
+      gradeDetails = await queryRunner.manager.find('GradeDetailEntity', {
+        where: {
+          studentId: studentId,
+          classGroupId: classGroupId,
+        },
+      });
+    } else {
+      // Sử dụng database chính
+      gradeDetails = await this.dataSource
+        .getRepository('GradeDetailEntity')
+        .createQueryBuilder('gradeDetail')
+        .where('gradeDetail.studentId = :studentId', { studentId })
+        .andWhere('gradeDetail.classGroupId = :classGroupId', { classGroupId })
+        .getMany();
+    }
+
+    if (gradeDetails.length === 0) {
+      return 0;
+    }
+
+    let totalWeightedScore = 0;
+    let totalWeight = 0;
+
+    for (const gradeDetail of gradeDetails) {
+      totalWeightedScore += gradeDetail.score * (gradeDetail.weight / 100);
+      totalWeight += gradeDetail.weight;
+    }
+
+    if (totalWeight === 0) {
+      return 0;
+    }
+
+    return totalWeightedScore / (totalWeight / 100);
+  }
+
+  /**
+   * Kiểm tra xem một môn học đã hoàn thành chưa (có đủ điểm)
+   * @param studentId - ID của sinh viên
+   * @param classGroupId - ID của nhóm lớp
+   * @param queryRunner - QueryRunner hiện tại (nếu có)
+   * @returns Promise<boolean> - true nếu môn học đã hoàn thành
+   */
+  async isCourseCompleted(
+    studentId: number,
+    classGroupId: number,
+    queryRunner?: QueryRunner,
+  ): Promise<boolean> {
+    let gradeDetails;
+
+    if (queryRunner) {
+      // Sử dụng transaction hiện tại
+      gradeDetails = await queryRunner.manager.find('GradeDetailEntity', {
+        where: {
+          studentId: studentId,
+          classGroupId: classGroupId,
+        },
+      });
+    } else {
+      // Sử dụng database chính
+      gradeDetails = await this.dataSource
+        .getRepository('GradeDetailEntity')
+        .createQueryBuilder('gradeDetail')
+        .where('gradeDetail.studentId = :studentId', { studentId })
+        .andWhere('gradeDetail.classGroupId = :classGroupId', { classGroupId })
+        .getMany();
+    }
+
+    if (gradeDetails.length === 0) {
+      return false;
+    }
+
+    // Tính tổng trọng số
+    const totalWeight = gradeDetails.reduce(
+      (sum, detail) => sum + detail.weight,
+      0,
+    );
+
+    // Môn học được coi là hoàn thành khi có đủ điểm (tổng trọng số >= 100)
+    return totalWeight >= 100;
+  }
+
+  /**
+   * Tính toán GPA cho một sinh viên dựa trên các môn học đã hoàn thành
+   * GPA được tính trên thang điểm 10
+   * @param studentId - ID của sinh viên
+   * @param queryRunner - QueryRunner hiện tại (nếu có)
+   * @returns Promise<number> - GPA được tính toán (thang điểm 10)
+   */
+  async calculateStudentGPA(
+    studentId: number,
+    queryRunner?: QueryRunner,
+  ): Promise<number> {
+    // Lấy tất cả các enrollment của sinh viên
+    let enrollments;
+
+    if (queryRunner) {
+      // Sử dụng transaction hiện tại
+      enrollments = await queryRunner.manager.find('EnrollmentCourseEntity', {
+        where: {
+          studentId: studentId,
+          status: In([7, 1, 2]), // ENROLLED = 7, PASSED = 1, FAILED = 2
+        },
+        relations: ['classGroup', 'classGroup.course'],
+      });
+    } else {
+      // Sử dụng database chính
+      enrollments = await this.dataSource
+        .getRepository('EnrollmentCourseEntity')
+        .createQueryBuilder('enrollment')
+        .leftJoinAndSelect('enrollment.classGroup', 'classGroup')
+        .leftJoinAndSelect('classGroup.course', 'course')
+        .where('enrollment.studentId = :studentId', { studentId })
+        .andWhere('enrollment.status IN (:...statuses)', {
+          statuses: [7, 1, 2], // ENROLLED = 7, PASSED = 1, FAILED = 2
+        })
+        .getMany();
+    }
+
+    if (enrollments.length === 0) {
+      return 0;
+    }
+
+    let totalWeightedScore = 0;
+    let totalCredits = 0;
+
+    for (const enrollment of enrollments) {
+      // Kiểm tra xem môn học này đã hoàn thành chưa
+      const isCompleted = await this.isCourseCompleted(
+        studentId,
+        enrollment.classGroupId,
+        queryRunner,
+      );
+
+      // Chỉ tính GPA cho các môn học đã hoàn thành
+      if (isCompleted) {
+        const courseCredit = enrollment.classGroup.course.credit;
+
+        // Tính điểm trung bình của môn học này
+        const courseAverage = await this.calculateWeightedAverage(
+          studentId,
+          enrollment.classGroupId,
+          queryRunner,
+        );
+
+        totalWeightedScore += courseAverage * courseCredit;
+        totalCredits += courseCredit;
+      }
+    }
+
+    if (totalCredits === 0) {
+      return 0;
+    }
+
+    return totalWeightedScore / totalCredits;
+  }
+
+  /**
+   * Cập nhật GPA của sinh viên trong database
+   * @param studentId - ID của sinh viên
+   * @param queryRunner - QueryRunner hiện tại (nếu có)
+   * @returns Promise<void>
+   */
+  async updateStudentGPA(
+    studentId: number,
+    queryRunner?: QueryRunner,
+  ): Promise<void> {
+    try {
+      const gpa = await this.calculateStudentGPA(studentId, queryRunner);
+
+      if (queryRunner) {
+        // Sử dụng transaction hiện tại
+        await queryRunner.manager.update(StudentEntity, studentId, { gpa });
+      } else {
+        // Tạo transaction mới nếu không có
+        const newQueryRunner = this.dataSource.createQueryRunner();
+        await newQueryRunner.connect();
+        await newQueryRunner.startTransaction();
+
+        try {
+          await newQueryRunner.manager.update(StudentEntity, studentId, {
+            gpa,
+          });
+          await newQueryRunner.commitTransaction();
+          console.log(`Updated GPA for student ${studentId}: ${gpa}`);
+        } catch (error) {
+          await newQueryRunner.rollbackTransaction();
+          console.error(`Error updating GPA for student ${studentId}:`, error);
+          throw new Error(`Failed to update GPA for student ${studentId}`);
+        } finally {
+          await newQueryRunner.release();
+        }
+      }
+    } catch (error) {
+      console.error(`Error calculating GPA for student ${studentId}:`, error);
+      throw new Error(`Failed to update GPA for student ${studentId}`);
+    }
+  }
+
+  /**
+   * Cập nhật GPA cho tất cả sinh viên
+   * @returns Promise<void>
+   */
+  async updateAllStudentsGPA(): Promise<void> {
+    try {
+      const students = await this.studentRepository.find({
+        select: ['id'],
+      });
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const student of students) {
+        try {
+          await this.updateStudentGPA(student.id, undefined);
+          successCount++;
+        } catch (error) {
+          errorCount++;
+          console.error(
+            `Failed to update GPA for student ${student.id}:`,
+            error,
+          );
+        }
+      }
+
+      console.log(
+        `Updated GPA for ${successCount} students successfully. ${errorCount} students failed.`,
+      );
+
+      if (errorCount > 0) {
+        throw new Error(`Failed to update GPA for ${errorCount} students`);
+      }
+    } catch (error) {
+      console.error('Error updating all students GPA:', error);
+      throw new Error('Failed to update all students GPA');
+    }
+  }
+
+  /**
+   * Lấy thông tin GPA chi tiết của sinh viên
+   * @param studentId - ID của sinh viên
+   * @returns Promise<object> - Thông tin GPA chi tiết
+   */
+  async getStudentGPADetails(studentId: number): Promise<{
+    gpa: number;
+    totalCredits: number;
+    totalWeightedScore: number;
+    courseDetails: Array<{
+      courseCode: string;
+      courseName: string;
+      credit: number;
+      averageScore: number;
+      status: string;
+      isCompleted: boolean;
+      totalWeight: number;
+    }>;
+  }> {
+    const enrollments = await this.dataSource
+      .getRepository('EnrollmentCourseEntity')
+      .createQueryBuilder('enrollment')
+      .leftJoinAndSelect('enrollment.classGroup', 'classGroup')
+      .leftJoinAndSelect('classGroup.course', 'course')
+      .where('enrollment.studentId = :studentId', { studentId })
+      .andWhere('enrollment.status IN (:...statuses)', {
+        statuses: [7, 1, 2], // ENROLLED = 7, PASSED = 1, FAILED = 2
+      })
+      .getMany();
+
+    let totalWeightedScore = 0;
+    let totalCredits = 0;
+    const courseDetails = [];
+
+    for (const enrollment of enrollments) {
+      const courseCredit = enrollment.classGroup.course.credit;
+      const averageScore = await this.calculateWeightedAverage(
+        studentId,
+        enrollment.classGroupId,
+      );
+
+      // Kiểm tra xem môn học này đã hoàn thành chưa
+      const isCompleted = await this.isCourseCompleted(
+        studentId,
+        enrollment.classGroupId,
+      );
+
+      // Tính tổng trọng số của môn học này
+      const gradeDetails = await this.dataSource
+        .getRepository('GradeDetailEntity')
+        .createQueryBuilder('gradeDetail')
+        .where('gradeDetail.studentId = :studentId', { studentId })
+        .andWhere('gradeDetail.classGroupId = :classGroupId', {
+          classGroupId: enrollment.classGroupId,
+        })
+        .getMany();
+
+      const totalWeight = gradeDetails.reduce(
+        (sum, detail) => sum + detail.weight,
+        0,
+      );
+
+      // Chỉ tính vào GPA nếu môn học đã hoàn thành
+      if (isCompleted) {
+        totalWeightedScore += averageScore * courseCredit;
+        totalCredits += courseCredit;
+      }
+
+      courseDetails.push({
+        courseCode: enrollment.classGroup.course.courseCode,
+        courseName: enrollment.classGroup.course.name,
+        credit: courseCredit,
+        averageScore: averageScore,
+        status: enrollment.status,
+        isCompleted: isCompleted,
+        totalWeight: totalWeight,
+      });
+    }
+
+    const gpa = totalCredits > 0 ? totalWeightedScore / totalCredits : 0;
+
+    return {
+      gpa,
+      totalCredits,
+      totalWeightedScore,
+      courseDetails,
+    };
+  }
+
+  /**
+   * Lấy thông tin chi tiết điểm của một môn học
+   * @param studentId - ID của sinh viên
+   * @param classGroupId - ID của nhóm lớp
+   * @returns Promise<object> - Thông tin chi tiết điểm
+   */
+  async getCourseGradeDetails(
+    studentId: number,
+    classGroupId: number,
+  ): Promise<{
+    courseInfo: {
+      courseCode: string;
+      courseName: string;
+      credit: number;
+    };
+    gradeDetails: Array<{
+      gradeType: number;
+      score: number;
+      weight: number;
+      letterGrade: string;
+      notes: string;
+    }>;
+    totalWeight: number;
+    averageScore: number;
+    isCompleted: boolean;
+  }> {
+    // Lấy thông tin môn học
+    const enrollment = await this.dataSource
+      .getRepository('EnrollmentCourseEntity')
+      .createQueryBuilder('enrollment')
+      .leftJoinAndSelect('enrollment.classGroup', 'classGroup')
+      .leftJoinAndSelect('classGroup.course', 'course')
+      .where('enrollment.studentId = :studentId', { studentId })
+      .andWhere('enrollment.classGroupId = :classGroupId', { classGroupId })
+      .getOne();
+
+    if (!enrollment) {
+      throw new NotFoundException('Không tìm thấy đăng ký môn học');
+    }
+
+    // Lấy chi tiết điểm
+    const gradeDetails = await this.dataSource
+      .getRepository('GradeDetailEntity')
+      .createQueryBuilder('gradeDetail')
+      .where('gradeDetail.studentId = :studentId', { studentId })
+      .andWhere('gradeDetail.classGroupId = :classGroupId', { classGroupId })
+      .orderBy('gradeDetail.gradeType', 'ASC')
+      .getMany();
+
+    const totalWeight = gradeDetails.reduce(
+      (sum, detail) => sum + detail.weight,
+      0,
+    );
+    const isCompleted = totalWeight >= 100;
+    const averageScore = await this.calculateWeightedAverage(
+      studentId,
+      classGroupId,
+    );
+
+    return {
+      courseInfo: {
+        courseCode: enrollment.classGroup.course.courseCode,
+        courseName: enrollment.classGroup.course.name,
+        credit: enrollment.classGroup.course.credit,
+      },
+      gradeDetails: gradeDetails.map((detail) => ({
+        gradeType: detail.gradeType,
+        score: detail.score,
+        weight: detail.weight,
+        letterGrade: detail.letterGrade,
+        notes: detail.notes,
+      })),
+      totalWeight,
+      averageScore,
+      isCompleted,
+    };
   }
 
   /**
