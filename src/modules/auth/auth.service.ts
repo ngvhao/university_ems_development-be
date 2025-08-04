@@ -162,7 +162,7 @@ export class AuthService {
     oldPassword: string,
     newPassword: string,
   ): Promise<void> {
-    const user = await this.userService.getUserById(userId);
+    const user = await this.userService.getOne({ id: userId });
     if (!user) {
       throw new BadRequestException('Không tìm thấy người dùng');
     }

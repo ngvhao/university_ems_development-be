@@ -1,6 +1,7 @@
 import {
   IsEmail,
   IsNotEmpty,
+  IsString,
   Matches,
   MaxLength,
   MinLength,
@@ -27,6 +28,7 @@ export class ResetPasswordDto {
 
 export class ChangePasswordDto {
   @IsNotEmpty()
+  @IsString()
   oldPassword: string;
 
   @Matches(PASSWORD_VALID_REGEX, {

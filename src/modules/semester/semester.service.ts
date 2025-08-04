@@ -52,8 +52,8 @@ export class SemesterService {
 
     const [data, total] = await this.semesterRepository.findAndCount({
       order: {
-        startYear: 'DESC',
-        term: 'DESC',
+        startYear: 'ASC',
+        term: 'ASC',
       },
       skip: (page - 1) * limit,
       take: limit,

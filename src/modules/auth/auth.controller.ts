@@ -184,11 +184,11 @@ export class AuthController {
     @Body() body: ChangePasswordDto,
     @Res() res: Response,
   ) {
-    await this.authService.changePassword(
-      req.user.id,
-      body.oldPassword,
-      body.newPassword,
-    );
+    const { id } = req.user;
+    const { oldPassword, newPassword } = body;
+    console.log('oldPassword:', oldPassword);
+    console.log('newPassword:', newPassword);
+    await this.authService.changePassword(id, oldPassword, newPassword);
     return new SuccessResponse({
       message: 'Đổi mật khẩu thành công.',
     }).send(res);
