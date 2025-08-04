@@ -172,7 +172,7 @@ export class ClassGroupController {
     });
     try {
       const classGroups = await axios.post(
-        'http://localhost:8000/schedules/calculating',
+        'http://52.221.33.143:8000/schedules/calculating',
         {
           coursesToSchedule: classGroupsNeedScheduling,
           semesterId: semester.id,
