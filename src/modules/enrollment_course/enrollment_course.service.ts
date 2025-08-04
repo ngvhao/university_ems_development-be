@@ -14,6 +14,7 @@ import {
   DataSource,
   FindOptionsWhere,
   FindOptionsRelations,
+  In,
 } from 'typeorm';
 import { EnrollmentCourseEntity } from './entities/enrollment_course.entity';
 import { StudentService } from 'src/modules/student/student.service';
@@ -28,6 +29,7 @@ import { FilterEnrollmentCourseDto } from './dtos/filterEnrollmentCourse.dto';
 import { UserEntity } from '../user/entities/user.entity';
 import { ClassGroupEntity } from '../class_group/entities/class_group.entity';
 import { UpdateEnrollmentStatusDto } from './dtos/updateEnrollmentCourse.dto';
+import { ClassWeeklyScheduleService } from '../class_weekly_schedule/class_weekly_schedule.service';
 
 @Injectable()
 export class EnrollmentCourseService {
@@ -37,6 +39,8 @@ export class EnrollmentCourseService {
     private readonly dataSource: DataSource,
     @Inject(forwardRef(() => StudentService))
     private readonly studentService: StudentService,
+    @Inject(forwardRef(() => ClassWeeklyScheduleService))
+    private readonly classWeeklyScheduleService: ClassWeeklyScheduleService,
   ) {}
 
   /**
@@ -96,6 +100,70 @@ export class EnrollmentCourseService {
   }
 
   /**
+   * Kiểm tra điều kiện trước khi đăng ký: conflict giữa các nhóm lớp gửi lên và với lịch học đã đăng ký.
+   */
+  private async checkEnrollmentPreConditions(
+    classGroupIds: number[],
+    studentId: number,
+  ) {
+    const classGroups = await this.enrollmentRepository.manager.find(
+      ClassGroupEntity,
+      {
+        where: { id: In(classGroupIds) },
+        relations: ['semester'],
+      },
+    );
+    if (!classGroups.length)
+      throw new BadRequestException('Không tìm thấy nhóm lớp nào.');
+    const semesterCode = classGroups[0]?.semester?.semesterCode;
+    if (!semesterCode)
+      throw new BadRequestException('Không xác định được học kỳ.');
+
+    const allNewSchedules = await this.classWeeklyScheduleService.find(
+      { classGroupId: In(classGroupIds) },
+      { classGroup: true, room: true, timeSlot: true },
+    );
+
+    const studentSchedules =
+      await this.classWeeklyScheduleService.getScheduleByStudentId(
+        studentId,
+        semesterCode,
+      );
+
+    for (let i = 0; i < allNewSchedules.length; i++) {
+      for (let j = i + 1; j < allNewSchedules.length; j++) {
+        if (
+          allNewSchedules[i].dayOfWeek === allNewSchedules[j].dayOfWeek &&
+          allNewSchedules[i].timeSlotId === allNewSchedules[j].timeSlotId &&
+          allNewSchedules[i].scheduledDates.some((date) =>
+            allNewSchedules[j].scheduledDates.includes(date),
+          )
+        ) {
+          throw new ConflictException(
+            `Các nhóm lớp đăng ký cùng lúc bị trùng lịch với nhau (Thứ ${allNewSchedules[i].dayOfWeek}, khung giờ ${allNewSchedules[i].timeSlotId}, ngày ${allNewSchedules[i].scheduledDates.filter((date) => allNewSchedules[j].scheduledDates.includes(date)).join(', ')})`,
+          );
+        }
+      }
+    }
+
+    for (const newSchedule of allNewSchedules) {
+      for (const existSchedule of studentSchedules) {
+        if (
+          newSchedule.dayOfWeek === existSchedule.dayOfWeek &&
+          newSchedule.timeSlotId === existSchedule.timeSlotId &&
+          newSchedule.scheduledDates.some((date) =>
+            existSchedule.scheduledDates.includes(date),
+          )
+        ) {
+          throw new ConflictException(
+            `Lịch học bị trùng với lớp đã đăng ký trước đó (Thứ ${newSchedule.dayOfWeek}, khung giờ ${newSchedule.timeSlotId}, ngày ${newSchedule.scheduledDates.filter((date) => existSchedule.scheduledDates.includes(date)).join(', ')})`,
+          );
+        }
+      }
+    }
+  }
+
+  /**
    * Tạo một lượt đăng ký môn học mới.
    * @param createDto - Dữ liệu đăng ký.
    * @param currentUser - Thông tin người dùng thực hiện hành động.
@@ -141,14 +209,14 @@ export class EnrollmentCourseService {
           'Bạn không có quyền đăng ký cho sinh viên khác.',
         );
       }
-      // Kiểm tra studentId được cung cấp có tồn tại không
       const studentProfile = await this.studentService.findOneById(studentId);
-      console.log('studentProfile@create: ', studentProfile);
       majorId = studentProfile.majorId;
       startAcademicYear = studentProfile.academicYear;
     }
+
+    await this.checkEnrollmentPreConditions(classGroupIds, studentId);
+
     for (const classGroupId of classGroupIds) {
-      // --- Bắt đầu Transaction ---
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
       await queryRunner.startTransaction();
@@ -167,6 +235,7 @@ export class EnrollmentCourseService {
               },
             },
           },
+          relations: ['semester'],
           lock: { mode: 'pessimistic_write' },
         });
 
@@ -176,7 +245,6 @@ export class EnrollmentCourseService {
           );
         }
 
-        // Kiểm tra trạng thái và số lượng chỗ trống của ClassGroup
         if (classGroup.status !== EClassGroupStatus.OPEN_FOR_REGISTER) {
           throw new BadRequestException(
             `Nhóm lớp học ID ${classGroupId} không mở để đăng ký (trạng thái: ${classGroup.status}).`,
@@ -188,7 +256,6 @@ export class EnrollmentCourseService {
           );
         }
 
-        // Kiểm tra sinh viên đã đăng ký nhóm này chưa
         const existingEnrollment = await queryRunner.manager.findOne(
           EnrollmentCourseEntity,
           {
