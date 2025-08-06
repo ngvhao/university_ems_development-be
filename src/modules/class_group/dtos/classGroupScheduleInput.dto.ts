@@ -5,10 +5,13 @@ import {
   IsDateString,
   IsInt,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsPositive,
   Max,
   Min,
+  ArrayNotEmpty,
+  ArrayMinSize,
   ValidateNested,
 } from 'class-validator';
 import { OccupiedResourceSlotDto } from './occupiedSlot.dto';
@@ -26,14 +29,15 @@ export class ClassGroupScheduleInputDto {
   @IsNotEmpty({ message: 'ID Học phần-Học kỳ không được để trống' })
   semesterId: number;
 
-  @ApiProperty({
-    description: 'IDs của học phần trong học kỳ',
-    example: [1, 2, 3, 4, 5],
-    required: true,
-    type: Array,
-  })
-  @IsArray({ message: 'IDs Học phần-Học kỳ phải là mảng' })
-  @IsNotEmpty({ message: 'IDs Học phần-Học kỳ không được để trống' })
+  @IsArray({ message: 'courseIds phải là một mảng' })
+  @ArrayNotEmpty({ message: 'courseIds không được để trống' })
+  @ArrayMinSize(1, { message: 'courseIds phải chứa ít nhất 1 phần tử' })
+  @IsNumber(
+    {},
+    { each: true, message: 'Mỗi phần tử trong courseIds phải là số' },
+  )
+  @IsPositive({ each: true, message: 'Mỗi ID Học phần phải là số dương' })
+  @Type(() => Number)
   courseIds: number[];
 
   @ApiProperty({

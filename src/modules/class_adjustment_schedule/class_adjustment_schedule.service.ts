@@ -151,6 +151,32 @@ export class ClassAdjustmentScheduleService {
         room: true,
         timeSlot: true,
       },
+      select: {
+        classGroup: {
+          id: true,
+          groupNumber: true,
+          course: {
+            id: true,
+            name: true,
+          },
+          semester: {
+            id: true,
+            semesterCode: true,
+          },
+          lecturer: {
+            id: true,
+            user: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              personalEmail: true,
+              universityEmail: true,
+            },
+          },
+        },
+        room: true,
+        timeSlot: true,
+      },
     });
     // const queryBuilder = this.adjustmentRepo.createQueryBuilder('adjustment');
 

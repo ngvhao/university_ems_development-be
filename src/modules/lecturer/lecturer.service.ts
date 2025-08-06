@@ -422,29 +422,46 @@ export class LecturerService {
     semesterCode?: string,
   ): Promise<{ data: ClassGroupEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
-
-    const queryBuilder = this.dataSource
-      .getRepository(ClassGroupEntity)
-      .createQueryBuilder('classGroup')
-      .leftJoinAndSelect('classGroup.course', 'course')
-      .leftJoinAndSelect('classGroup.semester', 'semester')
-      .leftJoinAndSelect('classGroup.enrollments', 'enrollments')
-      .leftJoinAndSelect('enrollments.student', 'student')
-      .leftJoinAndSelect('student.user', 'studentUser')
-      .where('classGroup.lecturerId = :lecturerId', { lecturerId });
+    const where: FindOptionsWhere<ClassGroupEntity> = {};
 
     if (semesterCode) {
-      queryBuilder.andWhere('semester.semesterCode = :semesterCode', {
+      where.semester = {
         semesterCode,
-      });
+      };
     }
+    where.lecturerId = lecturerId;
 
-    const total = await queryBuilder.getCount();
-    const data = await queryBuilder
-      .skip((page - 1) * limit)
-      .take(limit)
-      .orderBy('classGroup.createdAt', 'DESC')
-      .getMany();
+    const [data, total] = await this.dataSource
+      .getRepository(ClassGroupEntity)
+      .findAndCount({
+        where,
+        relations: {
+          schedules: {
+            timeSlot: true,
+            room: true,
+          },
+          course: true,
+          semester: true,
+          lecturer: {
+            user: true,
+          },
+          enrollments: true,
+        },
+      });
+    data.forEach((classGroup) => {
+      classGroup.lecturer.user.password = undefined;
+      classGroup.lecturer.user.resetPasswordToken = undefined;
+      classGroup.lecturer.user.isActive = undefined;
+      classGroup.lecturer.user.role = undefined;
+      classGroup.lecturer.user.avatarUrl = undefined;
+      classGroup.lecturer.user.dateOfBirth = undefined;
+      classGroup.lecturer.user.gender = undefined;
+      classGroup.lecturer.user.hometown = undefined;
+      classGroup.lecturer.user.permanentAddress = undefined;
+      classGroup.lecturer.user.temporaryAddress = undefined;
+      classGroup.lecturer.user.nationality = undefined;
+      classGroup.lecturer.user.ethnicity = undefined;
+    });
 
     const meta = generatePaginationMeta(total, page, limit);
 

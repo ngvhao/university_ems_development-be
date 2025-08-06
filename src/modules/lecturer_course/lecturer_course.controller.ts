@@ -51,6 +51,7 @@ export class LecturerCourseController {
   @Roles([
     EUserRole.ACADEMIC_MANAGER,
     EUserRole.ADMINISTRATOR,
+    EUserRole.LECTURER,
     EUserRole.HEAD_OF_FACULTY,
   ])
   @ApiOperation({ summary: 'Phân công giảng viên dạy học phần' })

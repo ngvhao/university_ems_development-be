@@ -14,6 +14,7 @@ import {
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { EAcademicRank } from 'src/utils/enums/user.enum';
 import { LecturerCourseEntity } from 'src/modules/lecturer_course/entities/lecturer_course.entity';
+import { ClassGroupEntity } from 'src/modules/class_group/entities/class_group.entity';
 
 @Entity('lecturers')
 export class LecturerEntity extends IEntity {
@@ -89,4 +90,11 @@ export class LecturerEntity extends IEntity {
     (lecturerCourse) => lecturerCourse.lecturer,
   )
   lecturerCourses: LecturerCourseEntity[];
+
+  @ApiPropertyOptional({
+    type: () => [ClassGroupEntity],
+    description: 'Các nhóm lớp Giảng viên này dạy',
+  })
+  @OneToMany(() => ClassGroupEntity, (classGroup) => classGroup.lecturer)
+  classGroups: ClassGroupEntity[];
 }

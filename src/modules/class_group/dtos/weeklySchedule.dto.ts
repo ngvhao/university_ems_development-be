@@ -4,7 +4,7 @@ import { CreateClassWeeklyScheduleDto } from 'src/modules/class_weekly_schedule/
 
 export class ClassWeeklyScheduleDto extends OmitType(
   CreateClassWeeklyScheduleDto,
-  ['dayOfWeek'],
+  ['dayOfWeek', 'classGroupId', 'startDate', 'endDate'],
 ) {
   @ApiProperty({
     description: 'Thứ trong tuần (0: Chủ Nhật, 1: Thứ Hai, ..., 6: Thứ Bảy)',

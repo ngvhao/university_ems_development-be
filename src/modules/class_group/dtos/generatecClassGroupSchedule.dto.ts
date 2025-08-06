@@ -5,6 +5,8 @@ import {
   IsString,
   IsDateString,
   ValidateNested,
+  IsBoolean,
+  IsOptional,
 } from 'class-validator';
 import { ScheduledCourseDto } from './scheduledCourse.dto';
 
@@ -36,4 +38,8 @@ export class GenerateScheduleResponseDto {
 
   @IsString()
   solverMessage: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isExtraClassGroup?: boolean;
 }

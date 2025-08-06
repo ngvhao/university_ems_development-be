@@ -1,6 +1,6 @@
 import { Entity, Column, Index, OneToMany } from 'typeorm';
 import { IEntity } from 'src/utils/interfaces/entity.interface';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ClassWeeklyScheduleEntity } from 'src/modules/class_weekly_schedule/entities/class_weekly_schedule.entity';
 import { ClassAdjustmentScheduleEntity } from 'src/modules/class_adjustment_schedule/entities/class_adjustment_schedule.entity';
 
@@ -25,9 +25,17 @@ export class TimeSlotEntity extends IEntity {
   @Column({ type: 'int', nullable: false })
   shift: number;
 
+  @ApiPropertyOptional({
+    type: () => [ClassWeeklyScheduleEntity],
+    description: 'Danh sách lịch học sử dụng khung giờ này',
+  })
   @OneToMany(() => ClassWeeklyScheduleEntity, (schedule) => schedule.timeSlot)
   classWeeklySchedules: ClassWeeklyScheduleEntity[];
 
+  @ApiPropertyOptional({
+    type: () => [ClassAdjustmentScheduleEntity],
+    description: 'Danh sách lịch điều chỉnh sử dụng khung giờ này',
+  })
   @OneToMany(
     () => ClassAdjustmentScheduleEntity,
     (schedule) => schedule.timeSlot,

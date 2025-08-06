@@ -532,6 +532,30 @@ export class TuitionService {
       skip: (page - 1) * limit,
       take: limit,
       order: { issueDate: 'DESC' },
+      relations: {
+        student: {
+          user: true,
+        },
+        semester: true,
+        details: true,
+        paymentTransactions: true,
+      },
+      select: {
+        student: {
+          id: true,
+          studentCode: true,
+          user: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            personalEmail: true,
+            universityEmail: true,
+          },
+        },
+        semester: true,
+        details: true,
+        paymentTransactions: true,
+      },
     });
 
     const meta = generatePaginationMeta(total, page, limit);

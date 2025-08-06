@@ -203,6 +203,7 @@ export class ClassGroupService {
               select: ['id', 'groupNumber'],
               relations: {
                 course: true,
+                semester: true,
               },
               order: { groupNumber: 'DESC' },
             },
@@ -214,7 +215,7 @@ export class ClassGroupService {
             } else {
               console.log(existingGroup);
               throw new ConflictException(
-                `Nhóm lớp số ${scheduleClassGroup.groupNumber} đã tồn tại cho Học phần-Học kỳ ID ${semesterId} của môn ${existingGroup.course.name}.`,
+                `Nhóm lớp số ${scheduleClassGroup.groupNumber} đã tồn tại cho Học phần-Học kỳ ${existingGroup.semester.semesterCode} của môn ${existingGroup.course.name}.`,
               );
             }
           }
@@ -490,6 +491,7 @@ export class ClassGroupService {
       where: condition,
       relations: {
         course: true,
+        semester: true,
       },
     });
 

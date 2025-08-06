@@ -210,7 +210,7 @@ export class TimeSlotService {
    * Get time slots with timezone conversion
    */
   async findAll(
-    paginationDto?: PaginationDto,
+    paginationDto: PaginationDto = { page: 1, limit: 100 },
   ): Promise<{ data: TimeSlotEntity[]; meta: MetaDataInterface }> {
     const { page = 1, limit = 10 } = paginationDto;
 

@@ -48,6 +48,8 @@ import axios from 'axios';
 import { SettingService } from '../setting/setting.service';
 import { EnrollmentCourseService } from '../enrollment_course/enrollment_course.service';
 import { EEnrollmentStatus } from 'src/utils/enums/course.enum';
+import { GenerateScheduleResponseDto } from './dtos/generatecClassGroupSchedule.dto';
+import { IScheduleCalculationData } from './interfaces/schedule-calculation.interface';
 
 @ApiTags('Quản lý Nhóm lớp học (Class Groups)')
 @ApiBearerAuth('token')
@@ -139,7 +141,7 @@ export class ClassGroupController {
       results.forEach((classGroup) => {
         if (classGroup != null) {
           throw new ConflictException(
-            `Nhóm lớp số ${classGroup.groupNumber} đã tồn tại cho Học phần - Học kỳ ID ${semesterId} của môn ${classGroup.course.name}.`,
+            `Nhóm lớp số ${classGroup.groupNumber} đã tồn tại cho Học phần - Học kỳ ${classGroup.semester.semesterCode} của môn ${classGroup.course.name}.`,
           );
         }
       });
@@ -156,7 +158,7 @@ export class ClassGroupController {
     const { data: rooms } = await this.roomService.findAll({
       roomType: ERoomType.CLASSROOM,
     });
-    console.log({
+    const scheduleData: IScheduleCalculationData = {
       coursesToSchedule: classGroupsNeedScheduling,
       semesterId: semester.id,
       semesterStartDate: semester.startDate,
@@ -169,7 +171,8 @@ export class ClassGroupController {
       occupiedSlots: occupiedSlots,
       groupSizeTarget: groupSizeTarget,
       maxSessionsPerWeekAllowed: maxSessionsPerWeekAllowed,
-    });
+    };
+    console.log('Schedule calculation data:', scheduleData);
     try {
       const classGroups = await axios.post(
         'http://52.221.33.143:8000/schedules/calculating',
@@ -202,6 +205,142 @@ export class ClassGroupController {
       console.log('error:', error.response.data.detail);
       throw new BadRequestException(error.response.data.detail);
     }
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @Post('/pre-data-for-scheduling')
+  async getPreDataForCalculating(
+    @Body() classGroupInputDto: ClassGroupScheduleInputDto,
+    @Res() res: Response,
+  ) {
+    const {
+      semesterId,
+      courseIds,
+      exceptionDates,
+      occupiedSlots,
+      groupSizeTarget,
+      maxSessionsPerWeekAllowed,
+      isExtraClassGroup,
+      isRegisterFromDate,
+      isRegisterToDate,
+    } = classGroupInputDto;
+    const classGroupsNeedScheduling =
+      await this.studyPlanService.findCourseRegistrations(
+        semesterId,
+        courseIds,
+        isExtraClassGroup,
+        isRegisterFromDate ? new Date(isRegisterFromDate) : undefined,
+        isRegisterToDate ? new Date(isRegisterToDate) : undefined,
+      );
+    if (!isExtraClassGroup) {
+      const results = await Promise.all(
+        courseIds.map((courseId) => {
+          return this.classGroupService.getOne({ courseId: courseId });
+        }),
+      );
+      results.forEach((classGroup) => {
+        if (classGroup != null) {
+          throw new ConflictException(
+            `Nhóm lớp số ${classGroup.groupNumber} đã tồn tại cho Học phần - Học kỳ ${classGroup.semester.semesterCode} của môn ${classGroup.course.name}.`,
+          );
+        }
+      });
+    }
+    if (classGroupsNeedScheduling.length == 0) {
+      throw new BadRequestException(
+        'Không tồn tại môn nào hợp lệ để lập nhóm lớp',
+      );
+    }
+
+    const semester = await this.semesterService.findOne(semesterId);
+    const { data: timeSlots } = await this.timeSlotService.findAll();
+    const lecturers = await this.lecturerService.findAllLecturersId();
+    const { data: rooms } = await this.roomService.findAll({
+      roomType: ERoomType.CLASSROOM,
+    });
+    const scheduleData: IScheduleCalculationData = {
+      coursesToSchedule: classGroupsNeedScheduling,
+      semesterId: semester.id,
+      semesterStartDate: semester.startDate,
+      semesterEndDate: semester.endDate,
+      daysOfWeek: dateOfWeeks,
+      timeSlots: timeSlots,
+      lecturers: lecturers,
+      rooms: rooms,
+      exceptionDates: exceptionDates,
+      occupiedSlots: occupiedSlots,
+      groupSizeTarget: groupSizeTarget,
+      maxSessionsPerWeekAllowed: maxSessionsPerWeekAllowed,
+    };
+    console.log('Schedule calculation data:', scheduleData);
+    return new SuccessResponse({
+      message: 'Lấy dữ liệu thành công',
+      data: {
+        coursesToSchedule: classGroupsNeedScheduling,
+        semesterId: semester.id,
+        semesterStartDate: semester.startDate,
+        semesterEndDate: semester.endDate,
+        daysOfWeek: dateOfWeeks,
+        timeSlots: timeSlots,
+        lecturers: lecturers,
+        rooms: rooms,
+        exceptionDates: exceptionDates,
+        occupiedSlots: occupiedSlots,
+        groupSizeTarget: groupSizeTarget,
+        maxSessionsPerWeekAllowed: maxSessionsPerWeekAllowed,
+      },
+    }).send(res);
+    // try {
+    //   const classGroups = await axios.post(
+    //     'http://52.221.33.143:8000/schedules/calculating',
+    //     {
+    //       coursesToSchedule: classGroupsNeedScheduling,
+    //       semesterId: semester.id,
+    //       semesterStartDate: semester.startDate,
+    //       semesterEndDate: semester.endDate,
+    //       daysOfWeek: dateOfWeeks,
+    //       timeSlots: timeSlots,
+    //       lecturers: lecturers,
+    //       rooms: rooms,
+    //       exceptionDates: exceptionDates,
+    //       occupiedSlots: occupiedSlots,
+    //       groupSizeTarget: groupSizeTarget,
+    //       maxSessionsPerWeekAllowed: maxSessionsPerWeekAllowed,
+    //     },
+    //   );
+    //   console.log('getClassGroupSchedule@@classGroups.data', classGroups.data);
+    //   const savedClassGroups =
+    //     await this.classGroupService.createWithWeeklySchedule(
+    //       classGroups.data,
+    //       isExtraClassGroup,
+    //     );
+    //   return new SuccessResponse({
+    //     message: 'Lấy nhóm lớp thành công',
+    //     data: savedClassGroups,
+    //   }).send(res);
+    // } catch (error) {
+    //   console.log('error:', error.response.data.detail);
+    //   throw new BadRequestException(error.response.data.detail);
+    // }
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles([EUserRole.ACADEMIC_MANAGER, EUserRole.ADMINISTRATOR])
+  @Post('/create-schedules')
+  async createClassGroupSchedule(
+    @Body() generateScheduleDto: GenerateScheduleResponseDto,
+    @Res() res: Response,
+  ) {
+    const savedClassGroups =
+      await this.classGroupService.createWithWeeklySchedule(
+        generateScheduleDto,
+        generateScheduleDto.isExtraClassGroup,
+      );
+    return new SuccessResponse({
+      message: 'Lấy nhóm lớp thành công',
+      data: savedClassGroups,
+    }).send(res);
   }
 
   @Get('/me/for-registration')

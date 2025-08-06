@@ -50,9 +50,17 @@ export class CourseEntity extends IEntity {
   })
   courseType: ECourseType;
 
+  @ApiPropertyOptional({
+    type: () => [CurriculumCourseEntity],
+    description: 'Danh sách chương trình đào tạo chứa môn học này',
+  })
   @OneToMany(() => CurriculumCourseEntity, (cc) => cc.course)
   curriculumCourses: CurriculumCourseEntity[];
 
+  @ApiPropertyOptional({
+    type: () => [StudyPlanEntity],
+    description: 'Danh sách kế hoạch học tập chứa môn học này',
+  })
   @OneToMany(() => StudyPlanEntity, (sp) => sp.course)
   studyPlans: StudyPlanEntity[];
 
@@ -66,6 +74,10 @@ export class CourseEntity extends IEntity {
   )
   lecturerCourses: LecturerCourseEntity[];
 
+  @ApiPropertyOptional({
+    type: () => [ClassGroupEntity],
+    description: 'Danh sách nhóm lớp của môn học này',
+  })
   @OneToMany(() => ClassGroupEntity, (classGroup) => classGroup.course)
   classGroups: ClassGroupEntity[];
 

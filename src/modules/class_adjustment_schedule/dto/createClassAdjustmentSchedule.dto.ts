@@ -1,5 +1,6 @@
 import {
   IsDateString,
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -8,6 +9,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { EClassAdjustmentScheduleStatus } from 'src/utils/enums/class.enum';
 
 export class CreateAdjustmentScheduleDto {
   @ApiProperty({
@@ -59,6 +61,13 @@ export class CreateAdjustmentScheduleDto {
   @IsPositive({ message: 'ID Khung giờ học phải là số dương' })
   @IsNotEmpty({ message: 'ID Khung giờ học không được để trống' })
   timeSlotId: number;
+
+  @IsOptional()
+  @IsEnum(EClassAdjustmentScheduleStatus, {
+    message: 'Trạng thái phải là một trong các giá trị hợp lệ',
+  })
+  @IsNotEmpty({ message: 'Trạng thái không được để trống' })
+  status: EClassAdjustmentScheduleStatus;
 
   @ApiProperty({
     example: 'Chuyển sang phòng B101 do phòng cũ có sự kiện',
