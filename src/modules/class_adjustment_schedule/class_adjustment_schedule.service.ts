@@ -26,6 +26,7 @@ import { ClassAdjustmentScheduleEntity } from './entities/class_adjustment_sched
 import { TimeSlotService } from '../time_slot/time_slot.service';
 import { TimeSlotEntity } from '../time_slot/entities/time_slot.entity';
 import { StudentService } from '../student/student.service';
+import { EEnrollmentStatus } from 'src/utils/enums/course.enum';
 
 @Injectable()
 export class ClassAdjustmentScheduleService {
@@ -178,16 +179,6 @@ export class ClassAdjustmentScheduleService {
         timeSlot: true,
       },
     });
-    // const queryBuilder = this.adjustmentRepo.createQueryBuilder('adjustment');
-
-    // queryBuilder
-    //   .leftJoinAndSelect('adjustment.classGroup', 'classGroup')
-    //   .leftJoinAndSelect('adjustment.room', 'room')
-    //   .leftJoinAndSelect('adjustment.timeSlot', 'timeSlot')
-    //   .orderBy('adjustment.adjustmentDate', 'DESC')
-    //   .addOrderBy('adjustment.createdAt', 'DESC')
-    //   .skip((page - 1) * limit)
-    //   .take(limit);
 
     const meta = generatePaginationMeta(total, page, limit);
     return { data, meta };
@@ -269,31 +260,40 @@ export class ClassAdjustmentScheduleService {
     studentId: number,
     semesterCode?: string,
   ): Promise<ClassAdjustmentScheduleEntity[]> {
-    await this.studentService.getOne({ id: studentId });
-
-    const queryBuilder = this.adjustmentRepo
-      .createQueryBuilder('schedule')
-      .innerJoin('schedule.classGroup', 'classGroup')
-      .innerJoin(
-        'classGroup.enrollments',
-        'enrollment',
-        'enrollment.studentId = :studentId',
-        { studentId },
-      )
-      .leftJoinAndSelect('schedule.room', 'room')
-      .leftJoinAndSelect('schedule.timeSlot', 'timeSlot')
-      .leftJoinAndSelect('classGroup.course', 'course')
-      .leftJoinAndSelect('classGroup.semester', 'semester')
-      .orderBy('schedule.adjustmentDate', 'ASC')
-      .addOrderBy('schedule.timeSlotId', 'ASC');
-
+    const where: FindOptionsWhere<ClassAdjustmentScheduleEntity> = {};
+    where.classGroup = {
+      enrollments: {
+        studentId: studentId,
+        status: In([
+          EEnrollmentStatus.ENROLLED,
+          EEnrollmentStatus.WITHDRAWN,
+          EEnrollmentStatus.PASSED,
+        ]),
+      },
+    };
     if (semesterCode) {
-      queryBuilder.andWhere('semester.semesterCode = :semesterCode', {
-        semesterCode,
-      });
+      where.classGroup = {
+        semester: {
+          semesterCode: semesterCode,
+        },
+      };
     }
 
-    const schedules = await queryBuilder.getMany();
+    const schedules = await this.adjustmentRepo.find({
+      where,
+      relations: {
+        room: true,
+        timeSlot: true,
+        classGroup: {
+          course: true,
+          semester: true,
+        },
+      },
+      order: {
+        adjustmentDate: 'ASC',
+        timeSlotId: 'ASC',
+      },
+    });
 
     return schedules;
   }

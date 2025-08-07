@@ -80,7 +80,7 @@ export class SemesterController {
     }).send(res);
   }
 
-  @Get('currentSemester')
+  @Get('current-semester')
   async getCurrentSemester(@Res() res: Response) {
     const semesterId = await this.settingService.findOne('currentSemesterId');
     const semester = await this.semesterService.findOne(semesterId.value);
