@@ -169,6 +169,42 @@ export class SettingService implements OnModuleInit {
   }
 
   /**
+   * @method activate
+   * @param {string} key - Key của cài đặt cần kích hoạt.
+   * @returns {Promise<SettingEntity>} Bản ghi cài đặt đã được kích hoạt.
+   * @throws {NotFoundException} Nếu không tìm thấy cài đặt.
+   * @description Kích hoạt một cài đặt bằng cách đặt isActive = true.
+   */
+  async activate(key: string): Promise<SettingEntity> {
+    const setting = await this.settingsRepository.findOne({ where: { key } });
+    if (!setting) {
+      throw new NotFoundException(`Không tìm thấy cài đặt với key: ${key}`);
+    }
+
+    setting.isActive = true;
+    const updatedSetting = await this.settingsRepository.save(setting);
+    return updatedSetting;
+  }
+
+  /**
+   * @method deactivate
+   * @param {string} key - Key của cài đặt cần vô hiệu hóa.
+   * @returns {Promise<SettingEntity>} Bản ghi cài đặt đã được vô hiệu hóa.
+   * @throws {NotFoundException} Nếu không tìm thấy cài đặt.
+   * @description Vô hiệu hóa một cài đặt bằng cách đặt isActive = false.
+   */
+  async deactivate(key: string): Promise<SettingEntity> {
+    const setting = await this.settingsRepository.findOne({ where: { key } });
+    if (!setting) {
+      throw new NotFoundException(`Không tìm thấy cài đặt với key: ${key}`);
+    }
+
+    setting.isActive = false;
+    const updatedSetting = await this.settingsRepository.save(setting);
+    return updatedSetting;
+  }
+
+  /**
    * @method getSettingFromCache
    * @param {string} key - Key của cài đặt cần lấy.
    * @returns {any | undefined} Giá trị của cài đặt từ cache (đã được parse), hoặc undefined nếu không tìm thấy.

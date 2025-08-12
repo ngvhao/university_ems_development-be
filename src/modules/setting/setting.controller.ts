@@ -20,7 +20,13 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from 'src/decorators/roles.decorator';
 import { EUserRole } from 'src/utils/enums/user.enum';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiTags,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+} from '@nestjs/swagger';
 
 /**
  * @class SettingController
@@ -112,6 +118,32 @@ export class SettingController {
     await this.SettingService.reloadSettings();
     return new SuccessResponse({
       message: 'Đã tải lại cài đặt vào cache thành công.',
+    }).send(res);
+  }
+
+  @Patch(':key/activate')
+  @ApiOperation({ summary: 'Kích hoạt cài đặt' })
+  @ApiParam({ name: 'key', description: 'Key của cài đặt cần kích hoạt' })
+  @ApiResponse({ status: 200, description: 'Kích hoạt cài đặt thành công' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy cài đặt' })
+  async activate(@Param('key') key: string, @Res() res: Response) {
+    const activatedSetting = await this.SettingService.activate(key);
+    return new SuccessResponse({
+      data: activatedSetting,
+      message: `Đã kích hoạt cài đặt '${key}' thành công.`,
+    }).send(res);
+  }
+
+  @Patch(':key/deactivate')
+  @ApiOperation({ summary: 'Vô hiệu hóa cài đặt' })
+  @ApiParam({ name: 'key', description: 'Key của cài đặt cần vô hiệu hóa' })
+  @ApiResponse({ status: 200, description: 'Vô hiệu hóa cài đặt thành công' })
+  @ApiResponse({ status: 404, description: 'Không tìm thấy cài đặt' })
+  async deactivate(@Param('key') key: string, @Res() res: Response) {
+    const deactivatedSetting = await this.SettingService.deactivate(key);
+    return new SuccessResponse({
+      data: deactivatedSetting,
+      message: `Đã vô hiệu hóa cài đặt '${key}' thành công.`,
     }).send(res);
   }
 }

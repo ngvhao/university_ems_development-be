@@ -34,6 +34,12 @@ export class SettingEntity extends IEntity {
   })
   value: any;
 
+  @Column({ type: 'boolean', default: true })
+  @ApiProperty({
+    description: 'Trạng thái hoạt động của cài đặt.',
+    example: true, // Ví dụ giá trị boolean
+  })
+  isActive: boolean;
   /**
    * @property {string} description - Mô tả tùy chọn về ý nghĩa của cài đặt này.
    */

@@ -373,6 +373,12 @@ export class ClassGroupController {
     const nextRegisterStudyPlanSemester = await this.settingService.findOne(
       'nextRegisterCourseSemesterId',
     );
+    if (!nextRegisterStudyPlanSemester.isActive) {
+      return new SuccessResponse({
+        data: null,
+        message: 'Hiện tại chưa đến kỳ đăng ký lớp học.',
+      }).send(res);
+    }
     const semester = await this.semesterService.findOne(
       nextRegisterStudyPlanSemester.value,
     );

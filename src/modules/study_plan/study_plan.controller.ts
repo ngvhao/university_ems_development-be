@@ -211,6 +211,12 @@ export class StudyPlanController {
     const nextRegisterStudyPlanSemester = await this.settingService.findOne(
       'nextRegisterStudyPlanSemesterId',
     );
+    if (!nextRegisterStudyPlanSemester.isActive) {
+      return new SuccessResponse({
+        data: null,
+        message: 'Hiện tại chưa đến kỳ đăng ký kế hoạch học tập.',
+      }).send(res);
+    }
     const semester = await this.semesterService.findOne(
       nextRegisterStudyPlanSemester.value,
     );
