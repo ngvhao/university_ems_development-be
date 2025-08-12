@@ -46,7 +46,6 @@ import { RoomService } from '../room/room.service';
 import { ERoomType } from 'src/utils/enums/room.enum';
 import axios from 'axios';
 import { SettingService } from '../setting/setting.service';
-import { EnrollmentCourseService } from '../enrollment_course/enrollment_course.service';
 import { EEnrollmentStatus } from 'src/utils/enums/course.enum';
 import { GenerateScheduleResponseDto } from './dtos/generatecClassGroupSchedule.dto';
 import { IScheduleCalculationData } from './interfaces/schedule-calculation.interface';
@@ -64,7 +63,6 @@ export class ClassGroupController {
     private readonly lecturerService: LecturerService,
     private readonly roomService: RoomService,
     private readonly settingService: SettingService,
-    private readonly enrollmentCourseService: EnrollmentCourseService,
   ) {}
 
   @Post()
@@ -233,20 +231,23 @@ export class ClassGroupController {
         isRegisterFromDate ? new Date(isRegisterFromDate) : undefined,
         isRegisterToDate ? new Date(isRegisterToDate) : undefined,
       );
-    if (!isExtraClassGroup) {
-      const results = await Promise.all(
-        courseIds.map((courseId) => {
-          return this.classGroupService.getOne({ courseId: courseId });
-        }),
-      );
-      results.forEach((classGroup) => {
-        if (classGroup != null) {
-          throw new ConflictException(
-            `Nhóm lớp số ${classGroup.groupNumber} đã tồn tại cho Học phần - Học kỳ ${classGroup.semester.semesterCode} của môn ${classGroup.course.name}.`,
-          );
-        }
-      });
-    }
+    // if (!isExtraClassGroup) {
+    //   const results = await Promise.all(
+    //     courseIds.map((courseId) => {
+    //       return this.classGroupService.getOne({
+    //         courseId: courseId,
+    //         semesterId: semesterId,
+    //       });
+    //     }),
+    //   );
+    //   results.forEach((classGroup) => {
+    //     if (classGroup != null) {
+    //       throw new ConflictException(
+    //         `Nhóm lớp số ${classGroup.groupNumber} đã tồn tại cho Học phần - Học kỳ ${classGroup.semester.semesterCode} của môn ${classGroup.course.name}.`,
+    //       );
+    //     }
+    //   });
+    // }
     if (classGroupsNeedScheduling.length == 0) {
       throw new BadRequestException(
         'Không tồn tại môn nào hợp lệ để lập nhóm lớp',
